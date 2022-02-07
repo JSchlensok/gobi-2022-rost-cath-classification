@@ -7,10 +7,8 @@ from typing import Dict, List, Tuple
 import h5py
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
 
-
-REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent
+REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
 
 
@@ -55,7 +53,9 @@ class DataSplits:
         )
         return validation_set
 
-    def get_filtered_test_set_for_level(self, cath_level: str) -> Tuple[np.ndarray, List[str]]:
+    def get_filtered_test_set_for_level(
+        self, cath_level: str
+    ) -> Tuple[np.ndarray, List[str]]:
 
         test_set = self._get_filtered_set_for_level(
             X=self.X_val, y=self.y_val, cath_level=cath_level
@@ -93,7 +93,9 @@ class DataSplits:
         label = self.all_labels_train_sorted[index]
         return label
 
-    def shuffled(self, shuffle_train=True, shuffle_val=True, shuffle_test=True, random_seed=1):
+    def shuffled(
+        self, shuffle_train=True, shuffle_val=True, shuffle_test=True, random_seed=1
+    ):
         """
 
         Returns a new DataSplits object with shuffled trainings set and/or shuffled validation set
@@ -187,12 +189,10 @@ def read_in_embeddings(path_to_file: Path) -> Dict[str, np.ndarray]:
     return id2embedding
 
 
-def create_sample_data_files():
-    pass
-
-
 def read_in_labels(path_to_file: Path) -> Dict[str, str]:
-    df = pd.read_csv(filepath_or_buffer=path_to_file, delimiter=r"\s+", header=None, comment="#")
+    df = pd.read_csv(
+        filepath_or_buffer=path_to_file, delimiter=r"\s+", header=None, comment="#"
+    )
 
     id2label = {}
 
@@ -227,15 +227,17 @@ def load_data(
     path_labels = data_dir / "cath-domain-list.txt"
 
     if load_only_small_sample:
-        path_sequences_train = data_dir / "sample_train100.fasta"
-        path_labels = data_dir / "sample_cath-domain-list100.txt"
+        path_sequences_train = data_dir / "sample_data/sample_train100.fasta"
+        path_labels = data_dir / "sample_data/sample_cath-domain-list100.txt"
 
     print("Reading in Sequences ...")
     id2seqs_train = read_in_sequences(path_sequences_train)
     id2seqs_val = read_in_sequences(path_sequences_val)
     id2seqs_test = read_in_sequences(path_sequences_test)
 
-    id2seqs_all = merge_two_dicts(id2seqs_train, merge_two_dicts(id2seqs_val, id2seqs_test))
+    id2seqs_all = merge_two_dicts(
+        id2seqs_train, merge_two_dicts(id2seqs_val, id2seqs_test)
+    )
     print(f"len(id2seqs_train) = {len(id2seqs_train)}")
     print(f"len(id2seqs_val) = {len(id2seqs_val)}")
     print(f"len(id2seqs_test) = {len(id2seqs_test)}")
@@ -246,6 +248,9 @@ def load_data(
     id2label = {}
     for key in id2seqs_all.keys():
         id2label[key] = id2label_all[key]
+
+    print(f"len(id2label_all) = {len(id2label_all)}")
+    print(f"len(id2label) = {len(id2label)}")
 
     print("Reading in Embeddings ...")
     id2embedding = read_in_embeddings(path_to_file=path_embeddings)
@@ -288,7 +293,9 @@ def load_data(
         y_val=[id2label[cath_id] for cath_id in id2seqs_val.keys()],
         X_test=np.array([embeddings[cath_id] for cath_id in id2seqs_test.keys()]),
         y_test=[id2label[cath_id] for cath_id in id2seqs_test.keys()],
-        all_labels_train_sorted=sorted(list(set([id2label[k] for k in id2seqs_train.keys()]))),
+        all_labels_train_sorted=sorted(
+            list(set([id2label[k] for k in id2seqs_train.keys()]))
+        ),
     )
     if shuffle_data:
         dataset = dataset.shuffled()
