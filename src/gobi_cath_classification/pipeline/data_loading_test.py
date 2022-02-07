@@ -23,9 +23,7 @@ def test_data_loading():
     # data_dir = Path("../data")
 
     dataset = load_data(data_dir=DATA_DIR, without_duplicates=False, shuffle_data=True)
-    dataset_no_dup = load_data(
-        data_dir=DATA_DIR, without_duplicates=True, shuffle_data=True
-    )
+    dataset_no_dup = load_data(data_dir=DATA_DIR, without_duplicates=True, shuffle_data=True)
 
     print(f"dataset.get_shape() = {dataset.get_shape()}")
     print(f"dataset_no_dup.get_shape() = {dataset_no_dup.get_shape()}")
@@ -52,21 +50,17 @@ def test_get_set_for_level_H():
 
     # val set
     np.testing.assert_allclose(
-        actual=data._get_filtered_set_for_level(
-            X=data.X_val, y=data.y_val, cath_level="H"
-        )[0],
+        actual=data._get_filtered_set_for_level(X=data.X_val, y=data.y_val, cath_level="H")[0],
         desired=np.array([[1], [2]]),
     )
-    y_val_at_level_3 = data._get_filtered_set_for_level(
-        X=data.X_val, y=data.y_val, cath_level="H"
-    )[1]
+    y_val_at_level_3 = data._get_filtered_set_for_level(X=data.X_val, y=data.y_val, cath_level="H")[
+        1
+    ]
     np.testing.assert_equal(y_val_at_level_3, np.array(["1.8.20.300", "2.4.6.8"]))
 
     # test set
     np.testing.assert_allclose(
-        actual=data._get_filtered_set_for_level(
-            X=data.X_test, y=data.y_test, cath_level="H"
-        )[0],
+        actual=data._get_filtered_set_for_level(X=data.X_test, y=data.y_test, cath_level="H")[0],
         desired=np.array([[1]]),
     )
     y_val_at_level_3 = data._get_filtered_set_for_level(
@@ -88,21 +82,17 @@ def test_get_set_for_level_A():
 
     # val set
     np.testing.assert_allclose(
-        actual=data._get_filtered_set_for_level(
-            X=data.X_val, y=data.y_val, cath_level="A"
-        )[0],
+        actual=data._get_filtered_set_for_level(X=data.X_val, y=data.y_val, cath_level="A")[0],
         desired=np.array([[3]]),
     )
-    y_val_at_level_3 = data._get_filtered_set_for_level(
-        X=data.X_val, y=data.y_val, cath_level="A"
-    )[1]
+    y_val_at_level_3 = data._get_filtered_set_for_level(X=data.X_val, y=data.y_val, cath_level="A")[
+        1
+    ]
     np.testing.assert_equal(y_val_at_level_3, np.array(["1.8.20.300"]))
 
     # test set
     np.testing.assert_allclose(
-        actual=data._get_filtered_set_for_level(
-            X=data.X_test, y=data.y_test, cath_level="A"
-        )[0],
+        actual=data._get_filtered_set_for_level(X=data.X_test, y=data.y_test, cath_level="A")[0],
         desired=np.array([[5], [6]]),
     )
     y_val_at_level_1 = data._get_filtered_set_for_level(
