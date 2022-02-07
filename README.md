@@ -53,8 +53,7 @@ More information in [Black documentation](https://black.readthedocs.io/en/stable
 ## Training in Google Colab
 1. Create a personal access token as described in [GitHub Docs Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 2. Open Google Colab Notebook and clone the repository with:
-```
-import os
+```python
 from getpass import getpass
 import urllib
 import subprocess
@@ -74,15 +73,19 @@ clone_dialog()
 ```
 3. Install requirements:
 ```
-!pip install -r gobi-2022-rost-cath-classification/requirements.txt
+!pip install -r /content/gobi-2022-rost-cath-classification/requirements.txt
 ```
 4. Download data to data directory:
 ```
+!wget -P /content/gobi-2022-rost-cath-classification/data https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/train74k.fasta
+!wget -P /content/gobi-2022-rost-cath-classification/data https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/val200.fasta
+!wget -P /content/gobi-2022-rost-cath-classification/data https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/test219.fasta
+!wget -P /content/gobi-2022-rost-cath-classification/data https://rostlab.org/~deepppi/cath-domain-list.txt
 !wget -P /content/gobi-2022-rost-cath-classification/data https://rostlab.org/~deepppi/eat_dbs/cath_v430_dom_seqs_S100_161121.h5
 ```
-5. Run your trainings script:
+5. Run your training script:
 ```
-!python gobi-2022-rost-cath-classification/src/gobi_cath_classification/scripts_charlotte/train_eval.py
+!python /content/gobi-2022-rost-cath-classification/src/gobi_cath_classification/scripts_charlotte/train_eval.py
 ```
 
 
