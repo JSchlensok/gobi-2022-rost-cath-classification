@@ -18,23 +18,11 @@ def test_label_for_level():
 
 
 def test_data_loading():
-    # +
-    # data_dir = Path(__file__).parent.parent.parent.parent / "data"
-    # data_dir = Path("../data")
-
     dataset = load_data(data_dir=DATA_DIR, without_duplicates=False, shuffle_data=True)
     dataset_no_dup = load_data(data_dir=DATA_DIR, without_duplicates=True, shuffle_data=True)
 
     print(f"dataset.get_shape() = {dataset.get_shape()}")
     print(f"dataset_no_dup.get_shape() = {dataset_no_dup.get_shape()}")
-
-    # print("Create model ...")
-    # model = LogisticRegression()
-    #
-    # print("Train model ...")
-    # model.fit(X=dataset_shuffled.X_train[:10000, :], y=dataset_shuffled.y_train[:10000])
-    # model.fit(X=dataset.X_train, y=dataset.y_train)
-    # model.score(X=dataset.X_test, y=dataset.y_test)
 
 
 def test_get_set_for_level_H():
