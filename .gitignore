@@ -1,8 +1,14 @@
 *.png
 *.jpg
-**/data/
 **/experiments/
 venv_gobi_project
+
+#**/data/
+**/sample_data
+*.fasta
+*.h5
+*.txt
+
 
 # IntelliJ
 .idea
