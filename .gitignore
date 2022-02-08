@@ -1,7 +1,10 @@
 *.png
 *.jpg
 **/experiments/
+venv_gobi_project3.7.12
+venv_gobi_project3.7.9
 venv_gobi_project
+venv
 
 #**/data/
 **/sample_data
