@@ -31,14 +31,11 @@ Download the following data:
 
 
 ## Requirements
-1. Install requirements with:
+Install requirements with:
 ```
 pip install -r requirements.txt
 ```
-2. When adding new imports that aren't saved in requirements.txt yet, add them to file with:
-```
-pip freeze > requirements.txt
-```
+
 
 
 ## Code Formatting
@@ -47,7 +44,8 @@ Before committing your code run the following command:
 black src
 ```
 Configurations for formatting with black are saved in [black configuration file](src/pyproject.toml).
-More information in [Black documentation](https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file).
+
+More information in [black documentation](https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file).
 
 
 ## Training in Google Colab
@@ -75,11 +73,15 @@ clone_dialog()
 ```
 !pip install -r /content/gobi-2022-rost-cath-classification/requirements.txt
 ```
-4. Download data to data directory:
+4. Add your module to pythonpath:
 ```
-!wget -P /content/gobi-2022-rost-cath-classification/data https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/train74k.fasta
-!wget -P /content/gobi-2022-rost-cath-classification/data https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/val200.fasta
-!wget -P /content/gobi-2022-rost-cath-classification/data https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/test219.fasta
+!echo $PYTHONPATH
+%env PYTHONPATH=$PYTHONPATH:/content/gobi-2022-rost-cath-classification/src
+!echo $PYTHONPATH
+```
+5. Download sequence data and save it to data directory (links in Data section.
+6. Download label and embedding data:
+```
 !wget -P /content/gobi-2022-rost-cath-classification/data https://rostlab.org/~deepppi/cath-domain-list.txt
 !wget -P /content/gobi-2022-rost-cath-classification/data https://rostlab.org/~deepppi/eat_dbs/cath_v430_dom_seqs_S100_161121.h5
 ```
