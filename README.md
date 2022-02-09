@@ -43,7 +43,7 @@ Before committing your code run the following command:
 ```
 black src
 ```
-Configurations for formatting with black are saved in [black configuration file](src/pyproject.toml).
+Configurations for formatting with black are saved in [black configuration file](pyproject.toml).
 
 More information in [black documentation](https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file).
 
