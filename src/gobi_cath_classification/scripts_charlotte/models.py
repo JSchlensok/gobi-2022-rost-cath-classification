@@ -94,14 +94,14 @@ class NeuralNetworkModel(ModelInterface):
         model = nn.Sequential()
 
         for i, num_in_features in enumerate(layer_sizes[:-1]):
-            self.model.add_module(
+            model.add_module(
                 f"Linear_{i}",
                 nn.Linear(
                     in_features=num_in_features,
                     out_features=layer_sizes[i + 1],
                 ),
             )
-            self.model.add_module(f"ReLU_{i}", nn.ReLU())
+            model.add_module(f"ReLU_{i}", nn.ReLU())
 
         model.add_module(
             f"Linear_{len(layer_sizes) - 1}",
