@@ -1,14 +1,10 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
 
-from gobi_cath_classification.scripts_charlotte.train_eval import (
-    accuracy_for_level,
-    evaluate,
-    Prediction,
-)
 from gobi_cath_classification.pipeline.data_loading import label_for_level
+from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.model_interface import Prediction
 
 labels_train_H = sorted(
     list(
