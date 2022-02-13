@@ -3,6 +3,7 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
+import torch
 
 
 class Prediction:
@@ -25,6 +26,7 @@ class ModelInterface:
     def train_one_epoch(
         self,
         embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
     ) -> None:
@@ -34,6 +36,8 @@ class ModelInterface:
         Args:
             embeddings:
                 2D array with shape (number of embeddings, 1024)
+            embeddings_tensor:
+                torch.Tensor(embeddings) for torch models
             labels:
                 2D array with shape (number of embeddings, number of classes) of
                 one-hot-encoded labels

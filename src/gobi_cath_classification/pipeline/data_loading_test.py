@@ -1,11 +1,8 @@
 import numpy as np
-from sklearn.linear_model import LogisticRegression
 
 from gobi_cath_classification.pipeline.data_loading import (
     DataSplits,
     label_for_level,
-    load_data,
-    DATA_DIR,
 )
 
 
@@ -17,12 +14,11 @@ def test_label_for_level():
     assert label_for_level(label=label, cath_level="H") == "1.400.45.200"
 
 
-def test_data_loading():
-    dataset = load_data(data_dir=DATA_DIR, without_duplicates=False, shuffle_data=True)
-    dataset_no_dup = load_data(data_dir=DATA_DIR, without_duplicates=True, shuffle_data=True)
-
-    print(f"dataset.get_shape() = {dataset.get_shape()}")
-    print(f"dataset_no_dup.get_shape() = {dataset_no_dup.get_shape()}")
+# def test_data_loading():
+#     dataset_no_dup = load_data(
+#         data_dir=DATA_DIR, without_duplicates=True, shuffle_data=True,
+#     )
+#     print(f"dataset_no_dup.get_shape() = {dataset_no_dup.get_shape()}")
 
 
 def test_get_set_for_level_H():

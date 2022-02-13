@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple
 import h5py
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
@@ -137,12 +138,12 @@ class DataSplits:
 def label_for_level(label: str, cath_level: str) -> str:
     """
     Example 1:
-        Input: label_for_level(label="3.250.40.265", cath_level=3)
+        Input: label_for_level(label="3.250.40.265", cath_level="H")
         Output: "3.250.40.265"
 
     Example 2:
-        Input: label_for_level(label="3.250.40.265", cath_level=1)
-        Output: "3.250."
+        Input: label_for_level(label="3.250.40.265", cath_level="A")
+        Output: "3.250"
     """
     check_if_cath_level_is_valid(cath_level=cath_level)
 
@@ -235,7 +236,7 @@ def load_data(
     print(f"len(id2seqs_test) = {len(id2seqs_test)}")
     print(f"len(id2seqs_all) = {len(id2seqs_all)}")
 
-    print("Reading in Labels  ...")
+    print("Reading in Labels ...")
     id2label_all = read_in_labels(path_to_file=path_labels)
     id2label = {}
     for key in id2seqs_all.keys():
@@ -251,6 +252,7 @@ def load_data(
         embeddings[key] = id2embedding[key]
 
     # remove duplicates and mismatched entries
+    print("Removing duplicates and mismatched entries ...")
     seq2count = Counter(id2seqs_all.values())
     for key_seq, value_count in seq2count.items():
         if value_count > 1:
@@ -277,7 +279,6 @@ def load_data(
                     id2label.pop(cath_id, None)
                     id2embedding.pop(cath_id, None)
 
-    # +
     dataset = DataSplits(
         X_train=np.array([embeddings[cath_id] for cath_id in id2seqs_train.keys()]),
         y_train=[id2label[cath_id] for cath_id in id2seqs_train.keys()],
@@ -287,13 +288,29 @@ def load_data(
         y_test=[id2label[cath_id] for cath_id in id2seqs_test.keys()],
         all_labels_train_sorted=sorted(list(set([id2label[k] for k in id2seqs_train.keys()]))),
     )
+
     if shuffle_data:
-        dataset = dataset.shuffled()
+        return dataset.shuffled()
+    else:
+        return dataset
 
-    return dataset
+
+def scale_dataset(dataset: DataSplits):
+    print("Scaling data ...")
+    scaler = StandardScaler()
+    scaler.fit(X=dataset.X_train)
+    return DataSplits(
+        X_train=scaler.transform(dataset.X_train),
+        y_train=dataset.y_train,
+        X_val=scaler.transform(dataset.X_val),
+        y_val=dataset.y_val,
+        X_test=scaler.transform(dataset.X_test),
+        y_test=dataset.y_test,
+        all_labels_train_sorted=dataset.all_labels_train_sorted,
+    )
 
 
-def merge_two_dicts(x, y):
+def merge_two_dicts(x: dict, y: dict) -> dict:
     """Given two dictionaries, merge them into a new dict as a shallow copy."""
     z = x.copy()
     z.update(y)
