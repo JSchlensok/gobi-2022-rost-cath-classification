@@ -1,22 +1,10 @@
 import ray
 import torch
 from ray import tune
-import numpy as np
 
-from gobi_cath_classification.pipeline.evaluation import evaluate
-from gobi_cath_classification.pipeline.sample_weights import (
-    compute_inverse_sample_weights,
-)
-from gobi_cath_classification.pipeline.data_loading import (
-    load_data,
-    DATA_DIR,
-    scale_dataset,
-)
 from gobi_cath_classification.scripts_charlotte import torch_utils
 from gobi_cath_classification.scripts_charlotte.models import (
-    RandomForestModel,
     NeuralNetworkModel,
-    GaussianNaiveBayesModel,
 )
 from gobi_cath_classification.scripts_charlotte.train_eval import training_function
 
@@ -40,11 +28,7 @@ def main():
                         "lr": tune.choice([1e-2]),
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
-                        "layer_sizes": tune.choice(
-                            [
-                                [1024],
-                            ]
-                        ),
+                        "layer_sizes": [1024],
                     },
                 ]
             ),
