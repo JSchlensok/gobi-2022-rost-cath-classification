@@ -84,7 +84,11 @@ def training_function(config: dict) -> None:
         y_pred_val = model.predict_proba(embeddings=data_set.X_val)
 
         # evaluate and save results in ray tune
-        eval_dict = evaluate(y_true=data_set.y_val, y_pred=y_pred_val)
+        eval_dict = evaluate(
+            y_true=data_set.y_val,
+            y_pred=y_pred_val,
+            class_names_training=data_set.all_labels_train_sorted,
+        )
         tune.report(**eval_dict)
 
 

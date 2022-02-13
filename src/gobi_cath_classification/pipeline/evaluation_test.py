@@ -91,17 +91,21 @@ def test_accuracy_for_level_H():
 
 def test_evaluate():
     columns = ["1.25.300.45", "2.25.400.10", "2.25.500.10", "3.10.25.300"]
-    y_true = ["1.25.300.45", "2.25.400.10", "1.25.300.45"]
+    y_true = ["1.25.300.45", "2.25.400.10", "1.25.300.450"]
     prediction = Prediction(
         probabilities=pd.DataFrame(
             np.array(
                 [
                     [0.7, 0.1, 0.1, 0.1],
-                    [0.2, 0.5, 0.2, 0.1],
+                    [0.2, 0.2, 0.5, 0.1],
                     [0.05, 0.7, 0.05, 0.2],
                 ]
             ),
             columns=columns,
         )
     )
-    print(evaluate(y_true=y_true, y_pred=prediction))
+    eval_dict = evaluate(y_true=y_true, y_pred=prediction, class_names_training=columns)
+    assert eval_dict["accuracy_h"] == 0.5
+    assert eval_dict["accuracy_t"] == 1 / 3
+    assert eval_dict["accuracy_a"] == 2 / 3
+    assert eval_dict["accuracy_c"] == 2 / 3
