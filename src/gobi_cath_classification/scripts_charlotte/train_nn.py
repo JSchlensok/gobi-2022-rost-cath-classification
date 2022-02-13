@@ -15,8 +15,10 @@ def main():
     print(f"device = {device}")
 
     ray.init()
+
     analysis = tune.run(
         training_function,
+        resources_per_trial={"gpu": 1},
         num_samples=1,
         config={
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
@@ -25,9 +27,9 @@ def main():
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 100,
-                        "lr": tune.choice([1e-2]),
+                        "lr": tune.choice([1e-3]),
                         "batch_size": 32,
-                        "optimizer": tune.choice(["adam", "sgd"]),
+                        "optimizer": tune.choice(["adam"]),
                         "layer_sizes": [1024],
                     },
                 ]

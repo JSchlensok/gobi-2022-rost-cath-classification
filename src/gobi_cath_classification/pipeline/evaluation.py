@@ -2,8 +2,10 @@ from typing import List, Dict
 
 from sklearn.metrics import accuracy_score
 
-from gobi_cath_classification.pipeline.data_loading import check_if_cath_level_is_valid, \
-    label_for_level
+from gobi_cath_classification.pipeline.data_loading import (
+    check_if_cath_level_is_valid,
+    label_for_level,
+)
 from gobi_cath_classification.pipeline.model_interface import Prediction
 
 

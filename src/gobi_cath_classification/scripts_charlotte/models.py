@@ -91,7 +91,7 @@ class NeuralNetworkModel(ModelInterface):
 
         self.batch_size = batch_size
         self.class_names = sorted(class_names)
-        self.model = nn.Sequential().to(self.device)
+        model = nn.Sequential()
 
         for i, num_in_features in enumerate(layer_sizes[:-1]):
             self.model.add_module(
@@ -103,11 +103,15 @@ class NeuralNetworkModel(ModelInterface):
             )
             self.model.add_module(f"ReLU_{i}", nn.ReLU())
 
-        self.model.add_module(
+        model.add_module(
             f"Linear_{len(layer_sizes) - 1}",
-            nn.Linear(in_features=layer_sizes[-1], out_features=len(self.class_names)),
+            nn.Linear(in_features=layer_sizes[-1], out_features=len(self.class_names)).to(
+                self.device
+            ),
         )
-        self.model.add_module("Softmax", nn.Softmax())
+
+        model.add_module("Softmax", nn.Softmax())
+        self.model = model.to(self.device)
         self.loss_function = torch.nn.CrossEntropyLoss()
         if optimizer == "sgd":
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
@@ -142,7 +146,7 @@ class NeuralNetworkModel(ModelInterface):
             self.optimizer.step()
 
     def predict_proba(self, embeddings: np.ndarray) -> Prediction:
-        pred_proba = self.model(torch.from_numpy(embeddings).float())
+        pred_proba = self.model(torch.from_numpy(embeddings).float().to(self.device))
         df = pd.DataFrame(pred_proba, columns=self.class_names).astype("float")
         return Prediction(probabilities=df)
 
