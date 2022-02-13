@@ -50,7 +50,7 @@ More information in [black documentation](https://black.readthedocs.io/en/stable
 ## Training in Google Colab
 1. Create a personal access token as described in [GitHub Docs Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 
-2. Open Google Colab Notebook and clone the repository with:
+2. Open Google Colab Notebook and copy the following snippet and execute it:
 ```python
 from getpass import getpass
 import urllib
@@ -68,30 +68,23 @@ def clone_dialog():
     
 
 clone_dialog()
-```
 
-3. Install requirements:
-```
+# Install requirements
 !pip install -r /content/gobi-2022-rost-cath-classification/requirements.txt
-```
 
-4. Add your module to PYTHONPATH:
-```
+# Add your module to PYTHONPATH
 !echo $PYTHONPATH
 %env PYTHONPATH=$PYTHONPATH:/content/gobi-2022-rost-cath-classification/src
 !echo $PYTHONPATH
-```
 
-5. Download data:
-```
+# Download data
 !wget -P /content/gobi-2022-rost-cath-classification/data https://raw.githubusercontent.com/Rostlab/EAT/main/data/ProtTucker/train74k.fasta
 !wget -P /content/gobi-2022-rost-cath-classification/data https://raw.githubusercontent.com/Rostlab/EAT/main/data/ProtTucker/test219.fasta
 !wget -P /content/gobi-2022-rost-cath-classification/data https://raw.githubusercontent.com/Rostlab/EAT/main/data/ProtTucker/val200.fasta
 !wget -P /content/gobi-2022-rost-cath-classification/data https://rostlab.org/~deepppi/cath-domain-list.txt
 !wget -P /content/gobi-2022-rost-cath-classification/data https://rostlab.org/~deepppi/eat_dbs/cath_v430_dom_seqs_S100_161121.h5
 ```
-
-6. Run your training script:
 ```
+# Run your training script
 !python /content/gobi-2022-rost-cath-classification/src/gobi_cath_classification/scripts_charlotte/train_eval.py
 ```
