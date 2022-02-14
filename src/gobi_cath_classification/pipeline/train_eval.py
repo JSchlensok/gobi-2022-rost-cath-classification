@@ -12,7 +12,7 @@ from gobi_cath_classification.pipeline.data_loading import (
     DATA_DIR,
     scale_dataset,
 )
-from gobi_cath_classification.scripts_charlotte import torch_utils
+from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.scripts_charlotte.models import (
     RandomForestModel,
     NeuralNetworkModel,

@@ -10,7 +10,7 @@ from torch import nn
 from torch.nn.functional import one_hot
 
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
-from gobi_cath_classification.scripts_charlotte import torch_utils
+from gobi_cath_classification.pipeline import torch_utils
 
 
 class RandomForestModel(ModelInterface):
