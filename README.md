@@ -4,6 +4,9 @@
 Rolling slide deck: https://docs.google.com/presentation/d/1TvTKibsBg_XdaENP_taODn4jPAQi8Y8t9tuwYYHxTKs/edit?usp=sharing
 https://www.cathdb.info/
 
+### Trello board
+https://trello.com/b/iEvimTbs/gobi-praktikum
+
 ### Papers
 ProtT5 papers:
 https://www.biorxiv.org/content/10.1101/2020.07.12.199554v3
