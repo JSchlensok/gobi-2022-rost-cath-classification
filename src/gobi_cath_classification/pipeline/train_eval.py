@@ -100,6 +100,7 @@ def main():
     ray.init()
     analysis = tune.run(
         training_function,
+        resources_per_trial={"gpu": 1},
         num_samples=1,
         config={
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),

@@ -12,6 +12,28 @@ from gobi_cath_classification.pipeline.model_interface import Prediction
 def accuracy_for_level(
     y_true: List[str], y_pred: List[str], class_names_training: List[str], cath_level: str
 ) -> float:
+    """
+
+    Calculates accuracy according to a given cath level.
+
+    Args:
+        y_true:
+            List of labels (List[str]): groundtruth
+        y_pred:
+            List of labels (List[str]): prediction
+        class_names_training:
+            Alphabetically sorted list of all labels, that occured in trainning
+        cath_level:
+            0 for 'C' in 'CATH'
+            1 for 'A' in 'CATH'
+            2 for 'T' in 'CATH'
+            3 for 'H' in 'CATH'
+
+    Returns:
+        Accuracy score
+
+    """
+
     check_if_cath_level_is_valid(cath_level=cath_level)
 
     class_names_for_level = list(
@@ -20,8 +42,8 @@ def accuracy_for_level(
     y_true_for_level = [label_for_level(label=label, cath_level=cath_level) for label in y_true]
     y_pred_for_level = [label_for_level(label=label, cath_level=cath_level) for label in y_pred]
 
+    # delete all entries where the groundtruth label does not occur in training class names.
     n = len(y_true_for_level) - 1
-
     for i in range(n, -1, -1):
         if y_true_for_level[i] not in class_names_for_level:
             del y_true_for_level[i]
