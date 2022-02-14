@@ -3,7 +3,7 @@ import torch
 
 from gobi_cath_classification.pipeline.model_interface import ModelInterface
 from gobi_cath_classification.scripts_charlotte.models import NeuralNetworkModel
-from gobi_cath_classification.scripts_charlotte.torch_utils import get_device
+from gobi_cath_classification.pipeline.torch_utils import get_device
 
 
 class TestNeuralNetwork:
