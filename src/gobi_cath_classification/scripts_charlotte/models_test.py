@@ -37,5 +37,5 @@ class TestNeuralNetwork:
                 sample_weights=None,
             )
 
-        y_pred = model.predict_proba(np.random.randn(3, num_features)).probabilities
+        y_pred = model.predict(np.random.randn(3, num_features)).probabilities
         assert len(y_pred) == 3

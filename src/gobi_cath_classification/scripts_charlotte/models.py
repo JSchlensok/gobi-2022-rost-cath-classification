@@ -41,8 +41,8 @@ class RandomForestModel(ModelInterface):
     ) -> None:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
 
-    def predict_proba(self, embeddings: np.ndarray) -> Prediction:
-        predictions = self.model.predict_proba(X=embeddings)
+    def predict(self, embeddings: np.ndarray) -> Prediction:
+        predictions = self.model.predict(X=embeddings)
         df = pd.DataFrame(data=predictions, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
@@ -66,8 +66,8 @@ class GaussianNaiveBayesModel(ModelInterface):
     ) -> None:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
 
-    def predict_proba(self, embeddings: np.ndarray) -> Prediction:
-        predictions = self.model.predict_proba(X=embeddings)
+    def predict(self, embeddings: np.ndarray) -> Prediction:
+        predictions = self.model.predict(X=embeddings)
         df = pd.DataFrame(data=predictions, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
@@ -145,9 +145,9 @@ class NeuralNetworkModel(ModelInterface):
             loss.backward()
             self.optimizer.step()
 
-    def predict_proba(self, embeddings: np.ndarray) -> Prediction:
-        pred_proba = self.model(torch.from_numpy(embeddings).float().to(self.device))
-        df = pd.DataFrame(pred_proba, columns=self.class_names).astype("float")
+    def predict(self, embeddings: np.ndarray) -> Prediction:
+        predicted_probabilities = self.model(torch.from_numpy(embeddings).float().to(self.device))
+        df = pd.DataFrame(predicted_probabilities, columns=self.class_names).astype("float")
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):

@@ -47,7 +47,7 @@ class ModelInterface:
         """
         raise NotImplementedError
 
-    def predict_proba(self, embeddings: np.ndarray) -> Prediction:
+    def predict(self, embeddings: np.ndarray) -> Prediction:
         """
         Predicts probabilities for the CATH superfamily labels.
 
