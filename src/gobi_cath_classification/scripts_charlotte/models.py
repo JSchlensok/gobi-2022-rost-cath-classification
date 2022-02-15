@@ -11,6 +11,7 @@ from torch.nn.functional import one_hot
 
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
 from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
 
 
 class RandomForestModel(ModelInterface):
@@ -87,8 +88,15 @@ class NeuralNetworkModel(ModelInterface):
         batch_size: int,
         optimizer: str,
         class_weights: torch.Tensor,
+        rng: np.random.RandomState,
+        random_seed: int = 42,
     ):
         self.device = torch_utils.get_device()
+
+        self.random_seed = random_seed
+        self.rng = rng
+        print(f"rng = {rng}")
+        set_random_seeds(seed=random_seed)
 
         self.batch_size = batch_size
         self.class_names = sorted(class_names)

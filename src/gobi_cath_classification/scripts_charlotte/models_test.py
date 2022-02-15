@@ -10,6 +10,7 @@ class TestNeuralNetwork:
     def test_training(self):
         num_features = 1024
         class_names = ["1.200.45.10", "3.20.25.40", "3.200.10.75"]
+        random_seed = 42
 
         model: ModelInterface = NeuralNetworkModel(
             lr=0.1,
@@ -18,6 +19,8 @@ class TestNeuralNetwork:
             class_weights=torch.Tensor(np.array([0.5, 1, 0.3])),
             batch_size=32,
             optimizer="adam",
+            rng=np.random.RandomState(random_seed),
+            random_seed=random_seed,
         )
 
         num_data = 200
