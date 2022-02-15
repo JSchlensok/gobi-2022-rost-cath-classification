@@ -5,7 +5,7 @@ import numpy as np
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.sample_weights import (
-    compute_inverse_sample_weights,
+    compute_inverse_sample_weights, compute_class_weights,
 )
 from gobi_cath_classification.pipeline.data_loading import (
     load_data,
@@ -41,20 +41,24 @@ def training_function(config: dict) -> None:
 
     if config["class_weights"] == "none":
         sample_weights = None
+        class_weights = None
     elif config["class_weights"] == "inverse":
         sample_weights = compute_inverse_sample_weights(labels=data_set.y_train)
+        class_weights = compute_class_weights(labels=data_set.y_train)
     elif config["class_weights"] == "sqrt_inverse":
         sample_weights = np.sqrt(compute_inverse_sample_weights(labels=data_set.y_train))
+        class_weights = np.sqrt(compute_class_weights(labels=data_set.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
     if model_class == NeuralNetworkModel.__name__:
         model = NeuralNetworkModel(
+            lr=config["model"]["lr"],
             class_names=class_names,
             layer_sizes=config["model"]["layer_sizes"],
             batch_size=config["model"]["batch_size"],
             optimizer=config["model"]["optimizer"],
-            lr=config["model"]["lr"],
+            class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
         )
 
     elif model_class == RandomForestModel.__name__:
@@ -95,12 +99,17 @@ def training_function(config: dict) -> None:
 def main():
     print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
     device = torch_utils.get_device()
+    if torch.cuda.is_available():
+        resources_per_trial = {"gpu": 1}
+    else:
+        resources_per_trial = {"cpu": 1}
+
     print(f"device = {device}")
 
     ray.init()
     analysis = tune.run(
         training_function,
-        resources_per_trial={"gpu": 1},
+        resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),

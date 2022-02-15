@@ -86,6 +86,7 @@ class NeuralNetworkModel(ModelInterface):
         layer_sizes: List[int],
         batch_size: int,
         optimizer: str,
+        class_weights: torch.Tensor,
     ):
         self.device = torch_utils.get_device()
 
@@ -112,7 +113,7 @@ class NeuralNetworkModel(ModelInterface):
 
         model.add_module("Softmax", nn.Softmax())
         self.model = model.to(self.device)
-        self.loss_function = torch.nn.CrossEntropyLoss()
+        self.loss_function = torch.nn.CrossEntropyLoss(weight=class_weights)
         if optimizer == "sgd":
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         elif optimizer == "adam":
