@@ -3,10 +3,13 @@ import torch
 from ray import tune
 
 from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
 )
-from gobi_cath_classification.pipeline.train_eval import training_function
+from gobi_cath_classification.pipeline.train_eval import (
+    training_function,
+)
 
 
 def main():
@@ -14,11 +17,15 @@ def main():
     device = torch_utils.get_device()
     print(f"device = {device}")
 
-    ray.init()
+    if torch.cuda.is_available():
+        resources_per_trial = {"gpu": 1}
+    else:
+        resources_per_trial = {"cpu": 1}
 
+    ray.init()
     analysis = tune.run(
         training_function,
-        resources_per_trial={"gpu": 1},
+        resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
@@ -34,6 +41,7 @@ def main():
                     },
                 ]
             ),
+            "random_seed": RANDOM_SEED,
         },
     )
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
