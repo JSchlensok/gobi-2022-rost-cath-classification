@@ -118,6 +118,11 @@ def main():
     else:
         resources_per_trial = {"cpu": 1}
 
+    reporter = tune.CLIReporter(
+        max_report_frequency=10,
+        infer_limit=10,
+    )
+
     ray.init()
     analysis = tune.run(
         training_function,
@@ -149,6 +154,7 @@ def main():
             ),
             "random_seed": RANDOM_SEED,
         },
+        progress_reporter=reporter,
     )
 
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
