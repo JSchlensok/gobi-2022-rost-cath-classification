@@ -33,20 +33,16 @@ def main():
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
-            "model": tune.grid_search(
-                [
-                    {
-                        "model_class": NeuralNetworkModel.__name__,
-                        "num_epochs": 100,
-                        "lr": tune.choice([1e-3]),
-                        "batch_size": 32,
-                        "optimizer": tune.choice(["adam"]),
-                        "layer_sizes": [1024],
-                    },
-                ]
-            ),
-            "random_seed": RANDOM_SEED,
+            "random_seed": tune.grid_search([1]),
+            "class_weights": tune.grid_search(["inverse", "sqrt_inverse"]),
+            "model": {
+                "model_class": NeuralNetworkModel.__name__,
+                "num_epochs": 1000,
+                "lr": tune.grid_search([1e-4, 1e-3]),
+                "batch_size": 32,
+                "optimizer": tune.choice(["adam"]),
+                "layer_sizes": tune.choice([1024, 1024]),
+            },
         },
         progress_reporter=reporter,
     )

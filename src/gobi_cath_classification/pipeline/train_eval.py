@@ -129,6 +129,7 @@ def main():
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
+            "random_seed": RANDOM_SEED,
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
             "model": tune.grid_search(
                 [
@@ -152,7 +153,6 @@ def main():
                     },
                 ]
             ),
-            "random_seed": RANDOM_SEED,
         },
         progress_reporter=reporter,
     )
