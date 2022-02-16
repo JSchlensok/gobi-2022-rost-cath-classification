@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from typing import List, Optional, Dict
 
@@ -149,7 +150,7 @@ class NeuralNetworkModel(ModelInterface):
             self.device
         )
         y_one_hot = 1.0 * one_hot(y_indices, num_classes=len(self.class_names))
-        loss_avg = 0
+        loss = 0
 
         for i in range(0, len(embeddings), self.batch_size):
             self.optimizer.zero_grad()
@@ -158,11 +159,12 @@ class NeuralNetworkModel(ModelInterface):
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
             loss = self.loss_function(y_pred, batch_y)
-            loss_avg += loss
+            loss += loss
             loss.backward()
             self.optimizer.step()
 
-        model_specific_metrics = {}
+        loss_avg = loss/(math.ceil(len(embeddings)/self.batch_size))
+        model_specific_metrics = {"loss_avg": loss_avg}
         return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
