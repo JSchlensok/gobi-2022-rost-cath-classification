@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import numpy as np
 import pandas as pd
@@ -29,7 +29,7 @@ class ModelInterface:
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
         """
         Trains the model.
 
@@ -43,6 +43,9 @@ class ModelInterface:
                 one-hot-encoded labels
             sample_weights:
                 1D array with sample weights, shape (number of embeddings)
+
+        Returns:
+            dictionary with model-specific metrics
 
         """
         raise NotImplementedError

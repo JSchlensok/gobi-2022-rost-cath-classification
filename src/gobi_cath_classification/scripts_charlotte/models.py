@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import numpy as np
 import pandas as pd
@@ -39,8 +39,10 @@ class RandomForestModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
+        model_specific_metrics = {}
+        return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         predictions = self.model.predict(X=embeddings)
@@ -64,12 +66,14 @@ class GaussianNaiveBayesModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
+        model_specific_metrics = {}
+        return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
-        predictions = self.model.predict(X=embeddings)
-        df = pd.DataFrame(data=predictions, columns=self.model.classes_)
+        predictions_proba = self.model.predict_proba(X=embeddings)
+        df = pd.DataFrame(data=predictions_proba, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
@@ -137,7 +141,7 @@ class NeuralNetworkModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
 
         permutation = torch.randperm(len(embeddings_tensor))
         X = embeddings_tensor.to(self.device)
@@ -145,6 +149,7 @@ class NeuralNetworkModel(ModelInterface):
             self.device
         )
         y_one_hot = 1.0 * one_hot(y_indices, num_classes=len(self.class_names))
+        loss_avg = 0
 
         for i in range(0, len(embeddings), self.batch_size):
             self.optimizer.zero_grad()
@@ -153,8 +158,12 @@ class NeuralNetworkModel(ModelInterface):
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
             loss = self.loss_function(y_pred, batch_y)
+            loss_avg += loss
             loss.backward()
             self.optimizer.step()
+
+        model_specific_metrics = {}
+        return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         predicted_probabilities = self.model(torch.from_numpy(embeddings).float().to(self.device))

@@ -26,11 +26,13 @@ from gobi_cath_classification.scripts_charlotte.models import (
 
 
 def training_function(config: dict) -> None:
+    # set random seeds
     random_seed = config["random_seed"]
     set_random_seeds(seed=random_seed)
     rng = np.random.RandomState(random_seed)
     print(f"rng = {rng}")
 
+    # load data
     data_dir = DATA_DIR
     data_set = scale_dataset(
         load_data(
@@ -40,11 +42,15 @@ def training_function(config: dict) -> None:
             rng=rng,
         )
     )
+    embeddings_train = data_set.X_train
+    embeddings_train_tensor = torch.tensor(embeddings_train)
+
+    y_train_labels = data_set.y_train
 
     class_names = data_set.all_labels_train_sorted
-    print(f"len(class_names = {len(class_names)}")
+    print(f"len(class_names) = {len(class_names)}")
 
-    # Hyperparameters
+    # get hyperparameters from config dict
     print(f"config = {config}")
     num_epochs = config["model"]["num_epochs"]
     model_class = config["model"]["model_class"]
@@ -61,6 +67,7 @@ def training_function(config: dict) -> None:
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
+    # set model
     if model_class == NeuralNetworkModel.__name__:
         model = NeuralNetworkModel(
             lr=config["model"]["lr"],
@@ -82,14 +89,14 @@ def training_function(config: dict) -> None:
     else:
         raise ValueError(f"Model class {model_class} does not exist.")
 
-    embeddings_train = data_set.X_train
-    embeddings_train_tensor = torch.tensor(embeddings_train)
-
-    y_train_labels = data_set.y_train
+    # set variables for early stopping
+    highest_acc_h = 0
+    n_bad = 0
+    n_thresh = 20
 
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(num_epochs):
-        model.train_one_epoch(
+        model_metrics_dict = model.train_one_epoch(
             embeddings=embeddings_train,
             embeddings_tensor=embeddings_train_tensor,
             labels=y_train_labels,
@@ -105,7 +112,18 @@ def training_function(config: dict) -> None:
             y_pred=y_pred_val,
             class_names_training=data_set.all_labels_train_sorted,
         )
-        tune.report(**eval_dict)
+        tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
+
+        # check for early stopping
+        acc_h = eval_dict["accuracy_h"]
+        if acc_h > highest_acc_h:
+            highest_acc_h = acc_h
+            n_bad = 0
+            print(f"New best performance found: accuracy_h = {highest_acc_h}")
+        else:
+            n_bad += 1
+            if n_bad >= n_thresh:
+                break
 
 
 def main():
