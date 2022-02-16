@@ -92,47 +92,43 @@ class DataSplits:
         label = self.all_labels_train_sorted[index]
         return label
 
-    def shuffled(self, shuffle_train=True, shuffle_val=True, shuffle_test=True, random_seed=1):
+    def shuffled(
+        self, rng: np.random.RandomState, shuffle_train=True, shuffle_val=True, shuffle_test=True
+    ):
         """
 
         Returns a new DataSplits object with shuffled trainings set and/or shuffled validation set
         and/or shuffled test set.
 
         """
-        new_datasplit = DataSplits(
-            X_train=self.X_train,
-            y_train=self.y_train,
-            X_val=self.X_val,
-            y_val=self.y_val,
-            X_test=self.X_test,
-            y_test=self.y_test,
+
+        # shuffler for training set
+        if shuffle_train:
+            shuffler_train = rng.permutation(len(self.X_train))
+        else:
+            shuffler_train = list(range(len(self.X_train)))
+
+        # shuffler for validation set
+        if shuffle_val:
+            shuffler_val = rng.permutation(len(self.X_val))
+        else:
+            shuffler_val = list(range(len(self.X_val)))
+
+        # shuffler for test set
+        if shuffle_test:
+            shuffler_test = rng.permutation(len(self.X_test))
+        else:
+            shuffler_test = list(range(len(self.X_test)))
+
+        return DataSplits(
+            X_train=self.X_train[shuffler_train],
+            y_train=[self.y_train[a] for a in shuffler_train],
+            X_val=self.X_val[shuffler_val],
+            y_val=[self.y_val[a] for a in shuffler_val],
+            X_test=self.X_test[shuffler_test],
+            y_test=[self.y_test[a] for a in shuffler_test],
             all_labels_train_sorted=self.all_labels_train_sorted,
         )
-
-        if shuffle_train:
-            train_zipped = list(zip(self.X_train, self.y_train))
-            random.Random(random_seed).shuffle(train_zipped)
-            x, y = zip(*train_zipped)
-            new_datasplit.X_train = np.array(x)
-            new_datasplit.y_train = y
-
-        if shuffle_val:
-            val_zipped = list(zip(self.X_val, self.y_val))
-            random.Random(random_seed).shuffle(val_zipped)
-            x, y = zip(*val_zipped)
-            new_datasplit.X_val = np.array(x)
-            new_datasplit.y_val = y
-
-        if shuffle_test:
-            test_zipped = list(zip(self.X_test, self.y_test))
-            random.Random(random_seed).shuffle(test_zipped)
-            x, y = zip(*test_zipped)
-            new_datasplit.X_test = np.array(x)
-            new_datasplit.y_test = y
-
-        assert self.get_shape() == new_datasplit.get_shape()
-
-        return new_datasplit
 
 
 def label_for_level(label: str, cath_level: str) -> str:
@@ -208,6 +204,7 @@ def read_in_labels(path_to_file: Path) -> Dict[str, str]:
 
 def load_data(
     data_dir: Path,
+    rng: np.random.RandomState,
     without_duplicates: bool,
     shuffle_data: bool = True,
     load_only_small_sample=False,
@@ -290,7 +287,7 @@ def load_data(
     )
 
     if shuffle_data:
-        return dataset.shuffled()
+        return dataset.shuffled(rng=rng)
     else:
         return dataset
 
