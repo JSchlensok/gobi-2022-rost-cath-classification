@@ -89,5 +89,5 @@ clone_dialog()
 ```
 ```
 # Run your training script
-!python /content/gobi-2022-rost-cath-classification/src/gobi_cath_classification/scripts_charlotte/train_eval.py
+!python /content/gobi-2022-rost-cath-classification/src/gobi_cath_classification/pipeline/train_eval.py
 ```
