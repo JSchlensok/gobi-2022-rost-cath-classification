@@ -150,7 +150,7 @@ class NeuralNetworkModel(ModelInterface):
             self.device
         )
         y_one_hot = 1.0 * one_hot(y_indices, num_classes=len(self.class_names))
-        loss = 0
+        loss_sum = 0
 
         for i in range(0, len(embeddings), self.batch_size):
             self.optimizer.zero_grad()
@@ -159,11 +159,11 @@ class NeuralNetworkModel(ModelInterface):
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
             loss = self.loss_function(y_pred, batch_y)
-            loss += loss
+            loss_sum += loss
             loss.backward()
             self.optimizer.step()
 
-        loss_avg = loss/(math.ceil(len(embeddings)/self.batch_size))
+        loss_avg = float(loss_sum/(math.ceil(len(embeddings)/self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
         return model_specific_metrics
 
