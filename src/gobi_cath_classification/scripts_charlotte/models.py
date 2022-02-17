@@ -163,7 +163,7 @@ class NeuralNetworkModel(ModelInterface):
             loss.backward()
             self.optimizer.step()
 
-        loss_avg = float(loss_sum/(math.ceil(len(embeddings)/self.batch_size)))
+        loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
         return model_specific_metrics
 
