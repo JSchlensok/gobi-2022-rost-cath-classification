@@ -37,11 +37,16 @@ def main():
             "class_weights": tune.grid_search(["inverse", "sqrt_inverse"]),
             "model": {
                 "model_class": NeuralNetworkModel.__name__,
-                "num_epochs": 1000,
-                "lr": tune.grid_search([1e-4, 1e-3]),
+                "num_epochs": 200,
+                "lr": tune.grid_search([1e-5, 1e-4, 1e-3]),
                 "batch_size": 32,
                 "optimizer": tune.choice(["adam"]),
-                "layer_sizes": tune.choice([1024, 1024]),
+                "layer_sizes": tune.choice(
+                    [
+                        [1024],
+                        [1024, 1024],
+                    ]
+                ),
             },
         },
         progress_reporter=reporter,
