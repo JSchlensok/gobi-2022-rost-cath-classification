@@ -1,10 +1,12 @@
 import os
+import platform
 import random
 
 import numpy as np
 import ray
 import torch
 from ray import tune
+from ray.tune import trial
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.sample_weights import (
@@ -126,6 +128,20 @@ def training_function(config: dict) -> None:
                 break
 
 
+def trial_dirname_creator(trial: trial.Trial) -> str:
+    trial_dirname = f"{trial.trainable_name}_{trial.trial_id}_{str(trial.experiment_tag)}".replace(
+        ": ", ", "
+    )
+
+    # max length for path in windosw = 260 character
+    operating_system = platform.system()
+    if operating_system == "Windows":
+        max_len_for_trial_dirname = 260 - len(trial.local_dir)
+        return trial_dirname[:max_len_for_trial_dirname]
+    else:
+        return trial_dirname
+
+
 def main():
     print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
     device = torch_utils.get_device()
@@ -144,6 +160,7 @@ def main():
     ray.init()
     analysis = tune.run(
         training_function,
+        trial_dirname_creator=trial_dirname_creator,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
