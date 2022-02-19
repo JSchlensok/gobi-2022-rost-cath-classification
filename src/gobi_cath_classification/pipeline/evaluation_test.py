@@ -20,7 +20,7 @@ labels_train_H = sorted([CATHLabel(label) for label in [
 
 labels_train_T = sorted([label["T"] for label in labels_train_H])
 labels_train_A = sorted([label["A"] for label in labels_train_H])
-labels_train_C = sorted([label["A"] for label in labels_train_C])
+labels_train_C = sorted([label["A"] for label in labels_train_H])
 
 
 def test_accuracy_for_level_H():

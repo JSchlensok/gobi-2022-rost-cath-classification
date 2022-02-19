@@ -1,6 +1,7 @@
 from typing import List, Dict
 
 from sklearn.metrics import accuracy_score
+from .utils import CATHLabel
 
 from gobi_cath_classification.pipeline.data_loading import (
     check_if_cath_level_is_valid,
@@ -49,7 +50,7 @@ def accuracy_for_level(
 
     assert len(y_true_for_level) == len(y_pred_for_level)
 
-    return accuracy_score(y_true=y_true_for_level, y_pred=y_pred_for_level)
+    return accuracy_score(y_true=[str(label) for label in y_true_for_level], y_pred=[str(label) for label in y_pred_for_level])
 
 
 def evaluate(
