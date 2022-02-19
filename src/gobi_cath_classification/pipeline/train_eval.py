@@ -7,7 +7,8 @@ from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
 )
-from gobi_cath_classification.pipeline.data_loading import (
+from ...gobi_cath_classification.pipeline.data import Dataset
+from ...gobi_cath_classification.pipeline.data.data_loading import (
     load_data,
     DATA_DIR,
     scale_dataset,
@@ -22,15 +23,15 @@ from gobi_cath_classification.scripts_charlotte.models import (
 
 def training_function(config: dict) -> None:
     data_dir = DATA_DIR
-    data_set = scale_dataset(
-        load_data(
-            data_dir=data_dir,
-            without_duplicates=True,
-            shuffle_data=True,
-        )
+    dataset = load_data(
+        data_dir=data_dir,
+        without_duplicates=True,
+        shuffle_data=True,
     )
+    dataset.shuffle(np.randomState(42))
 
-    class_names = data_set.all_labels_train_sorted
+    class_names = dataset.train_labels
+
     print(f"len(class_names = {len(class_names)}")
 
     # Hyperparameters
@@ -42,9 +43,9 @@ def training_function(config: dict) -> None:
     if config["class_weights"] == "none":
         sample_weights = None
     elif config["class_weights"] == "inverse":
-        sample_weights = compute_inverse_sample_weights(labels=data_set.y_train)
+        sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
     elif config["class_weights"] == "sqrt_inverse":
-        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=data_set.y_train))
+        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
@@ -66,10 +67,10 @@ def training_function(config: dict) -> None:
     else:
         raise ValueError(f"Model class {model_class} does not exist.")
 
-    embeddings_train = data_set.X_train
+    embeddings_train = dataset.X_train
     embeddings_train_tensor = torch.tensor(embeddings_train)
 
-    y_train_labels = data_set.y_train
+    y_train_labels = dataset.y_train
 
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(num_epochs):
@@ -81,13 +82,13 @@ def training_function(config: dict) -> None:
         )
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
-        y_pred_val = model.predict(embeddings=data_set.X_val)
+        y_pred_val = model.predict(embeddings=dataset.X_val)
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
-            y_true=data_set.y_val,
+            y_true=dataset.y_val,
             y_pred=y_pred_val,
-            class_names_training=data_set.all_labels_train_sorted,
+            class_names_training=dataset.all_labels_train_sorted,
         )
         tune.report(**eval_dict)
 

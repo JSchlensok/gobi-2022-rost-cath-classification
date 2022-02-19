@@ -34,15 +34,13 @@ def accuracy_for_level(
 
     """
 
-    check_if_cath_level_is_valid(cath_level=cath_level)
-
     class_names_for_level = list(
-        set([label_for_level(label=label, cath_level=cath_level) for label in class_names_training])
+        set([CATHLabel(label)[cath_level] for label in class_names_training])
     )
-    y_true_for_level = [label_for_level(label=label, cath_level=cath_level) for label in y_true]
-    y_pred_for_level = [label_for_level(label=label, cath_level=cath_level) for label in y_pred]
+    y_true_for_level = [CATHLabel(label)[cath_level] for label in y_true]
+    y_pred_for_level = [CATHLabel(label)[cath_level] for label in y_pred]
 
-    # delete all entries where the groundtruth label does not occur in training class names.
+    # delete all entries where the ground truth label does not occur in training class names.
     n = len(y_true_for_level) - 1
     for i in range(n, -1, -1):
         if y_true_for_level[i] not in class_names_for_level:
