@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Literal
-import random
+from typing import List, Dict, Tuple
+from typing_extensions import Literal
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -13,46 +13,56 @@ splits = ["train", "val", "test"]
 @dataclass
 class Dataset:
     X_train: np.ndarray
-    y_train: List[str]
+    y_train: List[CATHLabel]
     train_labels: List[CATHLabel]
     X_val: np.ndarray
-    y_val: List[str]
+    y_val: List[CATHLabel]
     X_test: np.ndarray
-    y_test: List[str]
+    y_test: List[CATHLabel]
 
     def __post_init__(self):
         # Order labels
         self.train_labels = sorted(list(set(self.train_labels)))
 
-        # Make datasets splits more accessible
-        self._X = [self.X_train, self.X_val, self.X_test]
-        self._y = [self.y_train, self.y_val, self.y_test]
-        self._data = {
-            'X': {split: data for split, data in zip(splits, self._X)},
-            'y': {split: data for split, data in zip(splits, self._y)}
+    def shape(self) -> Dict[str, Dict[str, Tuple[int, int]]]:
+        return {
+            "X": {"train": self.X_train.shape, "val": self.X_val.shape, "test": self.X_test.shape},
+            "y": {"train": len(self.y_train), "val": len(self.y_val), "test": len(self.X_test)}
         }
 
-    def shape(self) -> Dict[str, Dict[str, Tuple[int, int]]]:
-        return {x_or_y: {split: self._data[x_or_y][split].shape for split in splits} for x_or_y in "Xy"}
-
-    def getSplit(self, split: Literal["train", "val", "test"]) -> Tuple[np.ndarray, List[str]]:
-        return self._data['X'][split], self._data['y'][split]
+    def getSplit(self, split: Literal["train", "val", "test"]) -> Tuple[np.ndarray, List[CATHLabel]]:
+        return {
+            "train": (self.X_train, self.y_train),
+            "val": (self.X_val, self.y_val),
+            "test": (self.X_test, self.y_test)
+        }[split]
 
     ###################
     # BUILDER METHODS #
     ###################
 
     def shuffle(self, rng: np.random.RandomState) -> None:
-        for X, y in zip(self._X, self._y):
+        for X, y in [[self.X_train, self.y_train], [self.X_val, self.y_val], [self.X_test, self.y_test]]:
             shuffled_indices = rng.permutation(len(X))
             X = X[shuffled_indices]
             y = [y[a] for a in shuffled_indices]
 
-    def filter(self, cath_level: Literal['C', 'A', 'T', 'H']) -> None:
+    def filter(self, cath_level: Literal["C", "A", "T", "H"]) -> None:
+        """
+        Filter out all sequences from the validation & test set where there is no sequence sharing its CATH label
+        up to the specified level
+        """
         valid_labels = [label[cath_level] for label in self.train_labels]
-        for X, y in zip(self._X, self._y):
-            filtered_data = [[embedding, label] for embedding, label in zip(X, y) if label[cath_level] in valid_labels]
-            X, y = zip(*filtered_data)
+
+        self.X_val, self.y_val = [list(unzipped) for unzipped in zip(*[
+            [embedding, label] for embedding, label in zip(self.X_val, self.y_val)
+            if label[cath_level] in valid_labels
+        ])]
+
+        self.X_test, self.y_test = [list(unzipped) for unzipped in zip(*[
+            [embedding, label] for embedding, label in zip(self.X_test, self.y_test)
+            if label[cath_level] in valid_labels
+        ])]
 
     def scale(self) -> None:
         scaler = StandardScaler()

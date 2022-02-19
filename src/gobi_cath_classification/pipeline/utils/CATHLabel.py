@@ -1,12 +1,13 @@
 from __future__ import annotations
 from functools import total_ordering
-from typing import Literal
+from typing_extensions import Literal
+
 
 @total_ordering
 class CATHLabel:
     def __init__(self, label: str):
         self._string = label
-        self._levels = label.split('.')
+        self._levels = label.split(".")
 
     def __len__(self) -> int:
         return len(self._levels)
@@ -18,10 +19,14 @@ class CATHLabel:
         return self._string
 
     def __eq__(self, other):
-        if not isinstance(other, CATHLabel):
+        if isinstance(other, str):
+            return self._string == other
+
+        elif not isinstance(other, CATHLabel):
             return False
 
-        return self._string == other._string
+        else:
+            return self._string == other._string
 
     def __lt__(self, other):
         if not isinstance(other, CATHLabel):
@@ -39,7 +44,7 @@ class CATHLabel:
         """
         return self._string.__hash__()
 
-    def __getitem__(self, cath_level: Literal['C', 'A', 'T', 'H']) -> CATHLabel:
+    def __getitem__(self, cath_level: Literal["C", "A", "T", "H"]) -> CATHLabel:
         index = "CATH".index(cath_level)
-        label = '.'.join(self._levels[:index+1])
+        label = ".".join(self._levels[: index + 1])
         return CATHLabel(label)

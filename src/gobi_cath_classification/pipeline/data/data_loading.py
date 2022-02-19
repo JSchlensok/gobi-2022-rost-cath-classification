@@ -41,13 +41,11 @@ def read_in_embeddings(path_to_file: Path) -> Dict[str, np.ndarray]:
     return id2embedding
 
 
-def read_in_labels(path_to_file: Path) -> Dict[str, str]:
+def read_in_labels(path_to_file: Path) -> Dict[str, CATHLabel]:
     df = pd.read_csv(filepath_or_buffer=path_to_file, delimiter=r"\s+", header=None, comment="#")
 
     id2label = {
-        row[0]:
-            CATHLabel('.'.join([str(level) for level in row[1:5]]))
-        for row in df.rows()
+        row[0]: CATHLabel(".".join([str(level) for level in row[1:5]])) for row in df.rows()
     }
 
     return id2label
@@ -78,17 +76,17 @@ def load_data(
     id2seqs_test = read_in_sequences(path_sequences_test)
 
     id2seqs_all = {**id2seqs_train, **id2seqs_val, **id2seqs_test}
-    print(f"{len(id2seqs_train)=}")
-    print(f"{len(id2seqs_val)=}")
-    print(f"{len(id2seqs_test)=}")
-    print(f"{len(id2seqs_all)=}")
+    print(f"len(id2seqs_train) = {len(id2seqs_train)}")
+    print(f"len(id2seqs_val) = {len(id2seqs_val)}")
+    print(f"len(id2seqs_test) = {len(id2seqs_test)}")
+    print(f"len(id2seqs_all = {len(id2seqs_all)}")
 
     print("Reading in Labels ...")
     id2label_all = read_in_labels(path_to_file=path_labels)
     id2label = {id2label_all[key] for key in id2seqs_all.keys()}
 
-    print(f"{len(id2label_all)=}")
-    print(f"{len(id2label)=}")
+    print(f"len(id2label_all) = {len(id2label_all)}")
+    print(f"len(id2label) = {len(id2label)}")
 
     print("Reading in Embeddings ...")
     id2embedding = read_in_embeddings(path_to_file=path_embeddings)
@@ -99,7 +97,9 @@ def load_data(
     seq2count = Counter(id2seqs_all.values())
     for key_seq, value_count in seq2count.items():
         if value_count > 1:
-            cath_ids = [x for x, y in id2seqs_all.items() if y == key_seq] # all IDs of the sequence
+            cath_ids = [
+                x for x, y in id2seqs_all.items() if y == key_seq
+            ]  # all IDs of the sequence
 
             # remove mismatched entries
             cath_labels = [id2label[cath_id] for cath_id in cath_ids]
@@ -133,6 +133,7 @@ def load_data(
     )
 
     if shuffle_data:
-        dataset.shuffle()
+        rng = np.RandomState(42)
+        dataset.shuffle(rng)
 
     return Dataset

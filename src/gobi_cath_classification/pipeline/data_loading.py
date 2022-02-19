@@ -1,4 +1,3 @@
-import random
 from dataclasses import dataclass
 from pathlib import Path
 from collections import Counter
@@ -8,10 +7,10 @@ from copy import deepcopy
 import h5py
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
 from .utils.CATHLabel import CATHLabel
 from .data.Dataset import Dataset
+from .data.data_loading import *
 
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
@@ -19,6 +18,9 @@ DATA_DIR = REPO_ROOT_DIR / "data"
 
 @dataclass
 class DataSplits:
+    """
+    Interface to new data.Dataset class for compatibility
+    """
     X_train: np.ndarray
     y_train: List[str]
     X_val: np.ndarray
@@ -35,7 +37,7 @@ class DataSplits:
             self.X_val,
             self.y_val,
             self.X_test,
-            self.y_test
+            self.y_test,
         )
 
     def get_shape(self):
@@ -64,31 +66,37 @@ class DataSplits:
             instance with that label in the training set. In other words, we remove all
             sequences that have a label that does not occur in the training set.
         """
-        assert cath_level in ['C', 'A', 'T', 'H']
+        assert cath_level in ["C", "A", "T", "H"]
         filtered_data = deepcopy(self._dataset)
         filtered_data.filter(cath_level)
         return filtered_data.getSplit("val")
 
     def get_filtered_test_set_for_level(self, cath_level: str) -> Tuple[np.ndarray, List[str]]:
-        assert cath_level in ['C', 'A', 'T', 'H']
+        assert cath_level in ["C", "A", "T", "H"]
         filtered_data = deepcopy(self._dataset)
         filtered_data.filter(cath_level)
         return filtered_data.getSplit("test")
 
     def _get_filtered_set_for_level(
-            self, X: np.ndarray, y: List[str], cath_level: str = "T"
+        self, X: np.ndarray, y: List[str], cath_level: str = "T"
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         if cath_level not in ["C", "A", "T", "H"]:
             raise ValueError(f"Invalid CATH level: {cath_level}")
 
         valid_labels = [label[cath_level] for label in self._dataset.train_labels]
-        filtered_data = [[embedding, label] for embedding, label in zip(X, y) if CATHLabel(label)[cath_level] in valid_labels]
+        filtered_data = [
+            [embedding, label]
+            for embedding, label in zip(X, y)
+            if CATHLabel(label)[cath_level] in valid_labels
+        ]
         X, y = zip(*filtered_data)
 
         return X, y
 
-    def shuffled(self, rng: np.random.RandomState, shuffle_train=True, shuffle_val=True, shuffle_test=True):
+    def shuffled(
+        self, rng: np.random.RandomState, shuffle_train=True, shuffle_val=True, shuffle_test=True
+    ):
         """
 
         Returns a new DataSplits object with shuffled trainings set and/or shuffled validation set
@@ -96,7 +104,7 @@ class DataSplits:
 
         """
         shuffled_data = deepcopy(self._dataset)
-        shuffled_data.shuffle()
+        shuffled_data.shuffle(rng)
         if not shuffle_train:
             shuffled_data.X_train = self._dataset.X_train
             shuffled_data.y_train = self._dataset.y_train
@@ -110,10 +118,13 @@ class DataSplits:
             shuffled_data.y_test = self._dataset.y_test
 
         return DataSplits(
-            shuffled_data.X_train, shuffled_data.y_train,
-            shuffled_data.X_val, shuffled_data.y_val,
-            shuffled_data.X_test, shuffled_data.y_test,
-            [str(label) for label in shuffled_data.train_labels]
+            shuffled_data.X_train,
+            [str(label) for label in shuffled_data.y_train],
+            shuffled_data.X_val,
+            [str(label) for label in shuffled_data.y_val],
+            shuffled_data.X_test,
+            [str(label) for label in shuffled_data.y_test],
+            [str(label) for label in shuffled_data.train_labels],
         )
 
 
@@ -129,32 +140,13 @@ def label_for_level(label: str, cath_level: str) -> str:
     """
     return str(CATHLabel(label)[cath_level])
 
+
 def read_in_sequences(path_to_file: Path) -> Dict[str, str]:
-    id2seq = {}
-    tmp_id = ""
-
-    for line in open(path_to_file, "r"):
-        if line.startswith(">"):
-            tmp_id = line.replace(">", "").rstrip()
-            # tmp_id = line.split("|")[-1].split("/")[0]
-
-        elif not line.startswith("#"):
-            tmp_seq = line.rstrip()
-            id2seq[tmp_id] = tmp_seq
-
-    return id2seq
+    return read_in_sequences(path_to_file)
 
 
 def read_in_embeddings(path_to_file: Path) -> Dict[str, np.ndarray]:
-    id2embedding = {}
-    h5_file = h5py.File(path_to_file)
-
-    for key, value in h5_file.items():
-        protein_id = key.split("|")[-1].split("_")[0]
-        values = value[()]
-        id2embedding[protein_id] = values
-
-    return id2embedding
+    return read_in_embeddings(path_to_file)
 
 
 def read_in_labels(path_to_file: Path) -> Dict[str, str]:
@@ -261,7 +253,8 @@ def load_data(
     )
 
     if shuffle_data:
-        return dataset.shuffled()
+        rng = np.RandomSeed(42)
+        return dataset.shuffled(rng)
     else:
         return dataset
 
