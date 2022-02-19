@@ -133,7 +133,7 @@ def load_data(
     )
 
     if shuffle_data:
-        rng = np.RandomState(42)
+        rng = np.random.RandomState(42)
         dataset.shuffle(rng)
 
     return Dataset

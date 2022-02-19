@@ -253,7 +253,7 @@ def load_data(
     )
 
     if shuffle_data:
-        rng = np.RandomSeed(42)
+        rng = np.random.RandomState(42)
         return dataset.shuffled(rng)
     else:
         return dataset
