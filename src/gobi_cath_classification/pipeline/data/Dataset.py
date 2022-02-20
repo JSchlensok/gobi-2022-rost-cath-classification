@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional, Union
 from typing_extensions import Literal
 
 import numpy as np
@@ -26,7 +26,7 @@ class Dataset:
         # Order labels
         self.train_labels = sorted(list(set(self.train_labels)))
 
-    def shape(self) -> Dict[str, Dict[str, Tuple[int, int]]]:
+    def shape(self) -> Dict[str, Dict[str, Union[int, Tuple[int, int]]]]:
         return {
             "X": {"train": self.X_train.shape, "val": self.X_val.shape, "test": self.X_test.shape},
             "y": {"train": len(self.y_train), "val": len(self.y_val), "test": len(self.X_test)}
