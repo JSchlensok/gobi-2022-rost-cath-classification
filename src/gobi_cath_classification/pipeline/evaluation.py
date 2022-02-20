@@ -11,15 +11,15 @@ def accuracy_for_level(
 ) -> float:
     """
 
-    Calculates accuracy according to a given cath level.
+    Calculates accuracy according to a given CATH level.
 
     Args:
         y_true:
-            List of labels (List[str]): groundtruth
+            List of labels (List[str]): ground truth
         y_pred:
             List of labels (List[str]): prediction
         class_names_training:
-            Alphabetically sorted list of all labels, that occured in trainning
+            Alphabetically sorted list of all labels that occured in training
         cath_level:
             0 for 'C' in 'CATH'
             1 for 'A' in 'CATH'
