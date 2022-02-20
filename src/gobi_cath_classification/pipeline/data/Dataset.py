@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Dict, Tuple
 from typing_extensions import Literal
@@ -75,7 +76,7 @@ class Dataset:
         ])]
         X_val = np.array(X_val)
 
-        self.X_test, self.y_test = [list(unzipped) for unzipped in zip(*[
+        X_test, y_test = [list(unzipped) for unzipped in zip(*[
             [embedding, label] for embedding, label in zip(self.X_test, self.y_test)
             if label[cath_level] in valid_labels
         ])]

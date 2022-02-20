@@ -19,7 +19,7 @@ data1 = Dataset(
     y_test=[CATHLabel(label) for label in [id1, id5, id6]]
 )
 
-data1.filter("H")
+data1 = data1.get_filtered_version("H")
 
 
 class TestFilteringForHLevel:
@@ -44,8 +44,7 @@ data2 = Dataset(
     y_test=[CATHLabel("1.8.20.300"), CATHLabel("2.20.3.3")]
 )
 
-data2.filter("A")
-
+data2 = data2.get_filtered_version("A")
 
 class TestFilteringForALevel:
     def test_val(self, allclose):
