@@ -7,11 +7,10 @@ from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
 )
-from ...gobi_cath_classification.pipeline.data import Dataset
-from ...gobi_cath_classification.pipeline.data.data_loading import (
+from gobi_cath_classification.pipeline.data import Dataset
+from gobi_cath_classification.pipeline.data.data_loading import (
     load_data,
     DATA_DIR,
-    scale_dataset,
 )
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.scripts_charlotte.models import (

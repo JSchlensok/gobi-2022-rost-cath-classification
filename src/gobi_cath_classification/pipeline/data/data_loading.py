@@ -55,7 +55,7 @@ def load_data(
     data_dir: Path,
     without_duplicates: bool,
     shuffle_data: bool = True,
-    load_only_small_sample: bool = False
+    load_only_small_sample: bool = False,
 ):
     print(f"Loading data from directory: {data_dir}")
 

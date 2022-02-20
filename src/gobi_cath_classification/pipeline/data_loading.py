@@ -21,6 +21,7 @@ class DataSplits:
     """
     Interface to new data.Dataset class for compatibility
     """
+
     X_train: np.ndarray
     y_train: List[str]
     X_val: np.ndarray

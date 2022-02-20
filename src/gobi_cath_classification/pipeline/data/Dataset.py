@@ -29,14 +29,16 @@ class Dataset:
     def shape(self) -> Dict[str, Dict[str, Union[int, Tuple[int, int]]]]:
         return {
             "X": {"train": self.X_train.shape, "val": self.X_val.shape, "test": self.X_test.shape},
-            "y": {"train": len(self.y_train), "val": len(self.y_val), "test": len(self.X_test)}
+            "y": {"train": len(self.y_train), "val": len(self.y_val), "test": len(self.X_test)},
         }
 
-    def getSplit(self, split: Literal["train", "val", "test"]) -> Tuple[np.ndarray, List[CATHLabel]]:
+    def getSplit(
+        self, split: Literal["train", "val", "test"]
+    ) -> Tuple[np.ndarray, List[CATHLabel]]:
         return {
             "train": (self.X_train, self.y_train),
             "val": (self.X_val, self.y_val),
-            "test": (self.X_test, self.y_test)
+            "test": (self.X_test, self.y_test),
         }[split]
 
     ###################
@@ -49,12 +51,7 @@ class Dataset:
         X_test, y_test = shuffle(self.X_test, self.y_test, random_state=rng)
 
         if return_result:
-            return Dataset(
-                X_train, y_train,
-                self.train_labels,
-                X_val, y_val,
-                X_test, y_test
-            )
+            return Dataset(X_train, y_train, self.train_labels, X_val, y_val, X_test, y_test)
         else:
             self.X_train = X_train
             self.y_train = y_train
@@ -70,24 +67,31 @@ class Dataset:
         """
         valid_labels = [label[cath_level] for label in self.train_labels]
 
-        X_val, y_val = [list(unzipped) for unzipped in zip(*[
-            [embedding, label] for embedding, label in zip(self.X_val, self.y_val)
-            if label[cath_level] in valid_labels
-        ])]
+        X_val, y_val = [
+            list(unzipped)
+            for unzipped in zip(
+                *[
+                    [embedding, label]
+                    for embedding, label in zip(self.X_val, self.y_val)
+                    if label[cath_level] in valid_labels
+                ]
+            )
+        ]
         X_val = np.array(X_val)
 
-        X_test, y_test = [list(unzipped) for unzipped in zip(*[
-            [embedding, label] for embedding, label in zip(self.X_test, self.y_test)
-            if label[cath_level] in valid_labels
-        ])]
+        X_test, y_test = [
+            list(unzipped)
+            for unzipped in zip(
+                *[
+                    [embedding, label]
+                    for embedding, label in zip(self.X_test, self.y_test)
+                    if label[cath_level] in valid_labels
+                ]
+            )
+        ]
         X_test = np.array(X_test)
 
-        return Dataset(
-            self.X_train, self.y_train,
-            self.train_labels,
-            X_val, y_val,
-            X_test, y_test
-        )
+        return Dataset(self.X_train, self.y_train, self.train_labels, X_val, y_val, X_test, y_test)
 
     def scale(self) -> None:
         scaler = StandardScaler()

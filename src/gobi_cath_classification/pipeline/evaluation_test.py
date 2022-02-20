@@ -8,15 +8,19 @@ from gobi_cath_classification.pipeline.model_interface import Prediction
 
 from .utils import CATHLabel
 
-labels_train_H = sorted([CATHLabel(label) for label in [
-        "1.400.35.20",
-        "5.20.20.400",
-        "3.20.100.25",
-        "5.20.30.300",
-        "3.200.100.20",
-        "2.20.300.25",
+labels_train_H = sorted(
+    [
+        CATHLabel(label)
+        for label in [
+            "1.400.35.20",
+            "5.20.20.400",
+            "3.20.100.25",
+            "5.20.30.300",
+            "3.200.100.20",
+            "2.20.300.25",
+        ]
     ]
-])
+)
 
 labels_train_T = sorted([label["T"] for label in labels_train_H])
 labels_train_A = sorted([label["A"] for label in labels_train_H])
