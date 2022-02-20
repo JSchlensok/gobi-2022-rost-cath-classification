@@ -2,8 +2,8 @@ from copy import deepcopy
 import numpy as np
 from sklearn.utils import shuffle
 
-from .Dataset import Dataset
-from ..utils.CATHLabel import CATHLabel
+from ..data import Dataset
+from ..utils import CATHLabel
 
 x1 = np.array([[1], [2], [5]])
 x2 = np.array([[1], [2], [6]])
