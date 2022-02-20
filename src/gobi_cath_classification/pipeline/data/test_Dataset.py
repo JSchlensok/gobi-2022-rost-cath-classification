@@ -1,5 +1,6 @@
 from copy import deepcopy
 import numpy as np
+from sklearn.utils import shuffle
 
 from .Dataset import Dataset
 from ..utils.CATHLabel import CATHLabel
@@ -56,3 +57,10 @@ class TestFilteringForALevel:
         X, y = data2.getSplit("test")
         assert allclose(X, np.array([[5], [6]]))
         assert y == ["1.8.20.300", "2.20.3.3"]
+
+
+def test_shuffling(allclose):
+    shuffled_data = data1.shuffle(np.random.RandomState(42), True)
+    assert allclose(shuffled_data.X_train, shuffle(data1.X_train, random_state=np.random.RandomState(42)))
+
+

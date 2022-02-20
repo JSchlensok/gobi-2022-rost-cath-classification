@@ -4,6 +4,7 @@ from typing_extensions import Literal
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from sklearn.utils import shuffle
 
 from src.gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 
@@ -41,28 +42,51 @@ class Dataset:
     # BUILDER METHODS #
     ###################
 
-    def shuffle(self, rng: np.random.RandomState) -> None:
-        for X, y in [[self.X_train, self.y_train], [self.X_val, self.y_val], [self.X_test, self.y_test]]:
-            shuffled_indices = rng.permutation(len(X))
-            X = X[shuffled_indices]
-            y = [y[a] for a in shuffled_indices]
+    def shuffle(self, rng: np.random.RandomState, return_result: bool = False) -> Optional[Dataset]:
+        X_train, y_train = shuffle(self.X_train, self.y_train, random_state=rng)
+        X_val, y_val = shuffle(self.X_val, self.y_val, random_state=rng)
+        X_test, y_test = shuffle(self.X_test, self.y_test, random_state=rng)
 
-    def filter(self, cath_level: Literal["C", "A", "T", "H"]) -> None:
+        if return_result:
+            return Dataset(
+                X_train, y_train,
+                self.train_labels,
+                X_val, y_val,
+                X_test, y_test
+            )
+        else:
+            self.X_train = X_train
+            self.y_train = y_train
+            self.X_val = X_val
+            self.y_val = y_val
+            self.X_test = X_test
+            self.y_test = y_test
+
+    def get_filtered_version(self, cath_level: Literal["C", "A", "T", "H"]) -> Dataset:
         """
         Filter out all sequences from the validation & test set where there is no sequence sharing its CATH label
         up to the specified level
         """
         valid_labels = [label[cath_level] for label in self.train_labels]
 
-        self.X_val, self.y_val = [list(unzipped) for unzipped in zip(*[
+        X_val, y_val = [list(unzipped) for unzipped in zip(*[
             [embedding, label] for embedding, label in zip(self.X_val, self.y_val)
             if label[cath_level] in valid_labels
         ])]
+        X_val = np.array(X_val)
 
         self.X_test, self.y_test = [list(unzipped) for unzipped in zip(*[
             [embedding, label] for embedding, label in zip(self.X_test, self.y_test)
             if label[cath_level] in valid_labels
         ])]
+        X_test = np.array(X_test)
+
+        return Dataset(
+            self.X_train, self.y_train,
+            self.train_labels,
+            X_val, y_val,
+            X_test, y_test
+        )
 
     def scale(self) -> None:
         scaler = StandardScaler()
