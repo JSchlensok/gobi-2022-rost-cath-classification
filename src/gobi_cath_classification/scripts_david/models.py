@@ -45,7 +45,7 @@ class SupportVectorMachine(ModelInterface):
         #                       be used. If a callable is given it is used to pre-compute the kernel matrix from data
         #                       matrices;
 
-        self.model = svm.SVC(C=c, kernel=kernel, degree=degree, gamma=gamma)
+        self.model = svm.SVC(C=c, kernel=kernel, degree=degree, gamma=gamma, probability=True)
 
 
     def train_one_epoch(
@@ -78,7 +78,7 @@ class SupportVectorMachine(ModelInterface):
         # UPDATE            : ---
         ########################################################################################
 
-        predictions = self.model.predict(X=embeddings)
+        predictions = self.model.predict_proba(X=embeddings)
         df = pd.DataFrame(data=predictions, columns=self.model.classes_)
         return Prediction(probabilities=df)
 

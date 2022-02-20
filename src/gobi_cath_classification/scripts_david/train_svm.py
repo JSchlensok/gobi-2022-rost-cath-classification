@@ -29,8 +29,6 @@ def main():
     else:
         resources_per_trial = {"cpu": 1}
 
-    device = torch.device("cuda")
-    resources_per_trial = {"gpu": 1}
     # Configure a tune.CLIReporter as reporter to gain information during program flow
     reporter = tune.CLIReporter(
         max_report_frequency=10,
