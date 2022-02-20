@@ -28,7 +28,6 @@ def training_function(config: dict) -> None:
         without_duplicates=True,
         shuffle_data=True,
     )
-    dataset.shuffle(np.randomState(42))
 
     class_names = dataset.train_labels
 
