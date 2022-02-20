@@ -35,7 +35,8 @@ class SupportVectorMachine(ModelInterface):
         # DESCRIPTION       : Constructor to create instance of class SupportVectorMachine
         # AUTHOR            : D. Mauder
         # CREATE DATE       : 18.02.2022
-        # UPDATE            : ---
+        # UPDATE            : 20.02.2022 - probability = True eingefügt damit predict_proba
+        #                     ausgeführt werden kann
         ########################################################################################
         # Parameter description for SVMs
         # GAMMA             -   Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
@@ -75,7 +76,7 @@ class SupportVectorMachine(ModelInterface):
         # DESCRIPTION       : Create predictions with SVM-model given correct input parameters
         # AUTHOR            : D. Mauder
         # CREATE DATE       : 18.02.2022
-        # UPDATE            : ---
+        # UPDATE            : 20.02.2022 - predict durch predict_proba ersetzt
         ########################################################################################
 
         predictions = self.model.predict_proba(X=embeddings)

@@ -16,7 +16,7 @@ def main():
     # DESCRIPTION       : Main function to test the SVM model
     # AUTHOR            : D. Mauder
     # CREATE DATE       : 18.02.2022
-    # UPDATE            : ---
+    # UPDATE            : 20.02.2022 - Zwang der Berechnung auf die GPU entfernt
     ########################################################################################
 
     print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
