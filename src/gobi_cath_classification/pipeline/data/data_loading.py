@@ -6,10 +6,10 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from Dataset import Dataset
+from .Dataset import Dataset
 from src.gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 
-REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.absolute()
+REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
 
 
@@ -45,7 +45,7 @@ def read_in_labels(path_to_file: Path) -> Dict[str, CATHLabel]:
     df = pd.read_csv(filepath_or_buffer=path_to_file, delimiter=r"\s+", header=None, comment="#")
 
     id2label = {
-        row[0]: CATHLabel(".".join([str(level) for level in row[1:5]])) for row in df.rows()
+        row[0]: CATHLabel(".".join([str(level) for level in row[1:5]])) for _, row in df.iterrows()
     }
 
     return id2label
@@ -55,7 +55,7 @@ def load_data(
     data_dir: Path,
     without_duplicates: bool,
     shuffle_data: bool = True,
-    load_only_small_sample: bool = False,
+    load_only_small_sample: bool = False
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -83,14 +83,14 @@ def load_data(
 
     print("Reading in Labels ...")
     id2label_all = read_in_labels(path_to_file=path_labels)
-    id2label = {id2label_all[key] for key in id2seqs_all.keys()}
+    id2label = {key: id2label_all[key] for key in id2seqs_all.keys()}
 
     print(f"len(id2label_all) = {len(id2label_all)}")
     print(f"len(id2label) = {len(id2label)}")
 
     print("Reading in Embeddings ...")
     id2embedding = read_in_embeddings(path_to_file=path_embeddings)
-    embeddings = {id2embedding[key] for key in id2seqs_all.keys()}
+    embeddings = {key: id2embedding[key] for key in id2seqs_all.keys()}
 
     # remove duplicates and mismatched entries
     print("Removing duplicates and mismatched entries ...")
@@ -136,4 +136,4 @@ def load_data(
         rng = np.random.RandomState(42)
         dataset.shuffle(rng)
 
-    return Dataset
+    return dataset
