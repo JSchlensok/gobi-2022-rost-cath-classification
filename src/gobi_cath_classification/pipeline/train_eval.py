@@ -40,7 +40,7 @@ def training_function(config: dict) -> None:
         data_dir=data_dir,
         without_duplicates=True,
         shuffle_data=True,
-        rng=rng,
+        reloading_allowed=True
     )
     dataset.scale()
 

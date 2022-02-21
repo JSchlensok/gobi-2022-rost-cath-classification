@@ -5,6 +5,7 @@ from typing import Dict
 import h5py
 import numpy as np
 import pandas as pd
+import pickle
 
 from .Dataset import Dataset
 from src.gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
@@ -56,6 +57,7 @@ def load_data(
     without_duplicates: bool,
     shuffle_data: bool = True,
     load_only_small_sample: bool = False,
+    reloading_allowed: bool = False,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -70,7 +72,28 @@ def load_data(
         path_sequences_train = data_dir / "sample_data/sample_train100.fasta"
         path_labels = data_dir / "sample_data/sample_cath-domain-list100.txt"
 
-    print("Reading in Sequences ...")
+    # Reload if possible
+    duplicates_tag = "no-duplicates" if without_duplicates else "duplicates"
+    small_sample_tag = "small_sample" if load_only_small_sample else "full"
+    serialized_dataset_location = f"serialized_dataset_{duplicates_tag}_{small_sample_tag}.pickle"
+
+    if reloading_allowed:
+        print("Trying to find a serialized dataset ...")
+
+        if (data_dir / serialized_dataset_location).exists():
+            print("Found a serialized dataset to save time")
+            with open(data_dir / serialized_dataset_location, "rb") as f:
+                serialized_dataset = pickle.load(f)
+
+            if shuffle_data:
+                serialized_dataset.shuffle(np.random.RandomState(RANDOM_SEED))
+
+            return serialized_dataset
+
+        else:
+            print("Couldn't find a matching serialized dataset, creating a new one")
+
+    print("Reading in sequences ...")
     id2seqs_train = read_in_sequences(path_sequences_train)
     id2seqs_val = read_in_sequences(path_sequences_val)
     id2seqs_test = read_in_sequences(path_sequences_test)
@@ -135,5 +158,9 @@ def load_data(
     if shuffle_data:
         rng = np.random.RandomState(42)
         dataset.shuffle(rng)
+
+    print("Serializing data for faster reloading ...")
+    with open(data_dir / serialized_dataset_location, "wb+") as f:
+        pickle.dump(dataset, f)
 
     return dataset
