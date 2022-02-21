@@ -33,10 +33,13 @@ class Dataset:
             "y": {"train": len(self.y_train), "val": len(self.y_val), "test": len(self.X_test)},
         }
 
-    def getSplit(
-        self, split: Literal["train", "val", "test"]
-    ) -> Tuple[np.ndarray, List[CATHLabel]]:
-        return {
+    def get_split(
+        self,
+        split: Literal["train", "val", "test"],
+        as_tensors: bool = False,
+        zipped: bool = False,
+    ) -> Union[List[Tuple[np.ndarray, List[CATHLabel]], Tuple[np.ndarray, List[CATHLabel]]]]:
+        data = {
             "train": (self.X_train, self.y_train),
             "val": (self.X_val, self.y_val),
             "test": (self.X_test, self.y_test),
@@ -47,20 +50,10 @@ class Dataset:
             x_tensor = torch.from_numpy(np.array(data[0]))
             data = (x_tensor, data[1])
 
-    def shuffle(self, rng: np.random.RandomState, return_result: bool = False) -> Optional[Dataset]:
-        X_train, y_train = shuffle(self.X_train, self.y_train, random_state=rng)
-        X_val, y_val = shuffle(self.X_val, self.y_val, random_state=rng)
-        X_test, y_test = shuffle(self.X_test, self.y_test, random_state=rng)
-
-        if return_result:
-            return Dataset(X_train, y_train, self.train_labels, X_val, y_val, X_test, y_test)
+        if zipped:
+            return list(zip(data[0], data[1]))
         else:
-            self.X_train = X_train
-            self.y_train = y_train
-            self.X_val = X_val
-            self.y_val = y_val
-            self.X_test = X_test
-            self.y_test = y_test
+            return data
 
     def get_filtered_version(self, cath_level: Literal["C", "A", "T", "H"]) -> Dataset:
         """
@@ -95,9 +88,43 @@ class Dataset:
 
         return Dataset(self.X_train, self.y_train, self.train_labels, X_val, y_val, X_test, y_test)
 
-    def scale(self) -> None:
+    ###################
+    # BUILDER METHODS #
+    ###################
+
+    def shuffle(self, rng: np.random.RandomState, return_result: bool = False) -> Optional[Dataset]:
+        X_train, y_train = shuffle(self.X_train, self.y_train, random_state=rng)
+        X_val, y_val = shuffle(self.X_val, self.y_val, random_state=rng)
+        X_test, y_test = shuffle(self.X_test, self.y_test, random_state=rng)
+
+        if return_result:
+            return Dataset(X_train, y_train, self.train_labels, X_val, y_val, X_test, y_test)
+        else:
+            self.X_train = X_train
+            self.y_train = y_train
+            self.X_val = X_val
+            self.y_val = y_val
+            self.X_test = X_test
+            self.y_test = y_test
+
+    def scale(self, return_result: bool = False) -> Optional[Dataset]:
         scaler = StandardScaler()
         scaler.fit(X=self.X_train)
-        self.X_train = scaler.transform(self.X_train)
-        self.X_val = scaler.transform(self.X_val)
-        self.X_test = scaler.transform(self.X_test)
+        X_train_scaled = scaler.transform(self.X_train)
+        X_val_scaled = scaler.transform(self.X_val)
+        X_test_scaled = scaler.transform(self.X_test)
+
+        if return_result:
+            return Dataset(
+                X_train_scaled,
+                self.y_train,
+                self.train_labels,
+                X_val_scaled,
+                self.y_val,
+                X_test_scaled,
+                self.y_test,
+            )
+        else:
+            self.X_train = X_train_scaled
+            self.X_val = X_val_scaled
+            self.X_test = X_test_scaled
