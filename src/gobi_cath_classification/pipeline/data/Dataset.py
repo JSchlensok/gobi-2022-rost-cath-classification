@@ -6,6 +6,7 @@ from typing_extensions import Literal
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import shuffle
+import torch
 
 from src.gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 
@@ -41,9 +42,10 @@ class Dataset:
             "test": (self.X_test, self.y_test),
         }[split]
 
-    ###################
-    # BUILDER METHODS #
-    ###################
+        if as_tensors:
+            # convert X embedding to tensor
+            x_tensor = torch.from_numpy(np.array(data[0]))
+            data = (x_tensor, data[1])
 
     def shuffle(self, rng: np.random.RandomState, return_result: bool = False) -> Optional[Dataset]:
         X_train, y_train = shuffle(self.X_train, self.y_train, random_state=rng)
