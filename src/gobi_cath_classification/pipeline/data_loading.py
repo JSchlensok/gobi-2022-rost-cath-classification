@@ -8,9 +8,9 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from .utils.CATHLabel import CATHLabel
-from .data.Dataset import Dataset
-from .data.data_loading import *
+from gobi_cath_classification.pipeline.utils import CATHLabel
+from gobi_cath_classification.pipeline.data import Dataset
+import gobi_cath_classification.pipeline.data.data_loading as new
 
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
