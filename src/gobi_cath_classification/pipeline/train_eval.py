@@ -35,9 +35,10 @@ def training_function(config: dict) -> None:
     data_dir = DATA_DIR
     dataset = load_data(
         data_dir=data_dir,
+        rng=rng,
         without_duplicates=True,
         shuffle_data=True,
-        reloading_allowed=True
+        reloading_allowed=True,
     )
     dataset.scale()
 
@@ -63,7 +64,7 @@ def training_function(config: dict) -> None:
         sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
         class_weights = compute_class_weights(labels=dataset.y_train)
     elif config["class_weights"] == "sqrt_inverse":
-        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=data_set.y_train))
+        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
         class_weights = np.sqrt(compute_class_weights(labels=dataset.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
@@ -136,7 +137,7 @@ def trial_dirname_creator(trial: trial.Trial) -> str:
         ": ", ", "
     )
 
-    # max length for path in windosw = 260 character
+    # max length for path under Windows = 260 characters
     operating_system = platform.system()
     if operating_system == "Windows":
         max_len_for_trial_dirname = 260 - len(trial.local_dir)

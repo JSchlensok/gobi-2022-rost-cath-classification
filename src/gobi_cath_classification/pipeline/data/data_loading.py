@@ -55,6 +55,7 @@ def read_in_labels(path_to_file: Path) -> Dict[str, CATHLabel]:
 
 def load_data(
     data_dir: Path,
+    rng: np.random.RandomState,
     without_duplicates: bool,
     shuffle_data: bool = True,
     load_only_small_sample: bool = False,
@@ -157,7 +158,7 @@ def load_data(
     )
 
     if shuffle_data:
-        rng = np.random.RandomState(42)
+        print("Shuffling data ...")
         dataset.shuffle(rng)
 
     print("Serializing data for faster reloading ...")

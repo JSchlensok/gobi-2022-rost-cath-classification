@@ -255,7 +255,7 @@ def load_data(
     )
 
     if shuffle_data:
-        return dataset.shuffled(rng=rng)
+        return dataset.shuffled(rng)
     else:
         return dataset
 
