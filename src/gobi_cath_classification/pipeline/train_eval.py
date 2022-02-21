@@ -42,11 +42,8 @@ def training_function(config: dict) -> None:
     )
     dataset.scale()
 
-    embeddings_train = dataset.X_train
+    embeddings_train, y_train_labels = dataset.get_split("train", as_tensors=False, zipped=False)
     embeddings_train_tensor = torch.tensor(embeddings_train)
-
-    y_train_labels = dataset.y_train
-
     class_names = dataset.train_labels
 
     print(f"len(class_names = {len(class_names)}")
@@ -91,10 +88,6 @@ def training_function(config: dict) -> None:
     else:
         raise ValueError(f"Model class {model_class} does not exist.")
 
-    embeddings_train = dataset.X_train
-    embeddings_train_tensor = torch.tensor(embeddings_train)
-
-    y_train_labels = dataset.y_train
     # set variables for early stopping
     highest_acc_h = 0
     n_bad = 0
