@@ -1,12 +1,10 @@
-from dataclasses import dataclass
-from pathlib import Path
 from collections import Counter
-from typing import Dict, List, Tuple
-
 from copy import deepcopy
-import h5py
+from dataclasses import dataclass
 import numpy as np
 import pandas as pd
+from pathlib import Path
+from typing import List, Tuple, Dict
 
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.pipeline.data import Dataset
