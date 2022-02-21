@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.utils import shuffle
 import torch
 
-from src.gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
+from gobi_cath_classification.pipeline.utils import CATHLabel
 
 splits = ["train", "val", "test"]
 
