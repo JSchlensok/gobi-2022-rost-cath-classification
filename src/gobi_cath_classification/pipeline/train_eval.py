@@ -83,7 +83,12 @@ def training_function(config: dict) -> None:
         model = GaussianNaiveBayesModel()
 
     elif model_class == SupportVectorMachine.__name__:
-        model = SupportVectorMachine()
+        model = SupportVectorMachine(
+            gamma=config["model"]["gamma"],
+            c=config["model"]["regularization"],
+            kernel=config["model"]["kernel_function"],
+            degree=config["model"]["degree"],
+        )
 
     else:
         raise ValueError(f"Model class {model_class} does not exist.")

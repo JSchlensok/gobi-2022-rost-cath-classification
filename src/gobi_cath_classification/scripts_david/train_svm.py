@@ -5,7 +5,6 @@ from ray import tune
 # Import functions located in directory packages
 from src.gobi_cath_classification.pipeline import torch_utils
 from src.gobi_cath_classification.pipeline.train_eval import training_function
-from src.gobi_cath_classification.scripts_david.models_test import TestSupportVectorMachine
 from src.gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
 def main():
@@ -17,6 +16,7 @@ def main():
     # AUTHOR            : D. Mauder
     # CREATE DATE       : 18.02.2022
     # UPDATE            : 20.02.2022 - Zwang der Berechnung auf die GPU entfernt
+    #                   : Hyperparametrierung eingeführt
     ########################################################################################
 
     print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
@@ -45,12 +45,14 @@ def main():
             "random_seed": 0,               # Random Seeds have no application for SVMs
             "class_weights": "inverse",     # No weighting of any kind implemented yet
             "model": {
-                "model_class": SupportVectorMachine.__name__,   # Model = SupportVectorMachine
-                "num_epochs": 1,                                # SVMs are fitted by using one fitting
-                "lr": None,                                     # Learning Rate has no application for SVMs
-                "batch_size": None,                             # Batch size has no application for SVMs
-                "optimizer": None,                              # Optimizer has no application for SVMs
-                "layer_sizes": None,                            # Layer size has no application for SVMs
+                "model_class": SupportVectorMachine.__name__,
+                "num_epochs": 1,
+                "gamma": 0.1,
+                "regularization": 0.1,   # High regularization leads to large increase in computing time
+                "kernel_function": 'linear',
+                "degree": 0,
+                # Nach Testen von 144 verschiedenen Konfigurationen wurde die Folgende Parametrierung als am effizientesten ausgezeichnet
+                # {'model_class': 'SupportVectorMachine', 'num_epochs': 1, 'gamma': 0.1, 'regularization': 0.1, 'kernel_function': 'linear', 'degree': 0}
             },
         },
         progress_reporter=reporter,

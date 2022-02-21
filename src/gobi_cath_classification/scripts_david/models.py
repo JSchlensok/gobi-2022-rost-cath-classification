@@ -37,16 +37,28 @@ class SupportVectorMachine(ModelInterface):
         # CREATE DATE       : 18.02.2022
         # UPDATE            : 20.02.2022 - probability = True eingefügt damit predict_proba
         #                     ausgeführt werden kann
+        #                   : 21.02.2022 Model Cache auf 1000 MB erweitert
         ########################################################################################
         # Parameter description for SVMs
-        # GAMMA             -   Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
-        # REGULARIZATION C  -   The strength of the regularization is inversely proportional to C. Must be strictly
-        #                       positive. The penalty is a squared l2 penalty.
-        # KERNEL            -   Specifies the kernel type to be used in the algorithm. If none is given, ‘rbf’ will
-        #                       be used. If a callable is given it is used to pre-compute the kernel matrix from data
-        #                       matrices;
+        # Kernel: The main  function of  the  kernel is to transform the given dataset input data into the required form.
+        # There are various types of functions such as linear, polynomial, and radial basis function(RBF).Polynomial and
+        # RBF are useful for non - linear hyperplane.Polynomial and RBF kernels compute the separation line in the higher
+        # dimension.In some of the applications, it is suggested to use a more complex kernel to separate the classes that
+        # are curved or nonlinear.This transformation can lead to more accurate classifiers.
+        #
+        # Regularization: Regularization parameter in python's Scikit-learn C parameter used to maintain regularization.
+        # Here C is the penalty parameter, which represents mis classification or error term. The mis classification or error
+        # term tells the SVM optimization how much error is bearable. This is how you can control the trade-off between
+        # decision boundary and mis classification term. A smaller value of C creates a small-margin hyperplane and a larger
+        # value of C creates a larger-margin hyperplane.
+        #
+        # Gamma: A lower value  of Gamma will loosely fit the training dataset, whereas a higher value of gamma will
+        # exactly fit the training dataset, which causes over - fitting.In other words, you can say a low value of gamma
+        # considers only nearby  points in calculating the separation line, while the a value of gamma considers all the
+        # data points in the calculation of the separation line.
 
         self.model = svm.SVC(C=c, kernel=kernel, degree=degree, gamma=gamma, probability=True)
+        self.model.cache_size = 1000 #Make more MBs of RAM available for model cache
 
 
     def train_one_epoch(
@@ -95,6 +107,9 @@ class SupportVectorMachine(ModelInterface):
         # UPDATE            : ---
         ########################################################################################
 
+        # Checkpoint-Funktion ist für eine SVM nicht umsetzbar,
+        # da nicht in Epochen trainiert wird sondern in nur einem Schritt
+
         raise NotImplementedError
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
@@ -107,5 +122,8 @@ class SupportVectorMachine(ModelInterface):
         # CREATE DATE       : 18.02.2022
         # UPDATE            : ---
         ########################################################################################
+
+        # Checkpoint-Funktion ist für eine SVM nicht umsetzbar,
+        # da nicht in Epochen trainiert wird sondern in nur einem Schritt
 
         raise NotImplementedError
