@@ -1,11 +1,17 @@
+import os
+import platform
+import random
+
+import numpy as np
 import ray
 import torch
 from ray import tune
-import numpy as np
+from ray.tune import trial
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
+    compute_class_weights,
 )
 from gobi_cath_classification.pipeline.data import Dataset
 from gobi_cath_classification.pipeline.data.data_loading import (
@@ -13,6 +19,7 @@ from gobi_cath_classification.pipeline.data.data_loading import (
     DATA_DIR,
 )
 from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_charlotte.models import (
     RandomForestModel,
     NeuralNetworkModel,
@@ -21,18 +28,32 @@ from gobi_cath_classification.scripts_charlotte.models import (
 
 
 def training_function(config: dict) -> None:
+    # set random seeds
+    random_seed = config["random_seed"]
+    set_random_seeds(seed=random_seed)
+    rng = np.random.RandomState(random_seed)
+    print(f"rng = {rng}")
+
+    # load data
     data_dir = DATA_DIR
     dataset = load_data(
         data_dir=data_dir,
         without_duplicates=True,
         shuffle_data=True,
+        rng=rng,
     )
+    dataset.scale()
+
+    embeddings_train = dataset.X_train
+    embeddings_train_tensor = torch.tensor(embeddings_train)
+
+    y_train_labels = dataset.y_train
 
     class_names = dataset.train_labels
 
     print(f"len(class_names = {len(class_names)}")
 
-    # Hyperparameters
+    # get hyperparameters from config dict
     print(f"config = {config}")
 
     num_epochs = config["model"]["num_epochs"]
@@ -40,20 +61,27 @@ def training_function(config: dict) -> None:
 
     if config["class_weights"] == "none":
         sample_weights = None
+        class_weights = None
     elif config["class_weights"] == "inverse":
         sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
+        class_weights = compute_class_weights(labels=dataset.y_train)
     elif config["class_weights"] == "sqrt_inverse":
-        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
+        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=data_set.y_train))
+        class_weights = np.sqrt(compute_class_weights(labels=dataset.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
+    # set model
     if model_class == NeuralNetworkModel.__name__:
         model = NeuralNetworkModel(
+            lr=config["model"]["lr"],
             class_names=class_names,
             layer_sizes=config["model"]["layer_sizes"],
             batch_size=config["model"]["batch_size"],
             optimizer=config["model"]["optimizer"],
-            lr=config["model"]["lr"],
+            class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
+            rng=rng,
+            random_seed=RANDOM_SEED,
         )
 
     elif model_class == RandomForestModel.__name__:
@@ -69,10 +97,14 @@ def training_function(config: dict) -> None:
     embeddings_train_tensor = torch.tensor(embeddings_train)
 
     y_train_labels = dataset.y_train
+    # set variables for early stopping
+    highest_acc_h = 0
+    n_bad = 0
+    n_thresh = 20
 
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(num_epochs):
-        model.train_one_epoch(
+        model_metrics_dict = model.train_one_epoch(
             embeddings=embeddings_train,
             embeddings_tensor=embeddings_train_tensor,
             labels=y_train_labels,
@@ -88,7 +120,32 @@ def training_function(config: dict) -> None:
             y_pred=y_pred_val,
             class_names_training=dataset.all_labels_train_sorted,
         )
-        tune.report(**eval_dict)
+        tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
+
+        # check for early stopping
+        acc_h = eval_dict["accuracy_h"]
+        if acc_h > highest_acc_h:
+            highest_acc_h = acc_h
+            n_bad = 0
+            print(f"New best performance found: accuracy_h = {highest_acc_h}")
+        else:
+            n_bad += 1
+            if n_bad >= n_thresh:
+                break
+
+
+def trial_dirname_creator(trial: trial.Trial) -> str:
+    trial_dirname = f"{trial.trainable_name}_{trial.trial_id}_{str(trial.experiment_tag)}".replace(
+        ": ", ", "
+    )
+
+    # max length for path in windosw = 260 character
+    operating_system = platform.system()
+    if operating_system == "Windows":
+        max_len_for_trial_dirname = 260 - len(trial.local_dir)
+        return trial_dirname[:max_len_for_trial_dirname]
+    else:
+        return trial_dirname
 
 
 def main():
@@ -96,12 +153,24 @@ def main():
     device = torch_utils.get_device()
     print(f"device = {device}")
 
+    if torch.cuda.is_available():
+        resources_per_trial = {"gpu": 1}
+    else:
+        resources_per_trial = {"cpu": 1}
+
+    reporter = tune.CLIReporter(
+        max_report_frequency=10,
+        infer_limit=10,
+    )
+
     ray.init()
     analysis = tune.run(
         training_function,
-        resources_per_trial={"gpu": 1},
+        trial_dirname_creator=trial_dirname_creator,
+        resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
+            "random_seed": RANDOM_SEED,
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
             "model": tune.grid_search(
                 [
@@ -126,6 +195,7 @@ def main():
                 ]
             ),
         },
+        progress_reporter=reporter,
     )
 
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))

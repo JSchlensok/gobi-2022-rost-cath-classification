@@ -23,8 +23,7 @@ class Prediction:
         return y_pred_strings_val
 
 
-class ModelInterface(ABC):
-    @abstractmethod
+class ModelInterface:
     def train_one_epoch(
         self,
         embeddings: np.ndarray,
@@ -34,6 +33,7 @@ class ModelInterface(ABC):
     ) -> Dict[str, float]:
         """
         Trains the model.
+
         Args:
             embeddings:
                 2D array with shape (number of embeddings, 1024)
@@ -52,9 +52,11 @@ class ModelInterface(ABC):
     def predict(self, embeddings: np.ndarray) -> Prediction:
         """
         Predicts probabilities for the CATH superfamily labels.
+
         Args:
             embeddings:
                 2D array with shape (number of embeddings, 1024)
+
         Returns:
             Pandas DataFrame with shape (number of embeddings, number of classes) of
             probabilities. Each column corresponds to one CATH superfamily.
@@ -63,11 +65,15 @@ class ModelInterface(ABC):
     @abstractmethod
     def save_checkpoint(self, save_to_dir: Path):
         """
+
         Save a checkpoint to given directory.
+
         """
 
     @abstractmethod
     def load_model_from_checkpoint(self, load_from_dir: Path):
         """
+
         Load model from given checkpoint file(s),
+
         """

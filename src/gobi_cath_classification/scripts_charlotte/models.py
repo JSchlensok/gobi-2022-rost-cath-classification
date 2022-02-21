@@ -1,5 +1,6 @@
+import math
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from torch.nn.functional import one_hot
 
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
 from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
 
 
 class RandomForestModel(ModelInterface):
@@ -38,8 +40,10 @@ class RandomForestModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
+        model_specific_metrics = {}
+        return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         predictions = self.model.predict(X=embeddings)
@@ -63,12 +67,14 @@ class GaussianNaiveBayesModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
+        model_specific_metrics = {}
+        return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
-        predictions = self.model.predict(X=embeddings)
-        df = pd.DataFrame(data=predictions, columns=self.model.classes_)
+        predictions_proba = self.model.predict_proba(X=embeddings)
+        df = pd.DataFrame(data=predictions_proba, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
@@ -86,8 +92,16 @@ class NeuralNetworkModel(ModelInterface):
         layer_sizes: List[int],
         batch_size: int,
         optimizer: str,
+        class_weights: torch.Tensor,
+        rng: np.random.RandomState,
+        random_seed: int = 42,
     ):
         self.device = torch_utils.get_device()
+
+        self.random_seed = random_seed
+        self.rng = rng
+        print(f"rng = {rng}")
+        set_random_seeds(seed=random_seed)
 
         self.batch_size = batch_size
         self.class_names = sorted(class_names)
@@ -112,7 +126,9 @@ class NeuralNetworkModel(ModelInterface):
 
         model.add_module("Softmax", nn.Softmax())
         self.model = model.to(self.device)
-        self.loss_function = torch.nn.CrossEntropyLoss()
+        self.loss_function = torch.nn.CrossEntropyLoss(
+            weight=class_weights.to(self.device) if class_weights is not None else None,
+        )
         if optimizer == "sgd":
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         elif optimizer == "adam":
@@ -126,7 +142,7 @@ class NeuralNetworkModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
 
         permutation = torch.randperm(len(embeddings_tensor))
         X = embeddings_tensor.to(self.device)
@@ -134,6 +150,7 @@ class NeuralNetworkModel(ModelInterface):
             self.device
         )
         y_one_hot = 1.0 * one_hot(y_indices, num_classes=len(self.class_names))
+        loss_sum = 0
 
         for i in range(0, len(embeddings), self.batch_size):
             self.optimizer.zero_grad()
@@ -142,8 +159,13 @@ class NeuralNetworkModel(ModelInterface):
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
             loss = self.loss_function(y_pred, batch_y)
+            loss_sum += loss
             loss.backward()
             self.optimizer.step()
+
+        loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
+        model_specific_metrics = {"loss_avg": loss_avg}
+        return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         predicted_probabilities = self.model(torch.from_numpy(embeddings).float().to(self.device))
