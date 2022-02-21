@@ -106,14 +106,14 @@ def load_data(
     print(f"len(id2seqs_test) = {len(id2seqs_test)}")
     print(f"len(id2seqs_all = {len(id2seqs_all)}")
 
-    print("Reading in Labels ...")
+    print("Reading in labels ...")
     id2label_all = read_in_labels(path_to_file=path_labels)
     id2label = {key: id2label_all[key] for key in id2seqs_all.keys()}
 
     print(f"len(id2label_all) = {len(id2label_all)}")
     print(f"len(id2label) = {len(id2label)}")
 
-    print("Reading in Embeddings ...")
+    print("Reading in embeddings ...")
     id2embedding = read_in_embeddings(path_to_file=path_embeddings)
     embeddings = {key: id2embedding[key] for key in id2seqs_all.keys()}
 
