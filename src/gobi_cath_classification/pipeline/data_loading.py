@@ -141,11 +141,11 @@ def label_for_level(label: str, cath_level: str) -> str:
 
 
 def read_in_sequences(path_to_file: Path) -> Dict[str, str]:
-    return read_in_sequences(path_to_file)
+    return new.read_in_sequences(path_to_file)
 
 
 def read_in_embeddings(path_to_file: Path) -> Dict[str, np.ndarray]:
-    return read_in_embeddings(path_to_file)
+    return new.read_in_embeddings(path_to_file)
 
 
 def read_in_labels(path_to_file: Path) -> Dict[str, str]:
