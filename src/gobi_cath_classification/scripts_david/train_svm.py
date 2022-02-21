@@ -46,11 +46,11 @@ def main():
             "class_weights": "inverse",     # No weighting of any kind implemented yet
             "model": {
                 "model_class": SupportVectorMachine.__name__,
-                "num_epochs": 1,
-                "gamma": 0.1,
-                "regularization": 0.1,   # High regularization leads to large increase in computing time
-                "kernel_function": 'linear',
-                "degree": 0,
+                "num_epochs": tune.choice([1]),
+                "gamma": tune.choice([0.1]),
+                "regularization": tune.choice([0.1]),   # High regularization leads to large increase in computing time
+                "kernel_function": tune.choice(['linear']),
+                "degree": tune.choice([0]),
                 # Nach Testen von 144 verschiedenen Konfigurationen wurde die Folgende Parametrierung als am effizientesten ausgezeichnet
                 # {'model_class': 'SupportVectorMachine', 'num_epochs': 1, 'gamma': 0.1, 'regularization': 0.1, 'kernel_function': 'linear', 'degree': 0}
             },
