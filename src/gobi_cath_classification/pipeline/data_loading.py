@@ -66,15 +66,13 @@ class DataSplits:
             sequences that have a label that does not occur in the training set.
         """
         assert cath_level in ["C", "A", "T", "H"]
-        filtered_data = deepcopy(self._dataset)
-        filtered_data.filter(cath_level)
-        return filtered_data.getSplit("val")
+        return self._dataset.get_filtered_version(cath_level).get_split("val")
 
-    def get_filtered_test_set_for_level(self, cath_level: str) -> Tuple[np.ndarray, List[str]]:
+    def get_filtered_test_set_for_level(
+        self, cath_level: str
+    ) -> Tuple[np.ndarray, List[CATHLabel]]:
         assert cath_level in ["C", "A", "T", "H"]
-        filtered_data = deepcopy(self._dataset)
-        filtered_data.filter(cath_level)
-        return filtered_data.getSplit("test")
+        return self._dataset.get_filtered_version(cath_level).get_split("test")
 
     def _get_filtered_set_for_level(
         self, X: np.ndarray, y: List[str], cath_level: str = "T"
