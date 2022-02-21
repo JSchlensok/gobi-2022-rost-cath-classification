@@ -31,12 +31,12 @@ class DataSplits:
     def __post_init__(self):
         self._dataset = Dataset(
             self.X_train,
-            self.y_train,
+            [CATHLabel(label) for label in self.y_train],
             [CATHLabel(label) for label in self.all_labels_train_sorted],
             self.X_val,
-            self.y_val,
+            [CATHLabel(label) for label in self.y_val],
             self.X_test,
-            self.y_test,
+            [CATHLabel(label) for label in self.y_test],
         )
 
     def get_shape(self):
@@ -244,11 +244,11 @@ def load_data(
 
     dataset = DataSplits(
         X_train=np.array([embeddings[cath_id] for cath_id in id2seqs_train.keys()]),
-        y_train=[id2label[cath_id] for cath_id in id2seqs_train.keys()],
+        y_train=[str(id2label[cath_id]) for cath_id in id2seqs_train.keys()],
         X_val=np.array([embeddings[cath_id] for cath_id in id2seqs_val.keys()]),
-        y_val=[id2label[cath_id] for cath_id in id2seqs_val.keys()],
+        y_val=[str(id2label[cath_id]) for cath_id in id2seqs_val.keys()],
         X_test=np.array([embeddings[cath_id] for cath_id in id2seqs_test.keys()]),
-        y_test=[id2label[cath_id] for cath_id in id2seqs_test.keys()],
+        y_test=[str(id2label[cath_id]) for cath_id in id2seqs_test.keys()],
         all_labels_train_sorted=sorted(list(set([id2label[k] for k in id2seqs_train.keys()]))),
     )
 

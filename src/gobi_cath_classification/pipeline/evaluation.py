@@ -7,7 +7,10 @@ from gobi_cath_classification.pipeline.model_interface import Prediction
 
 
 def accuracy_for_level(
-    y_true: List[str], y_pred: List[str], class_names_training: List[str], cath_level: str
+    y_true: List[CATHLabel],
+    y_pred: List[str],
+    class_names_training: List[CATHLabel],
+    cath_level: str,
 ) -> float:
     """
 
@@ -31,10 +34,8 @@ def accuracy_for_level(
 
     """
 
-    class_names_for_level = list(
-        set([CATHLabel(label)[cath_level] for label in class_names_training])
-    )
-    y_true_for_level = [CATHLabel(label)[cath_level] for label in y_true]
+    class_names_for_level = list(set([label[cath_level] for label in class_names_training]))
+    y_true_for_level = [label[cath_level] for label in y_true]
     y_pred_for_level = [CATHLabel(label)[cath_level] for label in y_pred]
 
     # delete all entries where the ground truth label does not occur in training class names.
@@ -53,7 +54,7 @@ def accuracy_for_level(
 
 
 def evaluate(
-    y_true: List[str], y_pred: Prediction, class_names_training: List[str]
+    y_true: List[CATHLabel], y_pred: Prediction, class_names_training: List[CATHLabel]
 ) -> Dict[str, float]:
     y_proba = y_pred.probabilities
     y_labels = y_pred.argmax_labels()

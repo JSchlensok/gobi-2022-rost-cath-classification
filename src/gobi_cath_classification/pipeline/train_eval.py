@@ -98,7 +98,7 @@ def training_function(config: dict) -> None:
         model_metrics_dict = model.train_one_epoch(
             embeddings=embeddings_train,
             embeddings_tensor=embeddings_train_tensor,
-            labels=y_train_labels,
+            labels=[str(label) for label in y_train_labels],
             sample_weights=sample_weights if sample_weights is not None else None,
         )
 
@@ -109,7 +109,7 @@ def training_function(config: dict) -> None:
         eval_dict = evaluate(
             y_true=dataset.y_val,
             y_pred=y_pred_val,
-            class_names_training=dataset.all_labels_train_sorted,
+            class_names_training=dataset.train_labels,
         )
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
