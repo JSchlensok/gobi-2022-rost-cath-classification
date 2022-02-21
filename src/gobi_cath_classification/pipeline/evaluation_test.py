@@ -97,7 +97,7 @@ def test_evaluate():
             columns=columns,
         )
     )
-    eval_dict = evaluate(y_true=y_true, y_pred=prediction, class_names_training=columns)
+    eval_dict = evaluate(y_true=[CATHLabel(label) for label in y_true], y_pred=prediction, class_names_training=[CATHLabel(label) for label in columns])
     assert eval_dict["accuracy_h"] == 0.5
     assert eval_dict["accuracy_t"] == 1 / 3
     assert eval_dict["accuracy_a"] == 2 / 3

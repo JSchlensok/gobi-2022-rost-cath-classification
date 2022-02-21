@@ -31,12 +31,12 @@ data1 = data1.get_filtered_version("H")
 
 class TestFilteringForHLevel:
     def test_val(self, allclose):
-        X, y = data1.getSplit("val")
+        X, y = data1.get_split("val")
         assert allclose(X, np.array([[1], [2]]))
         assert y == [id1, id2]
 
     def test_test(self, allclose):
-        X, y = data1.getSplit("test")
+        X, y = data1.get_split("test")
         assert allclose(X, np.array([[1]]))
         assert y == [id1]
 
@@ -56,12 +56,12 @@ data2 = data2.get_filtered_version("A")
 
 class TestFilteringForALevel:
     def test_val(self, allclose):
-        X, y = data2.getSplit("val")
+        X, y = data2.get_split("val")
         assert allclose(X, np.array([[3]]))
         assert y == ["1.8.20.300"]
 
     def test_test(self, allclose):
-        X, y = data2.getSplit("test")
+        X, y = data2.get_split("test")
         assert allclose(X, np.array([[5], [6]]))
         assert y == ["1.8.20.300", "2.20.3.3"]
 
