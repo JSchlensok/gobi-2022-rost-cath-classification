@@ -170,7 +170,9 @@ class NeuralNetworkModel(ModelInterface):
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         predicted_probabilities = self.model(torch.from_numpy(embeddings).float().to(self.device))
-        df = pd.DataFrame(predicted_probabilities, columns=self.class_names).astype("float")
+        df = pd.DataFrame(
+            predicted_probabilities, columns=[str(label) for label in self.class_names]
+        ).astype("float")
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):

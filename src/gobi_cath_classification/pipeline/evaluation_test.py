@@ -6,32 +6,25 @@ from gobi_cath_classification.pipeline.data_loading import label_for_level
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.model_interface import Prediction
 
+from .utils import CATHLabel
+
 labels_train_H = sorted(
-    list(
-        set(
-            [
-                "1.400.35.20",
-                "5.20.20.400",
-                "3.20.100.25",
-                "5.20.30.300",
-                "3.200.100.20",
-                "2.20.300.25",
-            ]
-        )
-    )
+    [
+        CATHLabel(label)
+        for label in [
+            "1.400.35.20",
+            "5.20.20.400",
+            "3.20.100.25",
+            "5.20.30.300",
+            "3.200.100.20",
+            "2.20.300.25",
+        ]
+    ]
 )
 
-labels_train_T = sorted(
-    list(set([label_for_level(label, cath_level="T") for label in labels_train_H]))
-)
-
-labels_train_A = sorted(
-    list(set([label_for_level(label, cath_level="A") for label in labels_train_H]))
-)
-
-labels_train_C = sorted(
-    list(set([label_for_level(label, cath_level="C") for label in labels_train_H]))
-)
+labels_train_T = sorted([label["T"] for label in labels_train_H])
+labels_train_A = sorted([label["A"] for label in labels_train_H])
+labels_train_C = sorted([label["C"] for label in labels_train_H])
 
 
 def test_accuracy_for_level_H():
@@ -104,7 +97,11 @@ def test_evaluate():
             columns=columns,
         )
     )
-    eval_dict = evaluate(y_true=y_true, y_pred=prediction, class_names_training=columns)
+    eval_dict = evaluate(
+        y_true=[CATHLabel(label) for label in y_true],
+        y_pred=prediction,
+        class_names_training=[CATHLabel(label) for label in columns],
+    )
     assert eval_dict["accuracy_h"] == 0.5
     assert eval_dict["accuracy_t"] == 1 / 3
     assert eval_dict["accuracy_a"] == 2 / 3

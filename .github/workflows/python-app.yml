@@ -26,7 +26,7 @@ jobs:
         pip install -r requirements.txt
     - name: Test with pytest
       run: |
-        pytest src
+        pytest -k "not loading_with_shuffling and not loading_without_shuffling"
     - name: Check formatting
       run: |
         black --check src
