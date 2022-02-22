@@ -24,6 +24,8 @@ class Prediction:
 
 
 class ModelInterface:
+
+    @abstractmethod
     def train_one_epoch(
         self,
         embeddings: np.ndarray,
