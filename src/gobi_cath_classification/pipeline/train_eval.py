@@ -24,6 +24,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     RandomForestModel,
     NeuralNetworkModel,
     GaussianNaiveBayesModel,
+    EuclideanDistanceModel,
 )
 
 
@@ -54,8 +55,8 @@ def training_function(config: dict) -> None:
 
     # get hyperparameters from config dict
     print(f"config = {config}")
-    num_epochs = config["model"]["num_epochs"]
     model_class = config["model"]["model_class"]
+    num_epochs = config["model"]["num_epochs"] if "num_epochs" in config["model"].keys() else 1
 
     if config["class_weights"] == "none":
         sample_weights = None
@@ -87,6 +88,13 @@ def training_function(config: dict) -> None:
 
     elif model_class == GaussianNaiveBayesModel.__name__:
         model = GaussianNaiveBayesModel()
+
+    elif model_class == EuclideanDistanceModel.__name__:
+        model = EuclideanDistanceModel(
+            class_names=class_names,
+            embeddings=data_set.X_train,
+            labels=[str(y) for y in data_set.y_train],
+        )
 
     else:
         raise ValueError(f"Model class {model_class} does not exist.")

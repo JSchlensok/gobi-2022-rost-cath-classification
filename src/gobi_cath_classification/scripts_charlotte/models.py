@@ -1,4 +1,5 @@
 import math
+import sys
 from pathlib import Path
 from typing import List, Optional, Dict
 
@@ -177,3 +178,48 @@ class NeuralNetworkModel(ModelInterface):
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
         raise NotImplementedError
+
+
+class EuclideanDistanceModel(ModelInterface):
+    def __init__(self, embeddings: np.ndarray, labels: List[str], class_names: List[str]):
+        self.X_train = embeddings
+        self.y_train = labels
+        self.class_names = sorted(list(set(class_names)))
+
+    def train_one_epoch(
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
+    ) -> Dict[str, float]:
+        return {}
+
+    def predict(self, embeddings: np.ndarray) -> Prediction:
+        distances = []
+        for i, emb in enumerate(embeddings):
+            dists = []
+            for j, emb_lookup in enumerate(self.X_train):
+                dist = euclidian_distance(emb, emb_lookup)
+                dists.append(dist)
+            distances.append(dists)
+        distances = np.array(distances)
+        pred_labels = np.array([self.y_train[i] for i in np.argmin(distances, axis=1)])
+        pred_indices = [self.class_names.index(label) for label in pred_labels]
+        pred = np.zeros(shape=(len(embeddings), len(self.class_names)))
+        for row, index in enumerate(pred_indices):
+            pred[row, index] = 1
+
+        df = pd.DataFrame(data=pred, columns=self.class_names)
+        return Prediction(probabilities=df)
+
+    def save_checkpoint(self, save_to_dir: Path):
+        raise NotImplementedError
+
+    def load_model_from_checkpoint(self, load_from_dir: Path):
+        raise NotImplementedError
+
+
+def euclidian_distance(vec1: np.ndarray, vec2: np.ndarray) -> float:
+    dist = np.sqrt(np.sum((e1 - e2) ** 2 for e1, e2 in zip(vec1, vec2)))
+    return dist

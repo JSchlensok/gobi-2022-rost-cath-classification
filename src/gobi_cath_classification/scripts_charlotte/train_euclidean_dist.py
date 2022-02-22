@@ -41,17 +41,7 @@ def main():
                 ]
             ),
             "model": {
-                "model_class": NeuralNetworkModel.__name__,
-                "num_epochs": 200,
-                "lr": tune.grid_search([1e-5, 1e-4, 1e-3]),
-                "batch_size": 32,
-                "optimizer": tune.choice(["adam"]),
-                "layer_sizes": tune.choice(
-                    [
-                        [1024],
-                        [1024, 1024],
-                    ]
-                ),
+                "model_class": EuclideanDistanceModel.__name__,
             },
         },
         progress_reporter=reporter,
