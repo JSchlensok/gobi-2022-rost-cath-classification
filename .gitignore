@@ -6,6 +6,7 @@ venv_gobi_project3.7.9
 venv_gobi_project
 venv
 src/gobi_cath_classification/contrastive_learning_arcface/ProtTucker
+*.pickle
 
 #**/data/
 **/sample_data
