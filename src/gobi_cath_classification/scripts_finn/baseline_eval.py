@@ -6,10 +6,7 @@ from ray.tune import trial
 
 import platform
 from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.data import (
-    load_data,
-    DATA_DIR
-)
+from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
@@ -26,11 +23,16 @@ def training_function(config: dict) -> None:
 
     # load in the data
     data_dir = DATA_DIR
-    data_set = load_data(data_dir=data_dir, without_duplicates=True, shuffle_data=False, rng=rng, reloading_allowed=True)
+    data_set = load_data(
+        data_dir=data_dir,
+        without_duplicates=True,
+        shuffle_data=False,
+        rng=rng,
+        reloading_allowed=True,
+    )
     data_set.scale()
 
     class_names = data_set.train_labels
-
 
     print(f"config = {config}")
     model_class = config["model"]["model_class"]

@@ -71,7 +71,9 @@ class RandomBaseline(ModelInterface):
             predicted_probabilities = np.random.uniform(
                 0, 1, (embeddings.shape[0], len(class_names))
             )
-            df = pd.DataFrame(data=predicted_probabilities, columns=[str(label) for label in class_names])
+            df = pd.DataFrame(
+                data=predicted_probabilities, columns=[str(label) for label in class_names]
+            )
 
         # method with class_balance: every class is weighted with the corresponding number of labels in
         # its class
@@ -104,7 +106,9 @@ class RandomBaseline(ModelInterface):
             """
 
             # create the probability data frame
-            df = pd.DataFrame(data=predicted_probabilities, columns=[str(label) for label in class_names])
+            df = pd.DataFrame(
+                data=predicted_probabilities, columns=[str(label) for label in class_names]
+            )
 
         return Prediction(probabilities=df)
 
@@ -164,13 +168,13 @@ class ZeroRate(ModelInterface):
         class_names = self.data.train_labels
         class_weights = compute_class_counts(self.data.y_train)
         max_index = np.argmax(class_weights)
-        predicted_probabilities = np.zeros(
-            (embeddings.shape[0], len(self.data.train_labels))
-        )
+        predicted_probabilities = np.zeros((embeddings.shape[0], len(self.data.train_labels)))
         for row in predicted_probabilities:
             row[max_index] = 1
 
-        df = pd.DataFrame(data=predicted_probabilities, columns=[str(label) for label in class_names])
+        df = pd.DataFrame(
+            data=predicted_probabilities, columns=[str(label) for label in class_names]
+        )
         return Prediction(probabilities=df)
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
