@@ -2,6 +2,7 @@ from collections import Counter, OrderedDict
 from typing import List
 
 import numpy as np
+from gobi_cath_classification.pipeline.utils import CATHLabel
 
 
 def compute_class_weights(labels: List[str]) -> np.ndarray:
@@ -35,7 +36,7 @@ def compute_inverse_sample_weights(labels: List[str]) -> np.ndarray:
     return sample_weights
 
 
-def compute_class_counts(labels: List[str]) -> np.ndarray:
+def compute_class_counts(labels: List[CATHLabel]) -> np.ndarray:
     """
     Computes the counts for each label and returns them in alphabetical order according to their label names
 

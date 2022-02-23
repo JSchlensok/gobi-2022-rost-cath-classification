@@ -7,6 +7,7 @@ from gobi_cath_classification.pipeline.model_interface import ModelInterface, Pr
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
 from gobi_cath_classification.pipeline.data_loading import DataSplits
+from gobi_cath_classification.pipeline.data import Dataset
 from gobi_cath_classification.pipeline.sample_weights import compute_class_counts
 
 
@@ -22,7 +23,7 @@ class RandomBaseline(ModelInterface):
 
     def __init__(
         self,
-        data: DataSplits,
+        data: Dataset,
         class_balance: bool,
         rng: np.random.RandomState,
         random_seed: int = 42,
@@ -62,8 +63,7 @@ class RandomBaseline(ModelInterface):
 
         """
 
-        class_names = self.data.all_labels_train_sorted
-        val_labels = self.data.y_val
+        class_names = self.data.train_labels
 
         # method without class_balance: every class has equal probability
         if not self.class_balance:
@@ -71,7 +71,7 @@ class RandomBaseline(ModelInterface):
             predicted_probabilities = np.random.uniform(
                 0, 1, (embeddings.shape[0], len(class_names))
             )
-            df = pd.DataFrame(data=predicted_probabilities, columns=class_names)
+            df = pd.DataFrame(data=predicted_probabilities, columns=[str(label) for label in class_names])
 
         # method with class_balance: every class is weighted with the corresponding number of labels in
         # its class
@@ -104,7 +104,7 @@ class RandomBaseline(ModelInterface):
             """
 
             # create the probability data frame
-            df = pd.DataFrame(data=predicted_probabilities, columns=class_names)
+            df = pd.DataFrame(data=predicted_probabilities, columns=[str(label) for label in class_names])
 
         return Prediction(probabilities=df)
 
@@ -124,7 +124,7 @@ class ZeroRate(ModelInterface):
 
     def __init__(
         self,
-        data: DataSplits,
+        data: Dataset,
         rng: np.random.RandomState,
         random_seed: int = 42,
     ):
@@ -161,15 +161,16 @@ class ZeroRate(ModelInterface):
             Prediction object with only the largest class predicted
         """
 
+        class_names = self.data.train_labels
         class_weights = compute_class_counts(self.data.y_train)
         max_index = np.argmax(class_weights)
         predicted_probabilities = np.zeros(
-            (embeddings.shape[0], len(self.data.all_labels_train_sorted))
+            (embeddings.shape[0], len(self.data.train_labels))
         )
         for row in predicted_probabilities:
             row[max_index] = 1
 
-        df = pd.DataFrame(data=predicted_probabilities, columns=self.data.all_labels_train_sorted)
+        df = pd.DataFrame(data=predicted_probabilities, columns=[str(label) for label in class_names])
         return Prediction(probabilities=df)
 
     def load_model_from_checkpoint(self, load_from_dir: Path):

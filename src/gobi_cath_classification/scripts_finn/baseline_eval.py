@@ -6,14 +6,14 @@ from ray.tune import trial
 
 import platform
 from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.data_loading import (
+from gobi_cath_classification.pipeline.data import (
     load_data,
-    DATA_DIR,
-    scale_dataset,
+    DATA_DIR
 )
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
+from gobi_cath_classification.pipeline.train_eval import trial_dirname_creator
 
 
 def training_function(config: dict) -> None:
@@ -26,9 +26,11 @@ def training_function(config: dict) -> None:
 
     # load in the data
     data_dir = DATA_DIR
-    data_set = scale_dataset(
-        load_data(data_dir=data_dir, without_duplicates=True, shuffle_data=False, rng=rng)
-    )
+    data_set = load_data(data_dir=data_dir, without_duplicates=True, shuffle_data=False, rng=rng, reloading_allowed=True)
+    data_set.scale()
+
+    class_names = data_set.train_labels
+
 
     print(f"config = {config}")
     model_class = config["model"]["model_class"]
@@ -51,23 +53,9 @@ def training_function(config: dict) -> None:
     eval_dict = evaluate(
         y_true=data_set.y_val,
         y_pred=y_pred_val,
-        class_names_training=data_set.all_labels_train_sorted,
+        class_names_training=class_names,
     )
     tune.report(**eval_dict)
-
-
-def trial_dirname_creator(trial: trial.Trial) -> str:
-    trial_dirname = f"{trial.trainable_name}_{trial.trial_id}_{str(trial.experiment_tag)}".replace(
-        ": ", ", "
-    )
-
-    # max length for path in windosw = 260 character
-    operating_system = platform.system()
-    if operating_system == "Windows":
-        max_len_for_trial_dirname = 260 - len(trial.local_dir)
-        return trial_dirname[:max_len_for_trial_dirname]
-    else:
-        return trial_dirname
 
 
 def main():
