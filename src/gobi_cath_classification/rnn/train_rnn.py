@@ -9,7 +9,7 @@ from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import (
     RNNModel,
 )
-from src.gobi_cath_classification.rnn.pipeline import DATA_DIR, load_data
+from gobi_cath_classification.rnn.pipeline import DATA_DIR, load_data
 
 
 def training_function(config: dict) -> None:
