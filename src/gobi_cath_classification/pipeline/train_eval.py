@@ -1,6 +1,4 @@
-import os
 import platform
-import random
 
 import numpy as np
 import ray
@@ -13,11 +11,8 @@ from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
     compute_class_weights,
 )
-from gobi_cath_classification.pipeline.data_loading import (
-    load_data,
-    DATA_DIR,
-    scale_dataset,
-)
+from gobi_cath_classification.pipeline.data import Dataset, load_data, DATA_DIR
+
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_charlotte.models import (
@@ -36,24 +31,24 @@ def training_function(config: dict) -> None:
 
     # load data
     data_dir = DATA_DIR
-    data_set = scale_dataset(
-        load_data(
-            data_dir=data_dir,
-            without_duplicates=True,
-            shuffle_data=True,
-            rng=rng,
-        )
+    dataset = load_data(
+        data_dir=data_dir,
+        rng=rng,
+        without_duplicates=True,
+        shuffle_data=True,
+        reloading_allowed=True,
     )
-    embeddings_train = data_set.X_train
+    dataset.scale()
+
+    embeddings_train, y_train_labels = dataset.get_split("train", as_tensors=False, zipped=False)
     embeddings_train_tensor = torch.tensor(embeddings_train)
+    class_names = dataset.train_labels
 
-    y_train_labels = data_set.y_train
-
-    class_names = data_set.all_labels_train_sorted
-    print(f"len(class_names) = {len(class_names)}")
+    print(f"len(class_names = {len(class_names)}")
 
     # get hyperparameters from config dict
     print(f"config = {config}")
+
     num_epochs = config["model"]["num_epochs"]
     model_class = config["model"]["model_class"]
 
@@ -61,11 +56,11 @@ def training_function(config: dict) -> None:
         sample_weights = None
         class_weights = None
     elif config["class_weights"] == "inverse":
-        sample_weights = compute_inverse_sample_weights(labels=data_set.y_train)
-        class_weights = compute_class_weights(labels=data_set.y_train)
+        sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
+        class_weights = compute_class_weights(labels=dataset.y_train)
     elif config["class_weights"] == "sqrt_inverse":
-        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=data_set.y_train))
-        class_weights = np.sqrt(compute_class_weights(labels=data_set.y_train))
+        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
+        class_weights = np.sqrt(compute_class_weights(labels=dataset.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
@@ -79,7 +74,7 @@ def training_function(config: dict) -> None:
             optimizer=config["model"]["optimizer"],
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
-            random_seed=random_seed,
+            random_seed=RANDOM_SEED,
         )
 
     elif model_class == RandomForestModel.__name__:
@@ -101,18 +96,18 @@ def training_function(config: dict) -> None:
         model_metrics_dict = model.train_one_epoch(
             embeddings=embeddings_train,
             embeddings_tensor=embeddings_train_tensor,
-            labels=y_train_labels,
+            labels=[str(label) for label in y_train_labels],
             sample_weights=sample_weights if sample_weights is not None else None,
         )
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
-        y_pred_val = model.predict(embeddings=data_set.X_val)
+        y_pred_val = model.predict(embeddings=dataset.X_val)
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
-            y_true=data_set.y_val,
+            y_true=dataset.y_val,
             y_pred=y_pred_val,
-            class_names_training=data_set.all_labels_train_sorted,
+            class_names_training=dataset.train_labels,
         )
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
@@ -133,7 +128,7 @@ def trial_dirname_creator(trial: trial.Trial) -> str:
         ": ", ", "
     )
 
-    # max length for path in windosw = 260 character
+    # max length for path under Windows = 260 characters
     operating_system = platform.system()
     if operating_system == "Windows":
         max_len_for_trial_dirname = 260 - len(trial.local_dir)
