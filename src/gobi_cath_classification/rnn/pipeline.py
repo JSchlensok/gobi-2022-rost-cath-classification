@@ -4,10 +4,9 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from torch.nn.functional import one_hot
 
-from src.gobi_cath_classification.pipeline.data_loading import (
+from gobi_cath_classification.pipeline.data_loading import (
     read_in_sequences,
     read_in_labels,
-    merge_two_dicts,
     DataSplits,
 )
 
@@ -38,7 +37,7 @@ def load_data(
     id2seqs_val = read_in_sequences(path_sequences_val)
     id2seqs_test = read_in_sequences(path_sequences_test)
 
-    id2seqs_all = merge_two_dicts(id2seqs_train, merge_two_dicts(id2seqs_val, id2seqs_test))
+    id2seqs_all = {**id2seqs_train, **id2seqs_val, **id2seqs_test}
     print(f"len(id2seqs_train) = {len(id2seqs_train)}")
     print(f"len(id2seqs_val) = {len(id2seqs_val)}")
     print(f"len(id2seqs_test) = {len(id2seqs_test)}")

@@ -3,10 +3,10 @@ import torch
 import numpy as np
 from ray import tune
 
-from src.gobi_cath_classification.pipeline import torch_utils
-from src.gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
-from src.gobi_cath_classification.pipeline.evaluation import evaluate
-from src.gobi_cath_classification.rnn.models import (
+from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
+from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.rnn.models import (
     RNNModel,
 )
 from src.gobi_cath_classification.rnn.pipeline import DATA_DIR, load_data
