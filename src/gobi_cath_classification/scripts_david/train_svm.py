@@ -4,9 +4,9 @@ import torch
 from ray import tune
 
 # Import functions located in directory packages
-from src.gobi_cath_classification.pipeline import torch_utils
-from src.gobi_cath_classification.pipeline.train_eval import training_function
-from src.gobi_cath_classification.scripts_david.models import SupportVectorMachine
+from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.train_eval import training_function
+from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
 
 def main():
