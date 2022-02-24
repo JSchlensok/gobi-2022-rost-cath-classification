@@ -20,6 +20,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
     GaussianNaiveBayesModel,
 )
+from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
 
 def training_function(config: dict) -> None:
@@ -82,6 +83,14 @@ def training_function(config: dict) -> None:
 
     elif model_class == GaussianNaiveBayesModel.__name__:
         model = GaussianNaiveBayesModel()
+
+    elif model_class == SupportVectorMachine.__name__:
+        model = SupportVectorMachine(
+            gamma=config["model"]["gamma"],
+            c=config["model"]["regularization"],
+            kernel=config["model"]["kernel_function"],
+            degree=config["model"]["degree"],
+        )
 
     else:
         raise ValueError(f"Model class {model_class} does not exist.")
