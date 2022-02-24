@@ -23,9 +23,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
     GaussianNaiveBayesModel,
 )
-from gobi_cath_classification.scripts_david.models import (
-    SupportVectorMachine
-)
+from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
 
 def training_function(config: dict) -> None:

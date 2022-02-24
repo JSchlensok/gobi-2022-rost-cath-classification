@@ -2,10 +2,12 @@
 import ray
 import torch
 from ray import tune
+
 # Import functions located in directory packages
 from src.gobi_cath_classification.pipeline import torch_utils
 from src.gobi_cath_classification.pipeline.train_eval import training_function
 from src.gobi_cath_classification.scripts_david.models import SupportVectorMachine
+
 
 def main():
     ########################################################################################
@@ -42,14 +44,16 @@ def main():
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "random_seed": 0,               # Random Seeds have no application for SVMs
-            "class_weights": "inverse",     # No weighting of any kind implemented yet
+            "random_seed": 0,  # Random Seeds have no application for SVMs
+            "class_weights": "inverse",  # No weighting of any kind implemented yet
             "model": {
                 "model_class": SupportVectorMachine.__name__,
                 "num_epochs": tune.choice([1]),
                 "gamma": tune.choice([0.1]),
-                "regularization": tune.choice([0.1]),   # High regularization leads to large increase in computing time
-                "kernel_function": tune.choice(['linear']),
+                "regularization": tune.choice(
+                    [0.1]
+                ),  # High regularization leads to large increase in computing time
+                "kernel_function": tune.choice(["linear"]),
                 "degree": tune.choice([0]),
                 # Nach Testen von 144 verschiedenen Konfigurationen wurde die Folgende Parametrierung als am effizientesten ausgezeichnet
                 # {'model_class': 'SupportVectorMachine', 'num_epochs': 1, 'gamma': 0.1, 'regularization': 0.1, 'kernel_function': 'linear', 'degree': 0}

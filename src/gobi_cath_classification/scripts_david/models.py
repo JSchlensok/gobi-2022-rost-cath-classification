@@ -1,14 +1,18 @@
 # Import basic functionalities
 from pathlib import Path
 from typing import List, Optional
+
 # Import classes specifically needed for machine learning
 import numpy as np
 import pandas as pd
 import torch
+
 # Import own classes needed in this script
 from src.gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
+
 # Import library for support vector machines from scikit learn
 from sklearn import svm
+
 
 class SupportVectorMachine(ModelInterface):
     ########################################################################################
@@ -21,13 +25,7 @@ class SupportVectorMachine(ModelInterface):
     # UPDATE            : ---
     ########################################################################################
 
-    def __init__(
-            self,
-            c=1.0,
-            kernel='rbf',
-            degree=3,
-            gamma='scale'
-    ):
+    def __init__(self, c=1.0, kernel="rbf", degree=3, gamma="scale"):
         ########################################################################################
         # FUNCTION NAME     : __init__()
         # INPUT PARAMETERS  : self
@@ -58,8 +56,7 @@ class SupportVectorMachine(ModelInterface):
         # data points in the calculation of the separation line.
 
         self.model = svm.SVC(C=c, kernel=kernel, degree=degree, gamma=gamma, probability=True)
-        self.model.cache_size = 1000 #Make more MBs of RAM available for model cache
-
+        self.model.cache_size = 1000  # Make more MBs of RAM available for model cache
 
     def train_one_epoch(
         self,
