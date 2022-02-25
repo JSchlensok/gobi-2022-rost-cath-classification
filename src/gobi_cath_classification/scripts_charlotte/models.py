@@ -2,6 +2,7 @@ import math
 import sys
 from pathlib import Path
 from typing import List, Optional, Dict
+from typing_extensions import Literal
 
 import numpy as np
 import pandas as pd
@@ -182,11 +183,15 @@ class NeuralNetworkModel(ModelInterface):
         raise NotImplementedError
 
 
-class EuclideanDistanceModel(ModelInterface):
-    def __init__(self, embeddings: np.ndarray, labels: List[str], class_names: List[str]):
-        self.X_train = embeddings
+class DistanceModel(ModelInterface):
+    def __init__(self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int):
+        self.device = torch_utils.get_device()
+        self.X_train_tensor = torch.tensor(embeddings).to(self.device)
         self.y_train = labels
         self.class_names = sorted(list(set([str(cn) for cn in class_names])))
+        if distance_ord < 0:
+            raise ValueError(f"Distance order must be >= 0, but it is: {distance_ord}")
+        self.distance_ord = distance_ord
 
     def train_one_epoch(
         self,
@@ -198,14 +203,10 @@ class EuclideanDistanceModel(ModelInterface):
         return {}
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
-        distances = []
-        for i, emb in enumerate(embeddings):
-            dists = []
-            for j, emb_lookup in enumerate(self.X_train):
-                dist = euclidian_distance(emb, emb_lookup)
-                dists.append(dist)
-            distances.append(dists)
-        distances = np.array(distances)
+        emb_tensor = torch.tensor(embeddings).to(self.device)
+        pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08)
+        distances = np.array([[pdist(emb, emb_lookup) for emb_lookup in self.X_train_tensor] for emb in emb_tensor])
+
         pred_labels = np.array([self.y_train[i] for i in np.argmin(distances, axis=1)])
         pred_indices = [self.class_names.index(label) for label in pred_labels]
         pred = np.zeros(shape=(len(embeddings), len(self.class_names)))
@@ -222,6 +223,7 @@ class EuclideanDistanceModel(ModelInterface):
         raise NotImplementedError
 
 
-def euclidian_distance(vec1: np.ndarray, vec2: np.ndarray) -> float:
-    dist = np.sqrt(np.sum((e1 - e2) ** 2 for e1, e2 in zip(vec1, vec2)))
+def distance(vec1: np.ndarray, vec2: np.ndarray, dist_ord) -> float:
+    assert dist_ord >= 0
+    dist = np.linalg.norm(vec1 - vec2, ord=dist_ord)
     return dist

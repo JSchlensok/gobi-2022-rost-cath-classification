@@ -6,7 +6,7 @@ from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
-    EuclideanDistanceModel,
+    DistanceModel,
 )
 from gobi_cath_classification.pipeline.train_eval import (
     training_function,

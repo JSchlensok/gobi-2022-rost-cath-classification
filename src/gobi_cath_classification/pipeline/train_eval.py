@@ -19,7 +19,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     RandomForestModel,
     NeuralNetworkModel,
     GaussianNaiveBayesModel,
-    EuclideanDistanceModel,
+    DistanceModel,
 )
 
 
@@ -83,11 +83,12 @@ def training_function(config: dict) -> None:
     elif model_class == GaussianNaiveBayesModel.__name__:
         model = GaussianNaiveBayesModel()
 
-    elif model_class == EuclideanDistanceModel.__name__:
-        model = EuclideanDistanceModel(
+    elif model_class == DistanceModel.__name__:
+        model = DistanceModel(
             class_names=class_names,
             embeddings=dataset.X_train,
             labels=[str(y) for y in dataset.y_train],
+            distance_ord=config["model"]["distance_order"],
         )
 
     else:
@@ -108,11 +109,11 @@ def training_function(config: dict) -> None:
         )
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
-        y_pred_val = model.predict(embeddings=dataset.X_val)
+        y_pred_val = model.predict(embeddings=dataset.X_val[0])
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
-            y_true=dataset.y_val,
+            y_true=dataset.y_val[0],
             y_pred=y_pred_val,
             class_names_training=dataset.train_labels,
         )
