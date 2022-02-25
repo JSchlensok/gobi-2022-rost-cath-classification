@@ -184,7 +184,9 @@ class NeuralNetworkModel(ModelInterface):
 
 
 class DistanceModel(ModelInterface):
-    def __init__(self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int):
+    def __init__(
+        self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int
+    ):
         self.device = torch_utils.get_device()
         self.X_train_tensor = torch.tensor(embeddings).to(self.device)
         self.y_train = labels
@@ -204,8 +206,12 @@ class DistanceModel(ModelInterface):
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         emb_tensor = torch.tensor(embeddings).to(self.device)
-        pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08)
-        distances = np.array([[pdist(emb, emb_lookup) for emb_lookup in self.X_train_tensor] for emb in emb_tensor])
+        pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08).to(self.device)
+
+        distances = [
+            [pdist(emb, emb_lookup) for emb_lookup in self.X_train_tensor] for emb in emb_tensor
+        ]
+        distances = np.array(torch.tensor(distances).cpu())
 
         pred_labels = np.array([self.y_train[i] for i in np.argmin(distances, axis=1)])
         pred_indices = [self.class_names.index(label) for label in pred_labels]
@@ -221,9 +227,3 @@ class DistanceModel(ModelInterface):
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
         raise NotImplementedError
-
-
-def distance(vec1: np.ndarray, vec2: np.ndarray, dist_ord) -> float:
-    assert dist_ord >= 0
-    dist = np.linalg.norm(vec1 - vec2, ord=dist_ord)
-    return dist

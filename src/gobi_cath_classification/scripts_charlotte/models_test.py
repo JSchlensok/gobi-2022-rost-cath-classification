@@ -6,7 +6,7 @@ from gobi_cath_classification.pipeline.model_interface import ModelInterface
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
-    DistanceModel, distance,
+    DistanceModel,
 )
 from gobi_cath_classification.pipeline.torch_utils import get_device
 
@@ -38,10 +38,7 @@ class TestNeuralNetwork:
                 random_seed=random_seed,
             ),
             DistanceModel(
-                class_names=class_names,
-                embeddings=embeddings,
-                labels=labels,
-                distance_ord=1
+                class_names=class_names, embeddings=embeddings, labels=labels, distance_ord=1
             ),
         ]
         for model in models:
@@ -62,13 +59,17 @@ class TestNeuralNetwork:
             y_pred = model.predict(np.random.randn(5, num_features))
             assert len(y_pred.probabilities) == 5
 
-            y_true = [CATHLabel("1.200.45.10"), CATHLabel("3.20.25.40"), CATHLabel("3.200.10.75"),
-                      CATHLabel("3.20.25.40"), CATHLabel("3.200.10.75")]
-            
+            y_true = [
+                CATHLabel("1.200.45.10"),
+                CATHLabel("3.20.25.40"),
+                CATHLabel("3.200.10.75"),
+                CATHLabel("3.20.25.40"),
+                CATHLabel("3.200.10.75"),
+            ]
+
             eval_dict = evaluate(
                 y_true=y_true,
                 y_pred=y_pred,
                 class_names_training=[CATHLabel(cn) for cn in class_names],
             )
             print(f"eval_dict = {eval_dict}")
-
