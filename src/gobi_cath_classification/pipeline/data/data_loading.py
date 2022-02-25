@@ -148,13 +148,13 @@ def load_data(
                     id2embedding.pop(cath_id, None)
 
     dataset = Dataset(
-        X_train=np.array([embeddings[cath_id] for cath_id in id2seqs_train.keys()]),
-        y_train=[id2label[cath_id] for cath_id in id2seqs_train.keys()],
-        train_labels=[id2label[id] for id in id2seqs_train.keys()],
-        X_val=np.array([embeddings[cath_id] for cath_id in id2seqs_val.keys()]),
-        y_val=[id2label[cath_id] for cath_id in id2seqs_val.keys()],
-        X_test=np.array([embeddings[cath_id] for cath_id in id2seqs_test.keys()]),
-        y_test=[id2label[cath_id] for cath_id in id2seqs_test.keys()],
+        X_train=np.array([embeddings[prot_id] for prot_id in id2seqs_train.keys()]),
+        y_train=[id2label[prot_id] for prot_id in id2seqs_train.keys()],
+        train_labels=[id2label[prot_id] for prot_id in id2seqs_train.keys()],
+        X_val=np.array([embeddings[prot_id] for prot_id in id2seqs_val.keys()]),
+        y_val=[id2label[prot_id] for prot_id in id2seqs_val.keys()],
+        X_test=np.array([embeddings[prot_id] for prot_id in id2seqs_test.keys()]),
+        y_test=[id2label[prot_id] for prot_id in id2seqs_test.keys()],
     )
 
     if shuffle_data:
