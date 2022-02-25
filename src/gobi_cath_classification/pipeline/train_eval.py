@@ -11,7 +11,7 @@ from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
     compute_class_weights,
 )
-from gobi_cath_classification.pipeline.data import Dataset, load_data, DATA_DIR
+from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
@@ -21,6 +21,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     GaussianNaiveBayesModel,
     DistanceModel,
 )
+from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
 
 def training_function(config: dict) -> None:
@@ -89,6 +90,14 @@ def training_function(config: dict) -> None:
             embeddings=dataset.X_train,
             labels=[str(y) for y in dataset.y_train],
             distance_ord=config["model"]["distance_order"],
+        )
+
+    elif model_class == SupportVectorMachine.__name__:
+        model = SupportVectorMachine(
+            gamma=config["model"]["gamma"],
+            c=config["model"]["regularization"],
+            kernel=config["model"]["kernel_function"],
+            degree=config["model"]["degree"],
         )
 
     else:
