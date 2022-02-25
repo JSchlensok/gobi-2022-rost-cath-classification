@@ -109,11 +109,11 @@ def training_function(config: dict) -> None:
         )
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
-        y_pred_val = model.predict(embeddings=dataset.X_val[0])
+        y_pred_val = model.predict(embeddings=dataset.X_val)
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
-            y_true=dataset.y_val[0],
+            y_true=dataset.y_val,
             y_pred=y_pred_val,
             class_names_training=dataset.train_labels,
         )

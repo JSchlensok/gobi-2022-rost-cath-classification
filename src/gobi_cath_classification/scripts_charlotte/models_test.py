@@ -1,7 +1,9 @@
 import numpy as np
 import torch
 
+from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.model_interface import ModelInterface
+from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
     DistanceModel, distance,
@@ -57,67 +59,16 @@ class TestNeuralNetwork:
                     sample_weights=None,
                 )
 
-            y_pred = model.predict(np.random.randn(5, num_features)).probabilities
-            assert len(y_pred) == 5
+            y_pred = model.predict(np.random.randn(5, num_features))
+            assert len(y_pred.probabilities) == 5
 
-
-def test_scratch():
-    print()
-    embeddings = np.array(
-        [
-            [1, 1, 1, 1, 1],
-            [5, 5, 5, 5, 5]
-        ]
-    )
-    X_train = np.array(
-        [
-            [1, 2, 3, 2, 1],
-            [5, 6, 6, 5, 5],
-            [5, 5, 5, 5, 5],
-            [1, 1, 1, 1, 1],
-            [1, 6, 9, 9, 9]
-        ]
-    )
-
-    emb_tensor = torch.tensor(
-        [
-            [1, 1, 1, 1, 1],
-            [5, 5, 5, 5, 5]
-        ]
-    )
-    X_train_tensor = torch.tensor(
-        [
-            [1, 2, 3, 2, 1],
-            [5, 6, 6, 5, 5],
-            [5, 5, 5, 5, 5],
-            [1, 1, 1, 1, 1],
-            [1, 6, 9, 9, 9]
-        ]
-    )
-    dist_ord = 1
-    np_X_train = X_train_tensor.numpy()
-    print(f"type(np_X_train) = {type(np_X_train)}")
-    # dist = torch.cdist(emb_tensor[0], emb_tensor[0], p=2)
-    pdist = torch.nn.PairwiseDistance(p=dist_ord, eps=1e-08)
-    distances_t = np.array([[pdist(emb, emb_lookup) for emb_lookup in X_train_tensor] for emb in emb_tensor])
-
-    print(f"emb_tensor[0] = {emb_tensor[0]}")
-    print(f"dist = {distances_t}")
-    print(f"distances_t.shape = {distances_t.shape}")
-
-    distances = []
-    for i, emb in enumerate(embeddings):
-        dists = []
-        for j, emb_lookup in enumerate(X_train):
-            dist = distance(emb, emb_lookup, dist_ord=dist_ord)
-            dists.append(dist)
-        distances.append(dists)
-    distances = np.array(distances)
-    print(f"\ndistances = {distances}")
-    print(f"distances.shape = {distances.shape}")
-    assert np.allclose(distances.shape, (2, 5))
-
-    distances_2 = []
-    distances_2 = [[distance(emb, emb_lookup, dist_ord=dist_ord) for emb_lookup in X_train] for emb in embeddings]
-    assert np.allclose(distances, distances_2)
+            y_true = [CATHLabel("1.200.45.10"), CATHLabel("3.20.25.40"), CATHLabel("3.200.10.75"),
+                      CATHLabel("3.20.25.40"), CATHLabel("3.200.10.75")]
+            
+            eval_dict = evaluate(
+                y_true=y_true,
+                y_pred=y_pred,
+                class_names_training=[CATHLabel(cn) for cn in class_names],
+            )
+            print(f"eval_dict = {eval_dict}")
 
