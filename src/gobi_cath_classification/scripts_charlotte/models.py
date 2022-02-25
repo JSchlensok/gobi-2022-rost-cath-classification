@@ -186,7 +186,7 @@ class EuclideanDistanceModel(ModelInterface):
     def __init__(self, embeddings: np.ndarray, labels: List[str], class_names: List[str]):
         self.X_train = embeddings
         self.y_train = labels
-        self.class_names = sorted(list(set(class_names)))
+        self.class_names = sorted(list(set([str(cn) for cn in class_names])))
 
     def train_one_epoch(
         self,
