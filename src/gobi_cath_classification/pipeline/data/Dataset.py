@@ -42,7 +42,7 @@ class Dataset:
         split: Literal["train", "val", "test"],
         as_tensors: bool = False,
         zipped: bool = False,
-    ) -> Union[List[Tuple[np.ndarray, List[CATHLabel]], Tuple[np.ndarray, List[CATHLabel]]]]:
+    ) -> Union[List[Tuple[np.ndarray, List[CATHLabel]]], Tuple[np.ndarray, List[CATHLabel]]]:
         data = {
             "train": (self.X_train, self.y_train),
             "val": (self.X_val, self.y_val),
