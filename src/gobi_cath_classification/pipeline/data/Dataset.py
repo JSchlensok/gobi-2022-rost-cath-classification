@@ -74,9 +74,9 @@ class Dataset:
             }[split]
 
         if zipped:
-            return list(zip(data[0], data[1]))
+            return list(zip(x, y))
         else:
-            return data
+            return x, y
 
     def get_filtered_version(self, cath_level: Literal["C", "A", "T", "H"]) -> Dataset:
         """
@@ -85,28 +85,23 @@ class Dataset:
         """
         valid_labels = [label[cath_level] for label in self.train_labels]
 
-        X_val, y_val = [
-            list(unzipped)
-            for unzipped in zip(
-                *[
-                    [embedding, label]
-                    for embedding, label in zip(self.X_val, self.y_val)
-                    if label[cath_level] in valid_labels
-                ]
-            )
-        ]
+        def _filter_x_based_on_y(X, y):
+            x_filtered, y_filtered = [
+                list(unzipped)
+                for unzipped in zip(
+                    *[
+                        [embedding, label]
+                        for embedding, label in zip(X, y)
+                        if label[cath_level] in valid_labels
+                    ]
+                )
+            ]
+            return x_filtered, y_filtered
+
+        X_val, y_val = _filter_x_based_on_y(self.X_val, self.y_val)
         X_val = np.array(X_val)
 
-        X_test, y_test = [
-            list(unzipped)
-            for unzipped in zip(
-                *[
-                    [embedding, label]
-                    for embedding, label in zip(self.X_test, self.y_test)
-                    if label[cath_level] in valid_labels
-                ]
-            )
-        ]
+        X_test, y_test = _filter_x_based_on_y(self.X_test, self.y_test)
         X_test = np.array(X_test)
 
         copy = Dataset(self.X_train, self.y_train, self.train_labels, X_val, y_val, X_test, y_test)
