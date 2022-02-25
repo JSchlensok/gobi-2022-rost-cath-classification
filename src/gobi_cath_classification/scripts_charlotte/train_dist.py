@@ -40,7 +40,10 @@ def main():
                     "inverse",
                 ]
             ),
-            "model": {"model_class": DistanceModel.__name__, "distance_order": tune.choice([1, 2])},
+            "model": {
+                "model_class": DistanceModel.__name__,
+                "distance_order": tune.grid_search([1, 2, 3]),
+            },
         },
         progress_reporter=reporter,
     )
