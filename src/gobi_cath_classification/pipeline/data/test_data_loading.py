@@ -35,5 +35,5 @@ def test_loading_with_strings():
         True,
         False,
         True,
-        True
-        )
+        True,
+    )

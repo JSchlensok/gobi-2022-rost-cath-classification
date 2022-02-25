@@ -47,13 +47,13 @@ class Dataset:
         x_encoding: Literal["embedding-array", "embedding-tensor", "string"] = "embedding-array",
         zipped: bool = False,
     ) -> Union[
-            List[Tuple[np.ndarray, CATHLabel]],
-            Tuple[np.ndarray, List[CATHLabel]],
-            List[Tuple[torch.tensor, CATHLabel]],
-            Tuple[torch.tensor, List[CATHLabel]],
-            List[Tuple[str, CATHLabel]],
-            Tuple[List[str], List[CATHLabel]]
-        ]:
+        List[Tuple[np.ndarray, CATHLabel]],
+        Tuple[np.ndarray, List[CATHLabel]],
+        List[Tuple[torch.tensor, CATHLabel]],
+        Tuple[torch.tensor, List[CATHLabel]],
+        List[Tuple[str, CATHLabel]],
+        Tuple[List[str], List[CATHLabel]],
+    ]:
         x, y = {
             "train": (self.X_train, self.y_train),
             "val": (self.X_val, self.y_val),
@@ -66,12 +66,10 @@ class Dataset:
 
         elif x_encoding == "string":
             if not self.stores_strings:
-                raise ValueError("String representation requested, but no strings loaded. Use Dataset.load_strings() before calling get_split()")
-            x= {
-                "train": self.X_train_str,
-                "val": self.X_val_str,
-                "test": self.X_test_str
-            }[split]
+                raise ValueError(
+                    "String representation requested, but no strings loaded. Use Dataset.load_strings() before calling get_split()"
+                )
+            x = {"train": self.X_train_str, "val": self.X_val_str, "test": self.X_test_str}[split]
 
         if zipped:
             return list(zip(x, y))

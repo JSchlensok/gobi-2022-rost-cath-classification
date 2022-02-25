@@ -60,7 +60,7 @@ def load_data(
     shuffle_data: bool = True,
     load_only_small_sample: bool = False,
     reloading_allowed: bool = False,
-    load_strings: bool = False
+    load_strings: bool = False,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -79,7 +79,9 @@ def load_data(
     duplicates_tag = "no-duplicates" if without_duplicates else "duplicates"
     small_sample_tag = "small_sample" if load_only_small_sample else "full"
     including_strings_tag = "_with_strings" if load_strings else ""
-    serialized_dataset_location = f"serialized_dataset_{duplicates_tag}_{small_sample_tag}{including_strings_tag}.pickle"
+    serialized_dataset_location = (
+        f"serialized_dataset_{duplicates_tag}_{small_sample_tag}{including_strings_tag}.pickle"
+    )
 
     if reloading_allowed:
         print("Trying to find a serialized dataset ...")
@@ -160,7 +162,9 @@ def load_data(
     )
 
     if load_strings:
-        dataset.load_strings(list(id2seqs_train.values()), list(id2seqs_val.values()), list(id2seqs_test.keys()))
+        dataset.load_strings(
+            list(id2seqs_train.values()), list(id2seqs_val.values()), list(id2seqs_test.keys())
+        )
 
     if shuffle_data:
         print("Shuffling data ...")
