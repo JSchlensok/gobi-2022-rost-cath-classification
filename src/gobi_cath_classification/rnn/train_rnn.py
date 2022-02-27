@@ -9,7 +9,9 @@ from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import (
     RNNModel,
 )
-from gobi_cath_classification.rnn.pipeline import DATA_DIR, load_data
+from gobi_cath_classification.pipeline.data_loading import DATA_DIR
+from gobi_cath_classification.pipeline.data.data_loading import load_data
+from gobi_cath_classification.pipeline.data.Dataset import Dataset
 
 
 def training_function(config: dict) -> None:
@@ -21,11 +23,11 @@ def training_function(config: dict) -> None:
     # load data
     data_dir = DATA_DIR
     data_set = load_data(data_dir=data_dir, without_duplicates=True, shuffle_data=True, rng=rng)
-    sequences_train = data_set.X_train
+    sequences_train = data_set.train_seqs
 
     y_train_labels = data_set.y_train
 
-    class_names = data_set.all_labels_train_sorted
+    class_names = data_set.train_labels
     print(f"len(class_names) = {len(class_names)}")
 
     # get hyperparameters from config dict
@@ -72,7 +74,7 @@ def training_function(config: dict) -> None:
         eval_dict = evaluate(
             y_true=data_set.y_val,
             y_pred=y_pred_val,
-            class_names_training=data_set.all_labels_train_sorted,
+            class_names_training=data_set.train_labels,
         )
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 

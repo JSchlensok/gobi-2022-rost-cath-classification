@@ -149,11 +149,14 @@ def load_data(
 
     dataset = Dataset(
         X_train=np.array([embeddings[cath_id] for cath_id in id2seqs_train.keys()]),
+        train_seqs=id2seqs_train.items(),
         y_train=[id2label[cath_id] for cath_id in id2seqs_train.keys()],
         train_labels=[id2label[id] for id in id2seqs_train.keys()],
         X_val=np.array([embeddings[cath_id] for cath_id in id2seqs_val.keys()]),
+        val_seqs=id2seqs_val.items(),
         y_val=[id2label[cath_id] for cath_id in id2seqs_val.keys()],
         X_test=np.array([embeddings[cath_id] for cath_id in id2seqs_test.keys()]),
+        test_seqs=id2seqs_test.items(),
         y_test=[id2label[cath_id] for cath_id in id2seqs_test.keys()],
     )
 
