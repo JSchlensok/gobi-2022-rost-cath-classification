@@ -87,16 +87,16 @@ class RNNModel(nn.Module):
         loss_sum = 0
 
         for i in range(0, len(sequences), self.batch_size):
-            list_indices = list_perm[i : i + self.batch_size]
-            tensor_indices = tensor_perm[i : i + self.batch_size]
+            list_indices = list_perm[i:i + self.batch_size]
+            tensor_indices = tensor_perm[i:i + self.batch_size]
             batch_X = [sequences[index] for index in list_indices]
             # One Hot Encoding
             batch_X = self.one_hot_encode(batch_X).to(self.device)
             batch_y = y_one_hot[tensor_indices]
             y_pred = self.forward(batch_X.float())
-            self.optimizer.zero_grad()
 
             loss = self.loss_function(y_pred, batch_y)
+            self.optimizer.zero_grad()
 
             loss_sum += loss
             loss.backward()
