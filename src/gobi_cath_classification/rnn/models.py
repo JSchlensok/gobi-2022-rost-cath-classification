@@ -48,7 +48,7 @@ class RNNModel(nn.Module):
         )
 
         self.relu = nn.ReLU().to(self.device)
-        self.softmax = nn.Softmax()
+        self.sigmoid = nn.Sigmoid()
         self.loss_function = torch.nn.CrossEntropyLoss(weight=None)
 
         if optimizer == "sgd":
@@ -70,7 +70,7 @@ class RNNModel(nn.Module):
         out = self.relu(hn)
         out = self.fc(out)
         # print(f"Fully connected = {out.size()}")
-        out = self.softmax(out)
+        out = self.sigmoid(out)
         return out
 
     def one_hot_encode(self, X: List[str]):
