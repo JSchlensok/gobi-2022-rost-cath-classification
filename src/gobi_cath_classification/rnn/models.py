@@ -59,17 +59,17 @@ class RNNModel(nn.Module):
             raise ValueError(f"Optimizer is not valid: {optimizer}")
 
     def forward(self, x: torch.tensor):
-        print(f"Input = {x.size()}")
+        # print(f"Input = {x.size()}")
         h_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_dim)).to(self.device)
         c_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_dim)).to(self.device)
         output, (hn, cn) = self.lstm(x, (h_0, c_0))
-        print(f"Output = {output.size()}")
-        print(f"Hidden = {hn.size()}")
+        # print(f"Output = {output.size()}")
+        # print(f"Hidden = {hn.size()}")
         hn = hn.view(-1, self.hidden_dim)
-        print(f"Hidden2 = {hn.size()}")
+        # print(f"Hidden2 = {hn.size()}")
         out = self.relu(hn)
         out = self.fc(out)
-        print(f"Fully connected = {out.size()}")
+        # print(f"Fully connected = {out.size()}")
         out = self.softmax(out)
         return out
 
