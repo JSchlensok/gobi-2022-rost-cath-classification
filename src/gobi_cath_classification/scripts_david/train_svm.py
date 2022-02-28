@@ -4,9 +4,9 @@ import torch
 from ray import tune
 
 # Import functions located in directory packages
-from src.gobi_cath_classification.pipeline import torch_utils
-from src.gobi_cath_classification.pipeline.train_eval import training_function
-from src.gobi_cath_classification.scripts_david.models import SupportVectorMachine
+from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.train_eval import training_function
+from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
 
 def main():
@@ -17,8 +17,8 @@ def main():
     # DESCRIPTION       : Main function to test the SVM model
     # AUTHOR            : D. Mauder
     # CREATE DATE       : 18.02.2022
-    # UPDATE            : 20.02.2022 - Zwang der Berechnung auf die GPU entfernt
-    #                   : Hyperparametrierung eingeführt
+    # UPDATE            : 20.02.2022 - Model not longer forced on the GPU
+    #                                  Addition of hyper parameters
     ########################################################################################
 
     print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
@@ -55,8 +55,9 @@ def main():
                 ),  # High regularization leads to large increase in computing time
                 "kernel_function": tune.choice(["linear"]),
                 "degree": tune.choice([0]),
-                # Nach Testen von 144 verschiedenen Konfigurationen wurde die Folgende Parametrierung als am effizientesten ausgezeichnet
-                # {'model_class': 'SupportVectorMachine', 'num_epochs': 1, 'gamma': 0.1, 'regularization': 0.1, 'kernel_function': 'linear', 'degree': 0}
+                # After testing 144 different hyper parameter configurations and combinations, the following
+                # composition was considered best {'model_class': 'SupportVectorMachine', 'num_epochs': 1,
+                # 'gamma': 0.1, 'regularization': 0.1, 'kernel_function': 'linear', 'degree': 0}
             },
         },
         progress_reporter=reporter,

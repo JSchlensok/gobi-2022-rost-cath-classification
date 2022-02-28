@@ -3,8 +3,8 @@ import numpy as np
 import torch
 
 # Import functionalities from different packages in the directory
-from src.gobi_cath_classification.pipeline.model_interface import ModelInterface
-from src.gobi_cath_classification.pipeline.torch_utils import get_device
+from gobi_cath_classification.pipeline.model_interface import ModelInterface
+from gobi_cath_classification.pipeline.torch_utils import get_device
 from models import SupportVectorMachine
 
 
