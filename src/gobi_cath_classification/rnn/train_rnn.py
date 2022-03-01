@@ -104,11 +104,11 @@ def main():
             "class_weights": tune.grid_search(["none"]),
             "model": {
                 "model_class": RNNModel.__name__,
-                "num_epochs": 30,
+                "num_epochs": 10,
                 "lr": tune.grid_search([0.1]),
                 "batch_size": 100,
                 "optimizer": tune.choice(["adam"]),
-                "hidden_dim": tune.grid_search([64, 128, 1024]),
+                "hidden_dim": tune.grid_search([5, 20, 50]),
                 "num_layers": 1,
             },
         },
