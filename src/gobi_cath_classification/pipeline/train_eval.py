@@ -42,7 +42,7 @@ def training_function(config: dict) -> None:
     )
     dataset.scale()
 
-    embeddings_train, y_train_labels = dataset.get_split("train", as_tensors=False, zipped=False)
+    embeddings_train, y_train_labels = dataset.get_split(split="train", zipped=False)
     embeddings_train_tensor = torch.tensor(embeddings_train)
     class_names = dataset.train_labels
 

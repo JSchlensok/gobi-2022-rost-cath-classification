@@ -22,7 +22,7 @@ def train(num_epochs: int):
     )
 
     # TODO move to Dataset class
-    train_X, train_y = dataset.get_split("train", as_tensors=True, zipped=False)
+    train_X, train_y = dataset.get_split("train", zipped=False)
     label_encoder = sklearn.preprocessing.LabelEncoder()
     train_y_encoded = torch.as_tensor(label_encoder.fit_transform([str(label) for label in train_y]))
     train_data = list(zip(train_X, train_y_encoded))
