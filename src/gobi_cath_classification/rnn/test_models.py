@@ -22,12 +22,12 @@ from gobi_cath_classification.pipeline.data.data_loading import load_data
 from gobi_cath_classification.pipeline.data_loading import DATA_DIR
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
 
-dataset = pickle.load(
-    open(DATA_DIR / "serialized_dataset_no-duplicates_full_with_strings.pickle", "rb")
-)
-# dataset = load_data(
-# DATA_DIR, np.random.RandomState(42), without_duplicates=True, load_strings=True
+# dataset = pickle.load(
+#     open(DATA_DIR / "serialized_dataset_no-duplicates_full_with_strings.pickle", "rb")
 # )
+dataset = load_data(
+    DATA_DIR, np.random.RandomState(42), without_duplicates=True, load_strings=True, reloading_allowed=True
+)
 sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
 class_weights = compute_class_weights(labels=dataset.y_train)
 class_names = dataset.train_labels
