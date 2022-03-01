@@ -171,6 +171,7 @@ class BRNN(nn.Module):
         ).to(self.device)
         self.fc = nn.Linear(hidden_size * 2, len(class_names)).to(self.device)
         self.sigmoid = nn.Sigmoid()
+        self.softmax = nn.Softmax(dim=1)
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.loss_function = torch.nn.CrossEntropyLoss(
@@ -182,7 +183,7 @@ class BRNN(nn.Module):
         c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
         out, _ = self.lstm(x, (h0, c0))
         out = self.fc(out[:, -1, :])
-        out = self.sigmoid(out)
+        out = self.softmax(out)
 
         return out
 
