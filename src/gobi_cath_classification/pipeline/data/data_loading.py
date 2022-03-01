@@ -60,6 +60,7 @@ def load_data(
     shuffle_data: bool = True,
     load_only_small_sample: bool = False,
     reloading_allowed: bool = False,
+    load_strings: bool = False,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -77,7 +78,10 @@ def load_data(
     # Reload if possible
     duplicates_tag = "no-duplicates" if without_duplicates else "duplicates"
     small_sample_tag = "small_sample" if load_only_small_sample else "full"
-    serialized_dataset_location = f"serialized_dataset_{duplicates_tag}_{small_sample_tag}.pickle"
+    including_strings_tag = "_with_strings" if load_strings else ""
+    serialized_dataset_location = (
+        f"serialized_dataset_{duplicates_tag}_{small_sample_tag}{including_strings_tag}.pickle"
+    )
 
     if reloading_allowed:
         print("Trying to find a serialized dataset ...")
@@ -148,17 +152,19 @@ def load_data(
                     id2embedding.pop(cath_id, None)
 
     dataset = Dataset(
-        X_train=np.array([embeddings[cath_id] for cath_id in id2seqs_train.keys()]),
-        train_seqs=list(id2seqs_train.values()),
-        y_train=[id2label[cath_id] for cath_id in id2seqs_train.keys()],
-        train_labels=[id2label[id] for id in id2seqs_train.keys()],
-        X_val=np.array([embeddings[cath_id] for cath_id in id2seqs_val.keys()]),
-        val_seqs=list(id2seqs_val.values()),
-        y_val=[id2label[cath_id] for cath_id in id2seqs_val.keys()],
-        X_test=np.array([embeddings[cath_id] for cath_id in id2seqs_test.keys()]),
-        test_seqs=list(id2seqs_test.values()),
-        y_test=[id2label[cath_id] for cath_id in id2seqs_test.keys()],
+        X_train=np.array([embeddings[prot_id] for prot_id in id2seqs_train.keys()]),
+        y_train=[id2label[prot_id] for prot_id in id2seqs_train.keys()],
+        train_labels=[id2label[prot_id] for prot_id in id2seqs_train.keys()],
+        X_val=np.array([embeddings[prot_id] for prot_id in id2seqs_val.keys()]),
+        y_val=[id2label[prot_id] for prot_id in id2seqs_val.keys()],
+        X_test=np.array([embeddings[prot_id] for prot_id in id2seqs_test.keys()]),
+        y_test=[id2label[prot_id] for prot_id in id2seqs_test.keys()],
     )
+
+    if load_strings:
+        dataset.load_strings(
+            list(id2seqs_train.values()), list(id2seqs_val.values()), list(id2seqs_test.keys())
+        )
 
     if shuffle_data:
         print("Shuffling data ...")

@@ -26,17 +26,27 @@ data1 = Dataset(
     y_test=[CATHLabel(label) for label in [id1, id5, id6]],
 )
 
+
+data1_with_strings = deepcopy(data1)
+data1_with_strings.load_strings(["1", "2", "5"], ["1", "2", "6"], ["1", "2", "5"])
+
+
+def test_string_representation():
+    assert data1_with_strings.get_split("train", "string")[0] == ["1", "2", "5"]
+    assert data1_with_strings.get_split("val", "string")[0] == ["1", "2", "6"]
+
+
 data1 = data1.get_filtered_version("H")
 
 
 class TestFilteringForHLevel:
     def test_val(self, allclose):
-        X, y = data1.get_split("val")
+        X, y = data1.get_split("val", "embedding-array")
         assert allclose(X, np.array([[1], [2]]))
         assert y == [id1, id2]
 
     def test_test(self, allclose):
-        X, y = data1.get_split("test")
+        X, y = data1.get_split("test", "embedding-array")
         assert allclose(X, np.array([[1]]))
         assert y == [id1]
 

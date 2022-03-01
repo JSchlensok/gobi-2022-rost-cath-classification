@@ -9,9 +9,7 @@ from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import (
     RNNModel,
 )
-from gobi_cath_classification.pipeline.data_loading import DATA_DIR
-from gobi_cath_classification.pipeline.data.data_loading import load_data
-from gobi_cath_classification.pipeline.data.Dataset import Dataset
+from gobi_cath_classification.rnn.pipeline import DATA_DIR, load_data
 
 
 def training_function(config: dict) -> None:
@@ -23,11 +21,11 @@ def training_function(config: dict) -> None:
     # load data
     data_dir = DATA_DIR
     data_set = load_data(data_dir=data_dir, without_duplicates=True, shuffle_data=True, rng=rng)
-    sequences_train = data_set.train_seqs
+    sequences_train = data_set.X_train
 
     y_train_labels = data_set.y_train
 
-    class_names = data_set.train_labels
+    class_names = data_set.all_labels_train_sorted
     print(f"len(class_names) = {len(class_names)}")
 
     # get hyperparameters from config dict
@@ -68,15 +66,26 @@ def training_function(config: dict) -> None:
         )
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
-        y_pred_val = model.predict(data_set.val_seqs)
+        y_pred_val = model.predict(data_set.X_val)
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
             y_true=data_set.y_val,
             y_pred=y_pred_val,
-            class_names_training=data_set.train_labels,
+            class_names_training=data_set.all_labels_train_sorted,
         )
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
+
+        # check for early stopping
+        acc_h = eval_dict["accuracy_h"]
+        if acc_h > highest_acc_h:
+            highest_acc_h = acc_h
+            n_bad = 0
+            print(f"New best performance found: accuracy_h = {highest_acc_h}")
+        else:
+            n_bad += 1
+            if n_bad >= n_thresh:
+                break
 
 
 def main():
@@ -104,11 +113,11 @@ def main():
             "class_weights": tune.grid_search(["none"]),
             "model": {
                 "model_class": RNNModel.__name__,
-                "num_epochs": 30,
-                "lr": tune.grid_search([0.1]),
+                "num_epochs": 10,
+                "lr": tune.grid_search([1e-5, 1e-4, 1e-3]),
                 "batch_size": 100,
                 "optimizer": tune.choice(["adam"]),
-                "hidden_dim": tune.grid_search([64, 128, 1024]),
+                "hidden_dim": tune.choice([5, 20]),
                 "num_layers": 1,
             },
         },
