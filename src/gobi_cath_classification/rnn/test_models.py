@@ -25,17 +25,33 @@ from gobi_cath_classification.pipeline.data.Dataset import Dataset
 # dataset = pickle.load(
 #     open(DATA_DIR / "serialized_dataset_no-duplicates_full_with_strings.pickle", "rb")
 # )
+print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
+device = torch_utils.get_device()
+print(f"device = {device}")
+
+if torch.cuda.is_available():
+    resources_per_trial = {"gpu": 1}
+else:
+    resources_per_trial = {"cpu": 1}
+
 dataset = load_data(
-    DATA_DIR, np.random.RandomState(42), without_duplicates=True, load_strings=True, reloading_allowed=True
+    DATA_DIR,
+    np.random.RandomState(42),
+    without_duplicates=True,
+    load_strings=True,
+    reloading_allowed=True,
 )
+
 sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
 class_weights = compute_class_weights(labels=dataset.y_train)
 class_names = dataset.train_labels
 
 model = BRNN(hidden_size=128, num_layers=1, class_names=class_names)
 X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
+X_train.to(device)
+y_train_labels.to(device)
 
 for e in range(50):
     metrics = model.train_one_epoch(X_train, y_train_labels)
-    print(f"Epoch {e}")
-    print(f"Avg Loss{metrics['loss_avg']}")
+    print(f"Epoch {e + 1}")
+    print(f"Avg Loss {metrics['loss_avg']}")
