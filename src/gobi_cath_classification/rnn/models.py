@@ -28,7 +28,7 @@ def one_hot_encode(X: List[str]):
     X = X.reshape(X.shape[0], -1, 1)
     encoder = OneHotEncoder(categories=categories, handle_unknown="ignore")
     X = np.array([encoder.fit_transform(x).toarray() for x in X])
-    return Variable(torch.tensor(X))
+    return torch.tensor(X)
 
 
 class RNNModel(nn.Module):
@@ -157,7 +157,7 @@ class BRNN(nn.Module):
         input_size=23,
         class_weights=None,
         lr=0.01,
-        batch_size=300,
+        batch_size=200,
     ):
         super(BRNN, self).__init__()
         self.hidden_size = hidden_size
@@ -218,3 +218,11 @@ class BRNN(nn.Module):
         model_specific_metrics = {"loss_avg": loss_avg}
         print(y_pred)
         return model_specific_metrics
+
+    def predict(self, X: List[str]) -> Prediction:
+        with torch.no_grad:
+            y = self.forward(one_hot_encode(X).float())
+        df = pd.DataFrame(
+            y, columns=[str(label) for label in self.class_names]
+        ).astype("float")
+        return Prediction(probabilities=df)

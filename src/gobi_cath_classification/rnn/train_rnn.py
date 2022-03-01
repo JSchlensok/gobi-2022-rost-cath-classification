@@ -6,11 +6,13 @@ from ray import tune
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
 from gobi_cath_classification.pipeline.sample_weights import (
-    compute_inverse_sample_weights, compute_class_weights
+    compute_inverse_sample_weights,
+    compute_class_weights,
 )
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import (
     RNNModel,
+    BRNN
 )
 from gobi_cath_classification.pipeline.data_loading import DATA_DIR
 from gobi_cath_classification.pipeline.data.data_loading import load_data
@@ -25,12 +27,16 @@ def training_function(config: dict) -> None:
 
     # load data
     data_dir = DATA_DIR
-    data_set = load_data(data_dir=data_dir, without_duplicates=True, shuffle_data=True, rng=rng)
-    sequences_train = data_set.train_seqs
+    dataset = load_data(
+        DATA_DIR,
+        np.random.RandomState(42),
+        without_duplicates=True,
+        load_strings=True,
+        reloading_allowed=True,
+    )
+    X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
 
-    y_train_labels = data_set.y_train
-
-    class_names = data_set.train_labels
+    class_names = dataset.train_labels
     print(f"len(class_names) = {len(class_names)}")
 
     # get hyperparameters from config dict
@@ -51,39 +57,34 @@ def training_function(config: dict) -> None:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
     # set model
-    if model_class == RNNModel.__name__:
-        model = RNNModel(
+    if model_class == BRNN.__name__:
+        model = BRNN(
             lr=config["model"]["lr"],
             class_names=class_names,
             batch_size=config["model"]["batch_size"],
-            optimizer=config["model"]["optimizer"],
-            hidden_dim=config["model"]["hidden_dim"],
+            hidden_size=config["model"]["hidden_dim"],
             num_layers=config["model"]["num_layers"],
+            class_weights=class_weights
         )
     else:
         raise ValueError(f"Model class {model_class} does not exist.")
 
-    # set variables for early stopping
-    highest_acc_h = 0
-    n_bad = 0
-    n_thresh = 20
-
+    X_val, y_val = dataset.get_split("val", "string", False)
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(num_epochs):
         model_metrics_dict = model.train_one_epoch(
-            sequences=sequences_train,
-            labels=y_train_labels,
-            sample_weights=None,
+            sequences=X_train,
+            labels=y_train_labels
         )
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
-        y_pred_val = model.predict(data_set.val_seqs)
+        y_pred_val = model.predict(X_val)
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
-            y_true=data_set.y_val,
+            y_true=y_val,
             y_pred=y_pred_val,
-            class_names_training=data_set.train_labels,
+            class_names_training=class_names,
         )
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
@@ -112,12 +113,12 @@ def main():
             "random_seed": tune.grid_search([1]),
             "class_weights": tune.grid_search(["none"]),
             "model": {
-                "model_class": RNNModel.__name__,
-                "num_epochs": 30,
-                "lr": tune.grid_search([0.1]),
-                "batch_size": 100,
+                "model_class": BRNN.__name__,
+                "num_epochs": 50,
+                "lr": tune.grid_search([0.001, 0.0001]),
+                "batch_size": 32,
                 "optimizer": tune.choice(["adam"]),
-                "hidden_dim": tune.grid_search([64, 128, 1024]),
+                "hidden_dim": tune.choice([64, 128, 1024]),
                 "num_layers": 1,
             },
         },
