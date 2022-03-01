@@ -216,11 +216,10 @@ class BRNN(nn.Module):
 
         loss_avg = float(loss_sum / (math.ceil(len(sequences) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
-        print(y_pred)
         return model_specific_metrics
 
     def predict(self, X: List[str]) -> Prediction:
-        with torch.no_grad:
+        with torch.no_grad():
             y = self.forward(one_hot_encode(X).float())
         df = pd.DataFrame(
             y, columns=[str(label) for label in self.class_names]
