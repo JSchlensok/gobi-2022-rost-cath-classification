@@ -48,8 +48,6 @@ class_names = dataset.train_labels
 
 model = BRNN(hidden_size=128, num_layers=1, class_names=class_names)
 X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
-X_train.to(device)
-y_train_labels.to(device)
 
 for e in range(50):
     metrics = model.train_one_epoch(X_train, y_train_labels)
