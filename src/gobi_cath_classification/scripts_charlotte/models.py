@@ -48,7 +48,7 @@ class RandomForestModel(ModelInterface):
         return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
-        predictions = self.model.predict(X=embeddings)
+        predictions = self.model.predict_proba(X=embeddings)
         df = pd.DataFrame(data=predictions, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
