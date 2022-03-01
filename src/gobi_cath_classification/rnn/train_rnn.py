@@ -10,10 +10,7 @@ from gobi_cath_classification.pipeline.sample_weights import (
     compute_class_weights,
 )
 from gobi_cath_classification.pipeline.evaluation import evaluate
-from gobi_cath_classification.rnn.models import (
-    RNNModel,
-    BRNN
-)
+from gobi_cath_classification.rnn.models import RNNModel, BRNN
 from gobi_cath_classification.pipeline.data_loading import DATA_DIR
 from gobi_cath_classification.pipeline.data.data_loading import load_data
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
@@ -48,11 +45,11 @@ def training_function(config: dict) -> None:
         sample_weights = None
         class_weights = None
     elif config["class_weights"] == "inverse":
-        sample_weights = compute_inverse_sample_weights(labels=data_set.y_train)
-        class_weights = compute_class_weights(labels=data_set.y_train)
+        sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
+        class_weights = compute_class_weights(labels=dataset.y_train)
     elif config["class_weights"] == "sqrt_inverse":
-        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=data_set.y_train))
-        class_weights = np.sqrt(compute_class_weights(labels=data_set.y_train))
+        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
+        class_weights = np.sqrt(compute_class_weights(labels=dataset.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
@@ -64,7 +61,7 @@ def training_function(config: dict) -> None:
             batch_size=config["model"]["batch_size"],
             hidden_size=config["model"]["hidden_dim"],
             num_layers=config["model"]["num_layers"],
-            class_weights=class_weights
+            class_weights=class_weights,
         )
     else:
         raise ValueError(f"Model class {model_class} does not exist.")
@@ -72,10 +69,7 @@ def training_function(config: dict) -> None:
     X_val, y_val = dataset.get_split("val", "string", False)
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(num_epochs):
-        model_metrics_dict = model.train_one_epoch(
-            sequences=X_train,
-            labels=y_train_labels
-        )
+        model_metrics_dict = model.train_one_epoch(sequences=X_train, labels=y_train_labels)
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(X_val)
@@ -111,11 +105,11 @@ def main():
         num_samples=1,
         config={
             "random_seed": tune.grid_search([1]),
-            "class_weights": tune.grid_search(["none"]),
+            "class_weights": tune.choice(["inverse", "sqrt_inverse"]),
             "model": {
                 "model_class": BRNN.__name__,
                 "num_epochs": 50,
-                "lr": tune.grid_search([0.001, 0.0001]),
+                "lr": tune.choice([0.001, 0.0001]),
                 "batch_size": 32,
                 "optimizer": tune.choice(["adam"]),
                 "hidden_dim": tune.choice([64, 128, 1024]),
