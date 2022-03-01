@@ -17,14 +17,11 @@ splits = ["train", "val", "test"]
 @dataclass
 class Dataset:
     X_train: np.ndarray
-    train_seqs: List[str]
     y_train: List[CATHLabel]
     train_labels: List[CATHLabel]
     X_val: np.ndarray
-    val_seqs: List[str]
     y_val: List[CATHLabel]
     X_test: np.ndarray
-    test_seqs: List[str]
     y_test: List[CATHLabel]
 
     def __post_init__(self):
