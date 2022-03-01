@@ -9,6 +9,7 @@ src/gobi_cath_classification/contrastive_learning_arcface/ProtTucker
 *.pickle
 
 #**/data/
+data
 **/sample_data
 *.fasta
 *.h5
