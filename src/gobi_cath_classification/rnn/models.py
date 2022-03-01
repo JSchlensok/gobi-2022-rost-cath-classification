@@ -220,7 +220,7 @@ class BRNN(nn.Module):
 
     def predict(self, X: List[str]) -> Prediction:
         with torch.no_grad():
-            y = self.forward(one_hot_encode(X).float())
+            y = self.forward(one_hot_encode(X).float().to(self.device))
         df = pd.DataFrame(
             y, columns=[str(label) for label in self.class_names]
         ).astype("float")
