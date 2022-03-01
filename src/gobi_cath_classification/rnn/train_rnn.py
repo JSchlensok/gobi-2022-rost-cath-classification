@@ -108,7 +108,7 @@ def main():
                 "lr": tune.grid_search([0.1]),
                 "batch_size": 100,
                 "optimizer": tune.choice(["adam"]),
-                "hidden_dim": tune.grid_search([5, 20, 50]),
+                "hidden_dim": tune.choice([5, 20, 50]),
                 "num_layers": 1,
             },
         },
