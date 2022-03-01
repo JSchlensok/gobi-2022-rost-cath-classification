@@ -78,6 +78,17 @@ def training_function(config: dict) -> None:
         )
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
+        # check for early stopping
+        acc_h = eval_dict["accuracy_h"]
+        if acc_h > highest_acc_h:
+            highest_acc_h = acc_h
+            n_bad = 0
+            print(f"New best performance found: accuracy_h = {highest_acc_h}")
+        else:
+            n_bad += 1
+            if n_bad >= n_thresh:
+                break
+
 
 def main():
     print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
@@ -105,10 +116,10 @@ def main():
             "model": {
                 "model_class": RNNModel.__name__,
                 "num_epochs": 10,
-                "lr": tune.grid_search([0.1]),
+                "lr": tune.grid_search([1e-5, 1e-4, 1e-3]),
                 "batch_size": 100,
                 "optimizer": tune.choice(["adam"]),
-                "hidden_dim": tune.choice([5, 20, 50]),
+                "hidden_dim": tune.choice([5, 20]),
                 "num_layers": 1,
             },
         },
