@@ -61,7 +61,7 @@ def training_function(config: dict) -> None:
             batch_size=config["model"]["batch_size"],
             hidden_size=config["model"]["hidden_dim"],
             num_layers=config["model"]["num_layers"],
-            class_weights=class_weights,
+            class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
         )
     else:
         raise ValueError(f"Model class {model_class} does not exist.")
