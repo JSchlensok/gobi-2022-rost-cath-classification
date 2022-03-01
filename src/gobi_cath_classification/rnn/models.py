@@ -14,8 +14,10 @@ from gobi_cath_classification.pipeline.model_interface import ModelInterface, Pr
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
 
-categories = ["A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    "
-              "T    W    Y    V    B    Z    X".split()]
+categories = [
+    "A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    "
+    "T    W    Y    V    B    Z    X".split()
+]
 
 
 def one_hot_encode(X: List[str]):
@@ -26,19 +28,18 @@ def one_hot_encode(X: List[str]):
     X = X.reshape(X.shape[0], -1, 1)
     encoder = OneHotEncoder(categories=categories, handle_unknown="ignore")
     X = np.array([encoder.fit_transform(x).toarray() for x in X])
-    print(X.tolist())
     return Variable(torch.tensor(X))
 
 
 class RNNModel(nn.Module):
     def __init__(
-            self,
-            lr: float,
-            batch_size: int,
-            optimizer: str,
-            class_names: List[str],
-            hidden_dim: int,
-            num_layers: int,
+        self,
+        lr: float,
+        batch_size: int,
+        optimizer: str,
+        class_names: List[str],
+        hidden_dim: int,
+        num_layers: int,
     ):
         super(RNNModel, self).__init__()
         self.device = torch_utils.get_device()
@@ -49,10 +50,7 @@ class RNNModel(nn.Module):
         self.num_layers = num_layers
 
         self.lstm = nn.LSTM(
-            input_size=23,
-            hidden_size=hidden_dim,
-            num_layers=num_layers,
-            batch_first=True
+            input_size=23, hidden_size=hidden_dim, num_layers=num_layers, batch_first=True
         ).to(self.device)
         self.fc = nn.Linear(in_features=hidden_dim, out_features=len(self.class_names)).to(
             self.device
@@ -85,10 +83,10 @@ class RNNModel(nn.Module):
         return out
 
     def train_one_epoch(
-            self,
-            sequences: List[str],
-            labels: List[str],
-            sample_weights: Optional[np.ndarray],
+        self,
+        sequences: List[str],
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
 
         list_perm = np.random.permutation(len(sequences))
@@ -102,8 +100,8 @@ class RNNModel(nn.Module):
         loss_sum = 0
 
         for i in range(0, len(sequences), self.batch_size):
-            list_indices = list_perm[i:i + self.batch_size]
-            tensor_indices = tensor_perm[i:i + self.batch_size]
+            list_indices = list_perm[i : i + self.batch_size]
+            tensor_indices = tensor_perm[i : i + self.batch_size]
             batch_X = [sequences[index] for index in list_indices]
             # One Hot Encoding
             batch_X = one_hot_encode(batch_X).to(self.device)
@@ -151,14 +149,16 @@ class LSTMTagger(nn.Module):
 
 
 class BRNN(nn.Module):
-    def __init__(self,
-                 hidden_size,
-                 num_layers,
-                 class_names,
-                 input_size=23,
-                 class_weights=None,
-                 lr=0.01,
-                 batch_size=300):
+    def __init__(
+        self,
+        hidden_size,
+        num_layers,
+        class_names,
+        input_size=23,
+        class_weights=None,
+        lr=0.01,
+        batch_size=300,
+    ):
         super(BRNN, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -166,8 +166,9 @@ class BRNN(nn.Module):
         self.batch_size = batch_size
         self.class_names = class_names
 
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers,
-                            bidirectional=True, batch_first=True).to(self.device)
+        self.lstm = nn.LSTM(
+            input_size, hidden_size, num_layers, bidirectional=True, batch_first=True
+        ).to(self.device)
         self.fc = nn.Linear(hidden_size * 2, len(class_names)).to(self.device)
         self.sigmoid = nn.Sigmoid()
 
@@ -197,8 +198,8 @@ class BRNN(nn.Module):
         loss_sum = 0
 
         for i in range(0, len(sequences), self.batch_size):
-            list_indices = list_perm[i:i + self.batch_size]
-            tensor_indices = tensor_perm[i:i + self.batch_size]
+            list_indices = list_perm[i : i + self.batch_size]
+            tensor_indices = tensor_perm[i : i + self.batch_size]
             batch_X = [sequences[index] for index in list_indices]
             # One Hot Encoding
             batch_X = one_hot_encode(batch_X).to(self.device)
@@ -214,4 +215,5 @@ class BRNN(nn.Module):
 
         loss_avg = float(loss_sum / (math.ceil(len(sequences) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
+        print(y_pred)
         return model_specific_metrics
