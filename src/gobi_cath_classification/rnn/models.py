@@ -13,22 +13,7 @@ from torch.nn.functional import one_hot
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
-
-categories = [
-    "A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    "
-    "T    W    Y    V    B    Z    X".split()
-]
-
-
-def one_hot_encode(X: List[str]):
-    max_length = np.max([len(seq) for seq in X])
-    X = [seq.ljust(max_length, "Q") for seq in X]  # Pad to the left
-    X = [list(seq) for seq in X]
-    X = np.array(X)
-    X = X.reshape(X.shape[0], -1, 1)
-    encoder = OneHotEncoder(categories=categories, handle_unknown="ignore")
-    X = np.array([encoder.fit_transform(x).toarray() for x in X])
-    return torch.tensor(X)
+from gobi_cath_classification.rnn.encoder import one_hot_encode, num_categories
 
 
 class RNNModel(nn.Module):
@@ -50,7 +35,10 @@ class RNNModel(nn.Module):
         self.num_layers = num_layers
 
         self.lstm = nn.LSTM(
-            input_size=23, hidden_size=hidden_dim, num_layers=num_layers, batch_first=True
+            input_size=num_categories,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True
         ).to(self.device)
         self.fc = nn.Linear(in_features=hidden_dim, out_features=len(self.class_names)).to(
             self.device
@@ -130,11 +118,11 @@ class RNNModel(nn.Module):
 
 
 class LSTMTagger(nn.Module):
-    def __init__(self, hidden_dim: int, class_names: List[str], categories: int = 23):
+    def __init__(self, hidden_dim: int, class_names: List[str]):
         super(LSTMTagger, self).__init__()
 
         self.hidden_dim = hidden_dim
-        self.lstm = nn.LSTM(categories, hidden_dim, batch_first=True, bidirectional=True)
+        self.lstm = nn.LSTM(num_categories, hidden_dim, batch_first=True, bidirectional=True)
         self.softmax = nn.Softmax(dim=1)
 
         self.fc = nn.Linear(hidden_dim, len(class_names))
@@ -154,7 +142,6 @@ class BRNN(nn.Module):
         hidden_size,
         num_layers,
         class_names,
-        input_size=23,
         class_weights=None,
         lr=0.01,
         batch_size=200,
@@ -167,7 +154,7 @@ class BRNN(nn.Module):
         self.class_names = class_names
 
         self.lstm = nn.LSTM(
-            input_size, hidden_size, num_layers, bidirectional=True, batch_first=True
+            num_categories, hidden_size, num_layers, bidirectional=True, batch_first=True
         ).to(self.device)
         self.fc = nn.Linear(hidden_size * 2, len(class_names)).to(self.device)
         self.sigmoid = nn.Sigmoid()
@@ -204,9 +191,9 @@ class BRNN(nn.Module):
             batch_X = [sequences[index] for index in list_indices]
             # One Hot Encoding
             batch_X = one_hot_encode(batch_X).to(self.device)
-            batch_y = Variable(y_one_hot[tensor_indices])
+            batch_y = y_one_hot[tensor_indices]
             self.optimizer.zero_grad()
-            y_pred = self.forward(batch_X.float())
+            y_pred = self.forward(batch_X)
 
             loss = self.loss_function(y_pred, batch_y)
 
@@ -214,6 +201,7 @@ class BRNN(nn.Module):
             loss.backward()
             self.optimizer.step()
 
+        print(y_pred)
         loss_avg = float(loss_sum / (math.ceil(len(sequences) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
         return model_specific_metrics
