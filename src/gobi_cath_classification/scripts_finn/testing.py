@@ -28,12 +28,12 @@ model1 = RandomBaseline(data=data_set, class_balance=False, rng=rng, random_seed
 model2 = RandomBaseline(data=data_set, class_balance=True, rng=rng, random_seed=random_seed)
 model3 = ZeroRate(data=data_set, rng=rng, random_seed=random_seed)
 
-predictions1 = model1.predict(model1.data.X_val)
+predictions1 = model1.predict(model1.data.X_test)
 predictions2 = model2.predict(model2.data.X_val)
 predictions3 = model3.predict(model3.data.X_val)
 
 eval1 = Evaluation(
-    y_true=data_set.y_val,
+    y_true=data_set.y_test,
     predictions=predictions1,
     train_labels=data_set.train_labels
 )
