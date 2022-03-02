@@ -57,4 +57,3 @@ for e in range(100):
     print(metrics)
 
 torch.save(model, (DATA_DIR / "brnn.pth"))
-

@@ -38,7 +38,7 @@ class RNNModel(nn.Module):
             input_size=num_categories,
             hidden_size=hidden_dim,
             num_layers=num_layers,
-            batch_first=True
+            batch_first=True,
         ).to(self.device)
         self.fc = nn.Linear(in_features=hidden_dim, out_features=len(self.class_names)).to(
             self.device
@@ -209,7 +209,5 @@ class BRNN(nn.Module):
     def predict(self, X: List[str]) -> Prediction:
         with torch.no_grad():
             y = self.forward(one_hot_encode(X).float().to(self.device))
-        df = pd.DataFrame(
-            y, columns=[str(label) for label in self.class_names]
-        ).astype("float")
+        df = pd.DataFrame(y, columns=[str(label) for label in self.class_names]).astype("float")
         return Prediction(probabilities=df)
