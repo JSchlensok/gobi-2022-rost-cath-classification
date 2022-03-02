@@ -1,10 +1,8 @@
-import os
-import random
-
 import numpy as np
 import ray
 import torch
 from ray import tune
+import uuid
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.sample_weights import (
@@ -24,6 +22,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     GaussianNaiveBayesModel,
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
+from gobi_cath_classification.scripts_david.save_checkpoint import save_model, save_model_configuration, load_model, save_model_results
 
 
 def training_function(config: dict) -> None:
@@ -96,6 +95,10 @@ def training_function(config: dict) -> None:
 
     y_train_labels = data_set.y_train
 
+    # Create a unique ID to later identify the model later
+    index_uniqueID = uuid.uuid4()
+    print(f"CURRENT MODEL'S ASSIGNED UNIQUE ID - {index_uniqueID}")
+
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(num_epochs):
         model.train_one_epoch(
@@ -104,6 +107,14 @@ def training_function(config: dict) -> None:
             labels=y_train_labels,
             sample_weights=sample_weights if sample_weights is not None else None,
         )
+
+        # UPDATE - David Mauder 01.03.2022
+        # Attempting to save the current model state after one training epoch
+        save_model_configuration(model_class=model_class, unique_ID=index_uniqueID, dict_config=config)
+        save_model(model=model,
+                   model_class=model_class,
+                   unique_ID=index_uniqueID,
+                   epoch=epoch)
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(embeddings=data_set.X_val)
@@ -114,6 +125,11 @@ def training_function(config: dict) -> None:
             y_pred=y_pred_val,
             class_names_training=data_set.all_labels_train_sorted,
         )
+
+        # UPDATE - David Mauder 02.03.2022
+        # Attempting to save the current model results after evaluation
+        save_model_results(model_class=model_class, unique_ID=index_uniqueID, eval_dict=eval_dict)
+
         tune.report(**eval_dict)
 
 

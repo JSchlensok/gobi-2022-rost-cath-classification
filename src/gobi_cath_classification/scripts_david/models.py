@@ -75,7 +75,7 @@ class SupportVectorMachine(ModelInterface):
         # UPDATE            : ---
         ########################################################################################
 
-        self.model.fit(X=embeddings, y=labels)
+        self.model.fit(X=embeddings[:1000], y=labels[:1000])
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         ########################################################################################
@@ -125,7 +125,7 @@ class SupportVectorMachine(ModelInterface):
 
         raise NotImplementedError
 
-    class RandomForestModel(ModelInterface):
+class RandomForestModel(ModelInterface):
         def __init__(
                 self,
                 n_estimators=100,
@@ -164,7 +164,7 @@ class SupportVectorMachine(ModelInterface):
         def load_model_from_checkpoint(self, load_from_dir: Path):
             raise NotImplementedError
 
-    class GaussianNaiveBayesModel(ModelInterface):
+class GaussianNaiveBayesModel(ModelInterface):
         def __init__(self):
             self.model = GaussianNB()
 
@@ -188,7 +188,7 @@ class SupportVectorMachine(ModelInterface):
         def load_model_from_checkpoint(self, load_from_dir: Path):
             raise NotImplementedError
 
-    class NeuralNetworkModel(ModelInterface):
+class NeuralNetworkModel(ModelInterface):
         def __init__(
                 self,
                 lr: float,

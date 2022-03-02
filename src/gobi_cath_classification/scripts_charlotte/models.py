@@ -100,6 +100,8 @@ class NeuralNetworkModel(ModelInterface):
 
         self.batch_size = batch_size
         self.class_names = sorted(class_names)
+        # Save loss in global variable to be accessible from other functions
+        self.gbl_loss = None
         model = nn.Sequential()
 
         for i, num_in_features in enumerate(layer_sizes[:-1]):
@@ -153,6 +155,7 @@ class NeuralNetworkModel(ModelInterface):
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
             loss = self.loss_function(y_pred, batch_y)
+            self.gbl_loss = loss
             loss.backward()
             self.optimizer.step()
 
