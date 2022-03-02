@@ -46,12 +46,12 @@ sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
 class_weights = compute_class_weights(labels=dataset.y_train)
 class_names = dataset.train_labels
 
-model = BRNN(hidden_size=1024, num_layers=1, class_names=class_names, lr=1e-5, batch_size=16)
+model = BRNN(hidden_size=128, num_layers=1, class_names=class_names, lr=1e-2, batch_size=32)
 X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
 
 
 for e in range(100):
-    metrics = model.train_one_epoch(X_train[:100], y_train_labels[:100])
+    metrics = model.train_one_epoch(X_train, y_train_labels)
     print(f"Epoch {e + 1}")
     print(f"Avg Loss {metrics['loss_avg']}")
     print(metrics)

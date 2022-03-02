@@ -93,7 +93,7 @@ class RNNModel(nn.Module):
             batch_X = [sequences[index] for index in list_indices]
             # One Hot Encoding
             batch_X = one_hot_encode(batch_X).to(self.device)
-            batch_y = Variable(y_one_hot[tensor_indices])
+            batch_y = y_one_hot[tensor_indices]
             self.optimizer.zero_grad()
             y_pred = self.forward(batch_X.float())
 
@@ -169,7 +169,9 @@ class BRNN(nn.Module):
         h0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
         c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
         out, _ = self.lstm(x, (h0, c0))
-        out = self.fc(out[:, -1, :])
+        out_forward = out[:, -1, :self.hidden_size]
+        out_backward = out[:, 0, self.hidden_size:]
+        out = self.fc(torch.cat((out_forward, out_backward), dim=1))
         out = self.softmax(out)
 
         return out
@@ -186,8 +188,8 @@ class BRNN(nn.Module):
         loss_sum = 0
 
         for i in range(0, len(sequences), self.batch_size):
-            list_indices = list_perm[i : i + self.batch_size]
-            tensor_indices = tensor_perm[i : i + self.batch_size]
+            list_indices = list_perm[i:i + self.batch_size]
+            tensor_indices = tensor_perm[i:i + self.batch_size]
             batch_X = [sequences[index] for index in list_indices]
             # One Hot Encoding
             batch_X = one_hot_encode(batch_X).to(self.device)
