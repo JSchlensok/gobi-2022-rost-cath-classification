@@ -373,4 +373,4 @@ cython_debug/
 # End of https://www.toptal.com/developers/gitignore/api/python,macos,intellij,pycharm
 
 # Checkpoint files
-*.src/gobi_cath_classification/model checkpoints/
+/src/gobi_cath_classification/model checkpoints/
