@@ -187,9 +187,9 @@ class BRNN(nn.Module):
             loss_sum += loss
             loss.backward()
             self.optimizer.step()
-            if report_progress and (counter % 18 == 0):
+            if report_progress & (counter % 18 == 0):
                 print(f"\t\t{i + self.batch_size}/{len(sequences)} done")
-                counter += 1
+            counter += 1
 
         print(y_pred)
         loss_avg = float(loss_sum / (math.ceil(len(sequences) / self.batch_size)))

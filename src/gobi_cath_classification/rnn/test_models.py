@@ -1,5 +1,6 @@
 import math
 import pickle
+import subprocess
 from pathlib import Path
 from typing import List, Optional, Dict
 
@@ -47,14 +48,23 @@ class_weights = torch.tensor(compute_class_weights(labels=dataset.y_train))
 class_names = dataset.train_labels
 
 model = BRNN(
-    hidden_size=256,
+    hidden_size=512,
     num_layers=1,
     class_names=class_names,
     class_weights=class_weights,
-    lr=1e-5,
+    lr=1e-4,
     batch_size=32,
 )
 X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
+
+subprocess.run(
+        ["git", "commit", "-a", str(DATA_DIR / "brnn.pth"), "-m", f"Model_Epoch{0}"],
+        capture_output=True, text=True
+)
+subprocess.run(
+        ["git", "push"],
+        capture_output=True, text=True
+)
 
 
 for e in range(100):
