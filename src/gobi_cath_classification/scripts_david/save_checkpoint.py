@@ -11,7 +11,7 @@ from decimal import *
 import torch
 
 # Import own classes needed in this script
-from gobi_cath_classification.scripts_charlotte.models import (
+from gobi_cath_classification.scripts_david.models import (
     RandomForestModel,
     NeuralNetworkModel,
     GaussianNaiveBayesModel,

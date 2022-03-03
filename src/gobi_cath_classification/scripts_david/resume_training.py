@@ -3,12 +3,7 @@ import torch
 from ray import tune
 
 from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
-from gobi_cath_classification.scripts_charlotte.models import (
-    NeuralNetworkModel,
-)
 from gobi_cath_classification.pipeline.train_eval import (
-    training_function,
     resume_training
 )
 
@@ -22,6 +17,7 @@ def main():
     # CREATE DATE       : 03.03.2022
     # UPDATE            : ---
     ########################################################################################
+    # Check if GPU is available
     print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
     device = torch_utils.get_device()
     print(f"device = {device}")
@@ -31,12 +27,15 @@ def main():
     else:
         resources_per_trial = {"cpu": 1}
 
+    # Open CLI Reporter
     reporter = tune.CLIReporter(
         max_report_frequency=10,
         infer_limit=10,
     )
 
+    # Initialize Ray
     ray.init()
+    # Start tune run
     analysis = tune.run(
         resume_training,
         resources_per_trial=resources_per_trial,
