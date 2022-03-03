@@ -38,7 +38,7 @@ def main():
             "model": tune.grid_search([
                 {
                     "model_class": NeuralNetworkModel.__name__,
-                    "num_epochs": 400,
+                    "num_epochs": 500,
                     "lr": 1e-5,
                     "batch_size": 32,
                     "optimizer": "adam",
@@ -48,7 +48,7 @@ def main():
                 },
                 {
                     "model_class": NeuralNetworkModel.__name__,
-                    "num_epochs": 400,
+                    "num_epochs": 500,
                     "lr": 1e-5,
                     "batch_size": 32,
                     "optimizer": "adam",
@@ -58,7 +58,7 @@ def main():
                 },
                 {
                     "model_class": NeuralNetworkModel.__name__,
-                    "num_epochs": 400,
+                    "num_epochs": 500,
                     "lr": 1e-5,
                     "batch_size": 32,
                     "optimizer": "adam",
@@ -68,17 +68,17 @@ def main():
                 },
                 {
                     "model_class": NeuralNetworkModel.__name__,
-                    "num_epochs": 400,
+                    "num_epochs": 500,
                     "lr": 1e-3,
                     "batch_size": 32,
                     "optimizer": "adam",
                     "layer_sizes": [1024],
                     "dropout_sizes": [None],
-                    "scale": True,
+                    "scale": False,
                 },
                 {
                     "model_class": NeuralNetworkModel.__name__,
-                    "num_epochs": 400,
+                    "num_epochs": 500,
                     "lr": 1e-3,
                     "batch_size": 32,
                     "optimizer": "adam",
@@ -88,7 +88,7 @@ def main():
                 },
                 {
                     "model_class": NeuralNetworkModel.__name__,
-                    "num_epochs": 400,
+                    "num_epochs": 500,
                     "lr": 1e-3,
                     "batch_size": 32,
                     "optimizer": "adam",
