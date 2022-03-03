@@ -58,13 +58,11 @@ model = BRNN(
 X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
 
 subprocess.run(
-        ["git", "commit", "-a", str(DATA_DIR / "brnn.pth"), "-m", f"Model_Epoch{0}"],
-        capture_output=True, text=True
+    ["git", "commit", "-a", str(DATA_DIR / "brnn.pth"), "-m", f"Model_Epoch{0}"],
+    capture_output=True,
+    text=True,
 )
-subprocess.run(
-        ["git", "push"],
-        capture_output=True, text=True
-)
+subprocess.run(["git", "push"], capture_output=True, text=True)
 
 
 for e in range(100):
@@ -74,5 +72,11 @@ for e in range(100):
     print(metrics)
     if (e % 9) == 0:
         torch.save(model, (DATA_DIR / "brnn.pth"))
+        subprocess.run(
+            ["git", "commit", "-a", str(DATA_DIR / "brnn.pth"), "-m", f"Model_Epoch{e}"],
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(["git", "push"], capture_output=True, text=True)
 
 torch.save(model, (DATA_DIR / "brnn.pth"))
