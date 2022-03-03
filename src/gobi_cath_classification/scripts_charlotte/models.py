@@ -92,12 +92,14 @@ class NeuralNetworkModel(ModelInterface):
         lr: float,
         class_names: List[str],
         layer_sizes: List[int],
+        dropout_sizes: List[Optional[float]],
         batch_size: int,
         optimizer: str,
         class_weights: torch.Tensor,
         rng: np.random.RandomState,
         random_seed: int = 42,
     ):
+        assert len(layer_sizes) == len(dropout_sizes)
         self.device = torch_utils.get_device()
 
         self.random_seed = random_seed
@@ -117,6 +119,13 @@ class NeuralNetworkModel(ModelInterface):
                     out_features=layer_sizes[i + 1],
                 ),
             )
+            if dropout_sizes[i] is not None:
+                model.add_module(
+                    f"Dropout_{i}",
+                    nn.Dropout(
+                        p=dropout_sizes[i],
+                    ),
+                )
             model.add_module(f"ReLU_{i}", nn.ReLU())
 
         model.add_module(
@@ -125,6 +134,13 @@ class NeuralNetworkModel(ModelInterface):
                 self.device
             ),
         )
+        if dropout_sizes[-1] is not None:
+            model.add_module(
+                f"Dropout_{len(dropout_sizes)-1}",
+                nn.Dropout(
+                    p=dropout_sizes[-1],
+                ),
+            )
 
         model.add_module("Softmax", nn.Softmax())
         self.model = model.to(self.device)

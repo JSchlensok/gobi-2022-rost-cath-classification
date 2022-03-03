@@ -71,6 +71,7 @@ def training_function(config: dict) -> None:
             lr=config["model"]["lr"],
             class_names=class_names,
             layer_sizes=config["model"]["layer_sizes"],
+            dropout_sizes=config["model"]["dropout_sizes"],
             batch_size=config["model"]["batch_size"],
             optimizer=config["model"]["optimizer"],
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,

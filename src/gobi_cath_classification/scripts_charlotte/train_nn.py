@@ -3,10 +3,8 @@ import torch
 from ray import tune
 
 from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
-    DistanceModel,
 )
 from gobi_cath_classification.pipeline.train_eval import (
     training_function,
@@ -46,12 +44,8 @@ def main():
                 "lr": tune.grid_search([1e-5, 1e-4, 1e-3]),
                 "batch_size": 32,
                 "optimizer": tune.choice(["adam"]),
-                "layer_sizes": tune.choice(
-                    [
-                        [1024],
-                        [1024, 1024],
-                    ]
-                ),
+                "layer_sizes": [1024, 1024],
+                "dropout_sizes": [0.2, None]
             },
         },
         progress_reporter=reporter,
