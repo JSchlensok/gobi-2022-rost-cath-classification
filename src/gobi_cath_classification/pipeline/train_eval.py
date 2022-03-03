@@ -40,7 +40,8 @@ def training_function(config: dict) -> None:
         shuffle_data=True,
         reloading_allowed=True,
     )
-    dataset.scale()
+    if config["model"]["scale"] == True:
+        dataset.scale()
 
     embeddings_train, y_train_labels = dataset.get_split(split="train", zipped=False)
     embeddings_train_tensor = torch.tensor(embeddings_train)
@@ -187,13 +188,8 @@ def main():
                         "lr": tune.choice([1e-2, 1e-3, 1e-4, 1e-5, 1e-6]),
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
-                        "layer_sizes": tune.choice(
-                            [
-                                [1024],
-                                [1024, 128],
-                                [1024, 256],
-                            ]
-                        ),
+                        "layer_sizes": [1024, 2048],
+                        "dropout_sizes": [0.2, None]
                     },
                     {
                         "model_class": GaussianNaiveBayesModel.__name__,
