@@ -45,22 +45,22 @@ dataset = load_data(
 )
 
 sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
-class_weights = torch.tensor(compute_class_weights(labels=dataset.y_train))
+class_weights = torch.tensor(np.sqrt(compute_class_weights(labels=dataset.y_train)))
 class_names = dataset.train_labels
 
 model = BRNN(
-    hidden_size=512,
+    hidden_size=1024,
     num_layers=1,
     class_names=class_names,
     class_weights=class_weights,
-    lr=1e-3,
+    lr=1e-4,
     batch_size=32,
 )
 X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
 X_val, y_val = dataset.get_split("val", x_encoding="string", zipped=False)
 
 for e in range(100):
-    metrics = model.train_one_epoch(X_train, y_train_labels, report_progress=False)
+    metrics = model.train_one_epoch(X_train, y_train_labels, report_progress=True)
     print(f"Epoch {e + 1}")
     print(f"Avg Loss {metrics['loss_avg']}")
     print(metrics)

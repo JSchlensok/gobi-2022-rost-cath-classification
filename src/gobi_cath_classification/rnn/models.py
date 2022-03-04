@@ -138,7 +138,7 @@ class BRNN(nn.Module):
             num_categories, hidden_size, num_layers, bidirectional=True, batch_first=True
         ).to(self.device)
         self.fc = nn.Linear(hidden_size * 2, len(class_names)).to(self.device)
-        self.sigmoid = nn.Sigmoid()
+        self.ReLU = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
@@ -150,9 +150,10 @@ class BRNN(nn.Module):
         h0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
         c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
         out, _ = self.lstm(x, (h0, c0))
-        out_forward = out[:, -1, : self.hidden_size]
-        out_backward = out[:, 0, self.hidden_size :]
-        out = self.fc(torch.cat((out_forward, out_backward), dim=1))
+        out_forward = out[:, -1, :self.hidden_size]
+        out_backward = out[:, 0, self.hidden_size:]
+        out = self.ReLU(torch.cat((out_forward, out_backward), dim=1))
+        out = self.fc(out)
         out = self.softmax(out)
 
         return out
