@@ -5,7 +5,7 @@ import torch
 # Import functionalities from different packages in the directory
 from gobi_cath_classification.pipeline.model_interface import ModelInterface
 from gobi_cath_classification.pipeline.torch_utils import get_device
-from models import SupportVectorMachine
+from .models import SupportVectorMachine
 
 
 class TestSupportVectorMachine:

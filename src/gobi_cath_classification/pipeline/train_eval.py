@@ -1,8 +1,11 @@
-import numpy as np
 import ray
-import torch
-from ray import tune
 import uuid
+import torch
+import platform
+import numpy as np
+from ray import tune
+from ray.tune import trial
+
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.sample_weights import (
