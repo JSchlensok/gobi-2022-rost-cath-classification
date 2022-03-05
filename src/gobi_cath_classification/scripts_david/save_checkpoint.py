@@ -236,7 +236,7 @@ def load_results(unique_ID: uuid):
             if line.__contains__(" -:- "):
                 eval_dict[line.split(" -:- ")[0]] = line.split(" -:- ")[1]
     resultfile.close()
-    return eval_dict, Decimal(eval_dict["accuracy_avg"])
+    return eval_dict, Decimal(eval_dict["accuracy_avg"]), Decimal(eval_dict["accuracy_h"])
 
 
 def load_model(unique_ID: uuid):

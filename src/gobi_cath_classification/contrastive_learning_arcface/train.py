@@ -38,7 +38,7 @@ def train(num_epochs: int):
     )
     device = get_device()
     model = FNN().to(device)
-    
+
     # TODO tune fnn_optimizer parameters
     fnn_optimizer = torch.optim.Adam(model.parameters(), lr=10e-4, weight_decay=10e-4)
     loss_optimizer = torch.optim.Adam(criterion.parameters(), lr=10e-4, weight_decay=10e-4)
