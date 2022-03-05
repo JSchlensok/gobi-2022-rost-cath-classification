@@ -1,13 +1,14 @@
-import random
-from dataclasses import dataclass
-from pathlib import Path
 from collections import Counter
-from typing import Dict, List, Tuple
-
-import h5py
+from copy import deepcopy
+from dataclasses import dataclass
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from pathlib import Path
+from typing import List, Tuple, Dict
+
+from gobi_cath_classification.pipeline.utils import CATHLabel
+from gobi_cath_classification.pipeline.data import Dataset
+import gobi_cath_classification.pipeline.data.data_loading as new
 
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
@@ -15,6 +16,10 @@ DATA_DIR = REPO_ROOT_DIR / "data"
 
 @dataclass
 class DataSplits:
+    """
+    Interface to new data.Dataset class for compatibility
+    """
+
     X_train: np.ndarray
     y_train: List[str]
     X_val: np.ndarray
@@ -22,6 +27,17 @@ class DataSplits:
     X_test: np.ndarray
     y_test: List[str]
     all_labels_train_sorted: List[str]
+
+    def __post_init__(self):
+        self._dataset = Dataset(
+            self.X_train,
+            [CATHLabel(label) for label in self.y_train],
+            [CATHLabel(label) for label in self.all_labels_train_sorted],
+            self.X_val,
+            [CATHLabel(label) for label in self.y_val],
+            self.X_test,
+            [CATHLabel(label) for label in self.y_test],
+        )
 
     def get_shape(self):
         return (
@@ -49,17 +65,14 @@ class DataSplits:
             instance with that label in the training set. In other words, we remove all
             sequences that have a label that does not occur in the training set.
         """
-        validation_set = self._get_filtered_set_for_level(
-            X=self.X_val, y=self.y_val, cath_level=cath_level
-        )
-        return validation_set
+        assert cath_level in ["C", "A", "T", "H"]
+        return self._dataset.get_filtered_version(cath_level).get_split("val")
 
-    def get_filtered_test_set_for_level(self, cath_level: str) -> Tuple[np.ndarray, List[str]]:
-
-        test_set = self._get_filtered_set_for_level(
-            X=self.X_val, y=self.y_val, cath_level=cath_level
-        )
-        return test_set
+    def get_filtered_test_set_for_level(
+        self, cath_level: str
+    ) -> Tuple[np.ndarray, List[CATHLabel]]:
+        assert cath_level in ["C", "A", "T", "H"]
+        return self._dataset.get_filtered_version(cath_level).get_split("test")
 
     def _get_filtered_set_for_level(
         self, X: np.ndarray, y: List[str], cath_level: str = "T"
@@ -68,29 +81,15 @@ class DataSplits:
         if cath_level not in ["C", "A", "T", "H"]:
             raise ValueError(f"Invalid CATH level: {cath_level}")
 
-        X_filtered = []
-        y_filtered = []
-
-        training_labels_set = [
-            label_for_level(label=label, cath_level=cath_level)
-            for label in self.all_labels_train_sorted
+        valid_labels = [label[cath_level] for label in self._dataset.train_labels]
+        filtered_data = [
+            [embedding, label]
+            for embedding, label in zip(X, y)
+            if CATHLabel(label)[cath_level] in valid_labels
         ]
+        X, y = zip(*filtered_data)
 
-        for index in range(len(y)):
-            label_prefix = label_for_level(label=y[index], cath_level=cath_level)
-            if label_prefix in training_labels_set:
-                X_filtered.append(X[index])
-                y_filtered.append(y[index])
-
-        return np.array(X_filtered), y_filtered
-
-    def get_index_for_label(self, label: str) -> int:
-        index = self.all_labels_train_sorted.index(label)
-        return index
-
-    def get_label_for_index(self, index: int) -> str:
-        label = self.all_labels_train_sorted[index]
-        return label
+        return X, y
 
     def shuffled(
         self, rng: np.random.RandomState, shuffle_train=True, shuffle_val=True, shuffle_test=True
@@ -101,33 +100,28 @@ class DataSplits:
         and/or shuffled test set.
 
         """
+        shuffled_data = deepcopy(self._dataset)
+        shuffled_data.shuffle(rng)
+        if not shuffle_train:
+            shuffled_data.X_train = self._dataset.X_train
+            shuffled_data.y_train = self._dataset.y_train
 
-        # shuffler for training set
-        if shuffle_train:
-            shuffler_train = rng.permutation(len(self.X_train))
-        else:
-            shuffler_train = list(range(len(self.X_train)))
+        if not shuffle_val:
+            shuffled_data.X_val = self._dataset.X_val
+            shuffled_data.y_val = self._dataset.y_val
 
-        # shuffler for validation set
-        if shuffle_val:
-            shuffler_val = rng.permutation(len(self.X_val))
-        else:
-            shuffler_val = list(range(len(self.X_val)))
-
-        # shuffler for test set
-        if shuffle_test:
-            shuffler_test = rng.permutation(len(self.X_test))
-        else:
-            shuffler_test = list(range(len(self.X_test)))
+        if not shuffle_test:
+            shuffled_data.X_test = self._dataset.X_test
+            shuffled_data.y_test = self._dataset.y_test
 
         return DataSplits(
-            X_train=self.X_train[shuffler_train],
-            y_train=[self.y_train[a] for a in shuffler_train],
-            X_val=self.X_val[shuffler_val],
-            y_val=[self.y_val[a] for a in shuffler_val],
-            X_test=self.X_test[shuffler_test],
-            y_test=[self.y_test[a] for a in shuffler_test],
-            all_labels_train_sorted=self.all_labels_train_sorted,
+            shuffled_data.X_train,
+            [str(label) for label in shuffled_data.y_train],
+            shuffled_data.X_val,
+            [str(label) for label in shuffled_data.y_val],
+            shuffled_data.X_test,
+            [str(label) for label in shuffled_data.y_test],
+            [str(label) for label in shuffled_data.train_labels],
         )
 
 
@@ -141,45 +135,15 @@ def label_for_level(label: str, cath_level: str) -> str:
         Input: label_for_level(label="3.250.40.265", cath_level="A")
         Output: "3.250"
     """
-    check_if_cath_level_is_valid(cath_level=cath_level)
-
-    level = "CATH".index(cath_level)
-    label_for_level = ".".join(label.split(".")[: level + 1])
-
-    return label_for_level
-
-
-def check_if_cath_level_is_valid(cath_level: str):
-    if cath_level not in ["C", "A", "T", "H"]:
-        raise ValueError(f"Invalid CATH level: {cath_level}")
+    return str(CATHLabel(label)[cath_level])
 
 
 def read_in_sequences(path_to_file: Path) -> Dict[str, str]:
-    id2seq = {}
-    tmp_id = ""
-
-    for line in open(path_to_file, "r"):
-        if line.startswith(">"):
-            tmp_id = line.replace(">", "").rstrip()
-            # tmp_id = line.split("|")[-1].split("/")[0]
-
-        elif not line.startswith("#"):
-            tmp_seq = line.rstrip()
-            id2seq[tmp_id] = tmp_seq
-
-    return id2seq
+    return new.read_in_sequences(path_to_file)
 
 
 def read_in_embeddings(path_to_file: Path) -> Dict[str, np.ndarray]:
-    id2embedding = {}
-    h5_file = h5py.File(path_to_file)
-
-    for key, value in h5_file.items():
-        protein_id = key.split("|")[-1].split("_")[0]
-        values = value[()]
-        id2embedding[protein_id] = values
-
-    return id2embedding
+    return new.read_in_embeddings(path_to_file)
 
 
 def read_in_labels(path_to_file: Path) -> Dict[str, str]:
@@ -227,7 +191,7 @@ def load_data(
     id2seqs_val = read_in_sequences(path_sequences_val)
     id2seqs_test = read_in_sequences(path_sequences_test)
 
-    id2seqs_all = merge_two_dicts(id2seqs_train, merge_two_dicts(id2seqs_val, id2seqs_test))
+    id2seqs_all = {**id2seqs_train, **id2seqs_val, **id2seqs_test}
     print(f"len(id2seqs_train) = {len(id2seqs_train)}")
     print(f"len(id2seqs_val) = {len(id2seqs_val)}")
     print(f"len(id2seqs_test) = {len(id2seqs_test)}")
@@ -278,37 +242,21 @@ def load_data(
 
     dataset = DataSplits(
         X_train=np.array([embeddings[cath_id] for cath_id in id2seqs_train.keys()]),
-        y_train=[id2label[cath_id] for cath_id in id2seqs_train.keys()],
+        y_train=[str(id2label[cath_id]) for cath_id in id2seqs_train.keys()],
         X_val=np.array([embeddings[cath_id] for cath_id in id2seqs_val.keys()]),
-        y_val=[id2label[cath_id] for cath_id in id2seqs_val.keys()],
+        y_val=[str(id2label[cath_id]) for cath_id in id2seqs_val.keys()],
         X_test=np.array([embeddings[cath_id] for cath_id in id2seqs_test.keys()]),
-        y_test=[id2label[cath_id] for cath_id in id2seqs_test.keys()],
+        y_test=[str(id2label[cath_id]) for cath_id in id2seqs_test.keys()],
         all_labels_train_sorted=sorted(list(set([id2label[k] for k in id2seqs_train.keys()]))),
     )
 
     if shuffle_data:
-        return dataset.shuffled(rng=rng)
+        return dataset.shuffled(rng)
     else:
         return dataset
 
 
 def scale_dataset(dataset: DataSplits):
     print("Scaling data ...")
-    scaler = StandardScaler()
-    scaler.fit(X=dataset.X_train)
-    return DataSplits(
-        X_train=scaler.transform(dataset.X_train),
-        y_train=dataset.y_train,
-        X_val=scaler.transform(dataset.X_val),
-        y_val=dataset.y_val,
-        X_test=scaler.transform(dataset.X_test),
-        y_test=dataset.y_test,
-        all_labels_train_sorted=dataset.all_labels_train_sorted,
-    )
-
-
-def merge_two_dicts(x: dict, y: dict) -> dict:
-    """Given two dictionaries, merge them into a new dict as a shallow copy."""
-    z = x.copy()
-    z.update(y)
-    return z
+    dataset._dataset.scale()
+    return dataset

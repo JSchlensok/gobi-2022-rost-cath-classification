@@ -1,5 +1,8 @@
+import math
+import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
+from typing_extensions import Literal
 
 import numpy as np
 import pandas as pd
@@ -39,11 +42,13 @@ class RandomForestModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
+        model_specific_metrics = {}
+        return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
-        predictions = self.model.predict(X=embeddings)
+        predictions = self.model.predict_proba(X=embeddings)
         df = pd.DataFrame(data=predictions, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
@@ -64,12 +69,14 @@ class GaussianNaiveBayesModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
+        model_specific_metrics = {}
+        return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
-        predictions = self.model.predict(X=embeddings)
-        df = pd.DataFrame(data=predictions, columns=self.model.classes_)
+        predictions_proba = self.model.predict_proba(X=embeddings)
+        df = pd.DataFrame(data=predictions_proba, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
@@ -137,7 +144,7 @@ class NeuralNetworkModel(ModelInterface):
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
 
         permutation = torch.randperm(len(embeddings_tensor))
         X = embeddings_tensor.to(self.device)
@@ -145,6 +152,7 @@ class NeuralNetworkModel(ModelInterface):
             self.device
         )
         y_one_hot = 1.0 * one_hot(y_indices, num_classes=len(self.class_names))
+        loss_sum = 0
 
         for i in range(0, len(embeddings), self.batch_size):
             self.optimizer.zero_grad()
@@ -153,12 +161,65 @@ class NeuralNetworkModel(ModelInterface):
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
             loss = self.loss_function(y_pred, batch_y)
+            loss_sum += loss
             loss.backward()
             self.optimizer.step()
 
+        loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
+        model_specific_metrics = {"loss_avg": loss_avg}
+        return model_specific_metrics
+
     def predict(self, embeddings: np.ndarray) -> Prediction:
         predicted_probabilities = self.model(torch.from_numpy(embeddings).float().to(self.device))
-        df = pd.DataFrame(predicted_probabilities, columns=self.class_names).astype("float")
+        df = pd.DataFrame(
+            predicted_probabilities, columns=[str(label) for label in self.class_names]
+        ).astype("float")
+        return Prediction(probabilities=df)
+
+    def save_checkpoint(self, save_to_dir: Path):
+        raise NotImplementedError
+
+    def load_model_from_checkpoint(self, load_from_dir: Path):
+        raise NotImplementedError
+
+
+class DistanceModel(ModelInterface):
+    def __init__(
+        self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int
+    ):
+        self.device = torch_utils.get_device()
+        self.X_train_tensor = torch.tensor(embeddings).to(self.device)
+        self.y_train = labels
+        self.class_names = sorted(list(set([str(cn) for cn in class_names])))
+        if distance_ord < 0:
+            raise ValueError(f"Distance order must be >= 0, but it is: {distance_ord}")
+        self.distance_ord = distance_ord
+
+    def train_one_epoch(
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
+    ) -> Dict[str, float]:
+        return {}
+
+    def predict(self, embeddings: np.ndarray) -> Prediction:
+        emb_tensor = torch.tensor(embeddings).to(self.device)
+        pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08).to(self.device)
+
+        distances = [
+            [pdist(emb, emb_lookup) for emb_lookup in self.X_train_tensor] for emb in emb_tensor
+        ]
+        distances = np.array(torch.tensor(distances).cpu())
+
+        pred_labels = np.array([self.y_train[i] for i in np.argmin(distances, axis=1)])
+        pred_indices = [self.class_names.index(label) for label in pred_labels]
+        pred = np.zeros(shape=(len(embeddings), len(self.class_names)))
+        for row, index in enumerate(pred_indices):
+            pred[row, index] = 1
+
+        df = pd.DataFrame(data=pred, columns=self.class_names)
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):

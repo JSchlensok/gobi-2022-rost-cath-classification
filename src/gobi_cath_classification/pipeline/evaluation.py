@@ -1,28 +1,29 @@
 from typing import List, Dict
+from typing_extensions import Literal
 
 from sklearn.metrics import accuracy_score
+from .utils import CATHLabel
 
-from gobi_cath_classification.pipeline.data_loading import (
-    check_if_cath_level_is_valid,
-    label_for_level,
-)
 from gobi_cath_classification.pipeline.model_interface import Prediction
 
 
 def accuracy_for_level(
-    y_true: List[str], y_pred: List[str], class_names_training: List[str], cath_level: str
+    y_true: List[CATHLabel],
+    y_pred: List[str],
+    class_names_training: List[CATHLabel],
+    cath_level: Literal["C", "A", "T", "H"],
 ) -> float:
     """
 
-    Calculates accuracy according to a given cath level.
+    Calculates accuracy according to a given CATH level.
 
     Args:
         y_true:
-            List of labels (List[str]): groundtruth
+            List of labels (List[str]): ground truth
         y_pred:
             List of labels (List[str]): prediction
         class_names_training:
-            Alphabetically sorted list of all labels, that occured in trainning
+            Alphabetically sorted list of all labels that occured in training
         cath_level:
             0 for 'C' in 'CATH'
             1 for 'A' in 'CATH'
@@ -34,15 +35,11 @@ def accuracy_for_level(
 
     """
 
-    check_if_cath_level_is_valid(cath_level=cath_level)
+    class_names_for_level = list(set([label[cath_level] for label in class_names_training]))
+    y_true_for_level = [label[cath_level] for label in y_true]
+    y_pred_for_level = [CATHLabel(label)[cath_level] for label in y_pred]
 
-    class_names_for_level = list(
-        set([label_for_level(label=label, cath_level=cath_level) for label in class_names_training])
-    )
-    y_true_for_level = [label_for_level(label=label, cath_level=cath_level) for label in y_true]
-    y_pred_for_level = [label_for_level(label=label, cath_level=cath_level) for label in y_pred]
-
-    # delete all entries where the groundtruth label does not occur in training class names.
+    # delete all entries where the ground truth label does not occur in training class names.
     n = len(y_true_for_level) - 1
     for i in range(n, -1, -1):
         if y_true_for_level[i] not in class_names_for_level:
@@ -51,11 +48,14 @@ def accuracy_for_level(
 
     assert len(y_true_for_level) == len(y_pred_for_level)
 
-    return accuracy_score(y_true=y_true_for_level, y_pred=y_pred_for_level)
+    return accuracy_score(
+        y_true=[str(label) for label in y_true_for_level],
+        y_pred=[str(label) for label in y_pred_for_level],
+    )
 
 
 def evaluate(
-    y_true: List[str], y_pred: Prediction, class_names_training: List[str]
+    y_true: List[CATHLabel], y_pred: Prediction, class_names_training: List[CATHLabel]
 ) -> Dict[str, float]:
     y_proba = y_pred.probabilities
     y_labels = y_pred.argmax_labels()

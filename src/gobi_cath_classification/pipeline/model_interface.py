@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import numpy as np
 import pandas as pd
@@ -23,13 +24,14 @@ class Prediction:
 
 
 class ModelInterface:
+    @abstractmethod
     def train_one_epoch(
         self,
         embeddings: np.ndarray,
         embeddings_tensor: torch.Tensor,
         labels: List[str],
         sample_weights: Optional[np.ndarray],
-    ) -> None:
+    ) -> Dict[str, float]:
         """
         Trains the model.
 
@@ -43,10 +45,11 @@ class ModelInterface:
                 one-hot-encoded labels
             sample_weights:
                 1D array with sample weights, shape (number of embeddings)
-
+        Returns:
+            dictionary with model-specific metrics
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def predict(self, embeddings: np.ndarray) -> Prediction:
         """
         Predicts probabilities for the CATH superfamily labels.
@@ -59,20 +62,19 @@ class ModelInterface:
             Pandas DataFrame with shape (number of embeddings, number of classes) of
             probabilities. Each column corresponds to one CATH superfamily.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def save_checkpoint(self, save_to_dir: Path):
         """
 
         Save a checkpoint to given directory.
 
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def load_model_from_checkpoint(self, load_from_dir: Path):
         """
 
         Load model from given checkpoint file(s),
 
         """
-        raise NotImplementedError

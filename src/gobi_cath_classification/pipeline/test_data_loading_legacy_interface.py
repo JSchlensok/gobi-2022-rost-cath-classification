@@ -1,9 +1,6 @@
 import numpy as np
 
-from gobi_cath_classification.pipeline.data_loading import (
-    DataSplits,
-    label_for_level,
-)
+from ..pipeline.data_loading import DataSplits, label_for_level
 
 
 def test_label_for_level():
