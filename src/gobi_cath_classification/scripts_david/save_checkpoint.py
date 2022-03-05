@@ -18,10 +18,11 @@ from gobi_cath_classification.scripts_david.models import (
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
+
 def save_model_configuration(
-        model_class: str,
-        unique_ID: uuid,
-        dict_config: dict,
+    model_class: str,
+    unique_ID: uuid,
+    dict_config: dict,
 ):
     ########################################################################################
     # FUNCTION NAME     : save_model_configuration()
@@ -46,9 +47,11 @@ def save_model_configuration(
     # Create and open the file
     checkpoint_file = open(file_path, "w")
     # Write the file header
-    checkpoint_file.write(f"CHECKPOINT FILE - SAVED CONFIGURATION\nConfiguration for : {model_class}\nCreated on: "
-                          f"{datetime.datetime.now()}\nDo not alter the structure of this file to ensure no disturbance"
-                          f" in program flow while reading in the checkpoint!\n--->>><<<---\n")
+    checkpoint_file.write(
+        f"CHECKPOINT FILE - SAVED CONFIGURATION\nConfiguration for : {model_class}\nCreated on: "
+        f"{datetime.datetime.now()}\nDo not alter the structure of this file to ensure no disturbance"
+        f" in program flow while reading in the checkpoint!\n--->>><<<---\n"
+    )
     # Write the given configuration into the file
     for parameter in dict_config:
         checkpoint_file.write(f"{parameter} -:- {dict_config[parameter]}\n")
@@ -56,11 +59,12 @@ def save_model_configuration(
     checkpoint_file.write("--->>><<<---")
     checkpoint_file.close()
 
+
 def save_model_results(
-        model_class: str,
-        unique_ID: uuid,
-        eval_dict: dict,
-        epoch: int,
+    model_class: str,
+    unique_ID: uuid,
+    eval_dict: dict,
+    epoch: int,
 ):
     ########################################################################################
     # FUNCTION NAME     : save_model_results()
@@ -87,19 +91,22 @@ def save_model_results(
     # Create and open the file
     checkpoint_file = open(file_name, "w")
     # Write the file header
-    checkpoint_file.write(f"RESULT FILE\nResults for : {model_class}\nCreated on: "
-                          f"{datetime.datetime.now()}\n\nSaved on Epoch - {str(epoch)}\n")
+    checkpoint_file.write(
+        f"RESULT FILE\nResults for : {model_class}\nCreated on: "
+        f"{datetime.datetime.now()}\n\nSaved on Epoch - {str(epoch)}\n"
+    )
     # Write the given configuration into the file
     for result in eval_dict:
         checkpoint_file.write(f"{result} -:- {eval_dict[result]}\n")
     # close the file
     checkpoint_file.close()
 
+
 def save_model(
-        model,
-        model_class: str,
-        unique_ID: uuid,
-        epoch: int,
+    model,
+    model_class: str,
+    unique_ID: uuid,
+    epoch: int,
 ):
     ########################################################################################
     # FUNCTION NAME     : save_model()
@@ -138,9 +145,8 @@ def save_model(
     else:
         raise ValueError(f"Model class {model_class} does not exist and can not be saved.")
 
-def load_configuration(
-        unique_ID: uuid
-):
+
+def load_configuration(unique_ID: uuid):
     ########################################################################################
     # FUNCTION NAME     : load_model()
     # INPUT PARAMETERS  : unique_ID: uuid
@@ -161,7 +167,9 @@ def load_configuration(
     if myDirectory is None:
         raise ValueError("Unique Key could not be found")
     # Find the correct model file
-    allFilesInDirectory = [file for file in listdir(f"{str(directory)}\\model checkpoints\\{myDirectory}")]
+    allFilesInDirectory = [
+        file for file in listdir(f"{str(directory)}\\model checkpoints\\{myDirectory}")
+    ]
     modelConfiguration = None
     for file in allFilesInDirectory:
         if str(file).__contains__(f"Model Configuration"):
@@ -169,25 +177,26 @@ def load_configuration(
     if modelConfiguration is None:
         raise ValueError("Assigned folder does not contain a configuration file")
     # Return the configuration
-    configurationfile = open(f"{str(directory)}\\model checkpoints\\{myDirectory}\\{modelConfiguration}", "r")
+    configurationfile = open(
+        f"{str(directory)}\\model checkpoints\\{myDirectory}\\{modelConfiguration}", "r"
+    )
     configurationcontent = configurationfile.read()
     config_lines = configurationcontent.split("--->>><<<---")[1].split("\n")
     config_dict = {}
     for line in config_lines:
         if line != "":
-            if re.match(r"model -:- .*",line):
+            if re.match(r"model -:- .*", line):
                 model_dict = line.split("{")[1].split("}")[0].split(", '")
                 for config in model_dict:
-                    config = config.replace("'","")
+                    config = config.replace("'", "")
                     config_dict[config.split(": ")[0]] = config.split(": ")[1]
             else:
                 config_dict[line.split(" -:- ")[0]] = line.split(" -:- ")[1]
     configurationfile.close()
-    return(config_dict)
+    return config_dict
 
-def load_results(
-        unique_ID: uuid
-):
+
+def load_results(unique_ID: uuid):
     ########################################################################################
     # FUNCTION NAME     : load_results()
     # INPUT PARAMETERS  : unique_ID: uuid
@@ -208,7 +217,9 @@ def load_results(
     if myDirectory is None:
         raise ValueError("Unique Key could not be found")
     # Find the correct model file
-    allFilesInDirectory = [file for file in listdir(f"{str(directory)}\\model checkpoints\\{myDirectory}")]
+    allFilesInDirectory = [
+        file for file in listdir(f"{str(directory)}\\model checkpoints\\{myDirectory}")
+    ]
     modelResults = None
     for file in allFilesInDirectory:
         if str(file).__contains__(f"Model Results"):
@@ -227,9 +238,8 @@ def load_results(
     resultfile.close()
     return eval_dict, Decimal(eval_dict["accuracy_avg"])
 
-def load_model(
-        unique_ID: uuid
-):
+
+def load_model(unique_ID: uuid):
     ########################################################################################
     # FUNCTION NAME     : load_model()
     # INPUT PARAMETERS  : unique_ID: uuid
@@ -250,7 +260,9 @@ def load_model(
     if myDirectory is None:
         raise ValueError("Unique Key could not be found")
     # Find the correct model file
-    allFilesInDirectory = [file for file in listdir(f"{str(directory)}\\model checkpoints\\{myDirectory}")]
+    allFilesInDirectory = [
+        file for file in listdir(f"{str(directory)}\\model checkpoints\\{myDirectory}")
+    ]
     myModelFile = None
     highest_epoch = -1
     for file in allFilesInDirectory:
@@ -261,12 +273,14 @@ def load_model(
     if myModelFile is None:
         raise ValueError("Assigned folder does not contain a checkpoint file")
     # Return the model and the current epoch
-    return torch.load(f"{directory}\\model checkpoints\\{myDirectory}\\{myModelFile}"), int(highest_epoch), unique_ID
+    return (
+        torch.load(f"{directory}\\model checkpoints\\{myDirectory}\\{myModelFile}"),
+        int(highest_epoch),
+        unique_ID,
+    )
 
-def remove_files(
-        filetype: str,
-        unique_ID: uuid
-):
+
+def remove_files(filetype: str, unique_ID: uuid):
     ########################################################################################
     # FUNCTION NAME     : remove_files()
     # INPUT PARAMETERS  : filetype: str, unique_ID: uuid
@@ -287,7 +301,9 @@ def remove_files(
     if myDirectory is None:
         raise ValueError("Unique Key could not be found")
     # Find the correct model file
-    allFilesInDirectory = [file for file in listdir(f"{str(directory)}\\model checkpoints\\{myDirectory}")]
+    allFilesInDirectory = [
+        file for file in listdir(f"{str(directory)}\\model checkpoints\\{myDirectory}")
+    ]
     for file in allFilesInDirectory:
         if str(file).__contains__(f"{filetype}"):
             os.remove(f"{str(directory)}\\model checkpoints\\{myDirectory}\\{str(file)}")

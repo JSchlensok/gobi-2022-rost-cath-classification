@@ -3,9 +3,8 @@ import torch
 from ray import tune
 
 from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.train_eval import (
-    resume_training
-)
+from gobi_cath_classification.pipeline.train_eval import resume_training
+
 
 def main():
     ########################################################################################

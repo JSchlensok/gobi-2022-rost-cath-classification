@@ -6,7 +6,6 @@ import numpy as np
 from ray import tune
 from ray.tune import trial
 
-
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
@@ -142,12 +141,11 @@ def training_function(config: dict) -> None:
             highest_avg_accuracy = eval_dict["accuracy_avg"]
             # UPDATE - David Mauder 01.03.2022
             # Attempting to save the current model state after one training epoch
-            save_model(model=model,
-                       model_class=model_class,
-                       unique_ID=index_uniqueID,
-                       epoch=epoch)
+            save_model(model=model, model_class=model_class, unique_ID=index_uniqueID, epoch=epoch)
             # Attempting to save the current model results after evaluation
-            save_model_results(model_class=model_class, unique_ID=index_uniqueID, eval_dict=eval_dict, epoch=epoch)
+            save_model_results(
+                model_class=model_class, unique_ID=index_uniqueID, eval_dict=eval_dict, epoch=epoch
+            )
 
 
 def resume_training(config: dict) -> None:
@@ -203,7 +201,9 @@ def resume_training(config: dict) -> None:
     model, epoch, uniqueID = load_model(unique_ID=unique_ID)
     eval_dict, avg_accuracy = load_results(unique_ID=unique_ID)
     tune.report(**eval_dict)
-    print(f"unique ID: {uniqueID}, model: {model}, epoch: {epoch}, avg-accuracy {avg_accuracy}, eval-dict:\n{eval_dict}")
+    print(
+        f"unique ID: {uniqueID}, model: {model}, epoch: {epoch}, avg-accuracy {avg_accuracy}, eval-dict:\n{eval_dict}"
+    )
 
     embeddings_train = data_set.X_train
     embeddings_train_tensor = torch.tensor(embeddings_train)
@@ -237,12 +237,11 @@ def resume_training(config: dict) -> None:
             avg_accuracy = eval_dict["accuracy_avg"]
             # UPDATE - David Mauder 01.03.2022
             # Attempting to save the current model state after one training epoch
-            save_model(model=model,
-                       model_class=model_class,
-                       unique_ID=uniqueID,
-                       epoch=epoch)
+            save_model(model=model, model_class=model_class, unique_ID=uniqueID, epoch=epoch)
             # Attempting to save the current model results after evaluation
-            save_model_results(model_class=model_class, unique_ID=uniqueID, eval_dict=eval_dict, epoch=epoch)
+            save_model_results(
+                model_class=model_class, unique_ID=uniqueID, eval_dict=eval_dict, epoch=epoch
+            )
 
 
 def main():

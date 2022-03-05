@@ -2,21 +2,61 @@ import numpy as np
 from Bio import SeqIO
 import Parameters
 
-class prepareData():
+
+class prepareData:
     def __init__(self):
-        self.DATA_HOME = 'data/'
+        self.DATA_HOME = "data/"
 
         self.window_size = Parameters.window_size
         self.sequenceLength = Parameters.sequence_length
-        self.coding = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F',
-        'P', 'S', 'T', 'W', 'Y', 'V']
-        self.aaVal = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                           1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-
+        self.coding = [
+            "A",
+            "R",
+            "N",
+            "D",
+            "C",
+            "Q",
+            "E",
+            "G",
+            "H",
+            "I",
+            "L",
+            "K",
+            "M",
+            "F",
+            "P",
+            "S",
+            "T",
+            "W",
+            "Y",
+            "V",
+        ]
+        self.aaVal = [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+        ]
 
     def read_fasta(self, path):
 
-        seq_record = list(SeqIO.parse(path, 'fasta'))
+        seq_record = list(SeqIO.parse(path, "fasta"))
         coding_record = []
         protein_names = []
         for record in seq_record:
@@ -31,13 +71,12 @@ class prepareData():
             coding_record.append(coding)
         return coding_record, protein_names
 
-
-
     def genertateMat(self, path):
-        coding_record, protein_names  = self.read_fasta(path)
-        wside = (self.window_size - 1)/2
+        coding_record, protein_names = self.read_fasta(path)
+        wside = (self.window_size - 1) / 2
         mats = np.asarray(
-            np.zeros([len(coding_record), self.sequenceLength, 20*self.window_size]))
+            np.zeros([len(coding_record), self.sequenceLength, 20 * self.window_size])
+        )
         index = 0
 
         for seq in coding_record:
@@ -45,32 +84,23 @@ class prepareData():
             seqLength = len(seq)
             if seqLength > self.sequenceLength:
                 seqLength = self.sequenceLength
-            #else:
+            # else:
             #    x = 'shorter than ' + str(seqLength)
 
-            inputVector= np.zeros([self.sequenceLength, len(self.coding)*self.window_size])
+            inputVector = np.zeros([self.sequenceLength, len(self.coding) * self.window_size])
             for i in range(seqLength):
                 starti = i - wside
                 for j in range(self.window_size):
                     iter = starti + j
-                    if (iter < 0 or iter >= seqLength):
+                    if iter < 0 or iter >= seqLength:
                         continue
                     aaCharPos = seq[iter]
-                    inputVector[i][j*len(self.coding)+aaCharPos] = self.aaVal[aaCharPos]
+                    inputVector[i][j * len(self.coding) + aaCharPos] = self.aaVal[aaCharPos]
 
             mats[index] = inputVector
             index = index + 1
 
         return mats, protein_names
-
-
-
-
-
-
-
-
-
 
     def generateInputData(self, args):
         pos_train_mat, pos_train_names = self.genertateMat(args.pos_train_dir)
@@ -89,7 +119,6 @@ class prepareData():
         test_names = pos_test_names
         return (train_mat, train_label, test_mat, test_label, test_names)
 
-
     def generateTestingSamples(self, args):
 
         pos_test_mat, pos_test_names = self.genertateMat(args.pos_test_dir)
@@ -104,8 +133,3 @@ class prepareData():
         pos_test_names.extend(neg_test_names)
         test_names = pos_test_names
         return (test_mat, test_label, test_names)
-
-
-
-
-
