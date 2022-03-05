@@ -90,7 +90,3 @@ Werkzeug==2.0.3
 wrapt==1.13.3
 yarl==1.7.2
 zipp==3.7.0
-typing~=3.7.4.3
-sklearn~=0.0
-pathlib~=1.0.1
-tensorflow~=2.1.0
