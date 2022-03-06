@@ -129,7 +129,6 @@ def save_model_results(
 #         raise ValueError(f"Model class {model_class} does not exist and can not be saved.")
 
 
-
 def load_configuration(unique_ID: uuid, directory: Path):
     ########################################################################################
     # FUNCTION NAME     : load_model()
@@ -148,9 +147,7 @@ def load_configuration(unique_ID: uuid, directory: Path):
     if modelConfiguration is None:
         raise ValueError("Assigned folder does not contain a configuration file")
     # Return the configuration
-    configurationfile = open(
-        directory / modelConfiguration, "r"
-    )
+    configurationfile = open(directory / modelConfiguration, "r")
     configurationcontent = configurationfile.read()
     config_lines = configurationcontent.split("--->>><<<---")[1].split("\n")
     config_dict = {}

@@ -258,7 +258,9 @@ def main():
                 [
                     {
                         # unique_ID_dir = Path from within "model checkpoints" folder to model
-                        "unique_ID_dir": Path("2022-03-06-23-11-26-522867/GaussianNaiveBayesModel 240b9462-e290-4f63-b077-c4ea831dd294"),
+                        "unique_ID_dir": Path(
+                            "2022-03-06-23-11-26-522867/GaussianNaiveBayesModel 240b9462-e290-4f63-b077-c4ea831dd294"
+                        ),
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
