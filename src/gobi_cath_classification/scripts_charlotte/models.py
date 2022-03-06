@@ -151,7 +151,9 @@ class NeuralNetworkModel(ModelInterface):
         if optimizer == "sgd":
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         elif optimizer == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
+            self.optimizer = torch.optim.Adam(
+                self.model.parameters(), lr=lr, weight_decay=weight_decay
+            )
         else:
             raise ValueError(f"Optimizer is not valid: {optimizer}")
 
@@ -198,6 +200,45 @@ class NeuralNetworkModel(ModelInterface):
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
         raise NotImplementedError
+
+
+def hierarchical_loss(
+    y_pred: torch.Tensor,
+    y_true: torch.Tensor,
+    labels: List[str],
+    weights: np.ndarray,
+    loss_function,
+) -> float:
+    loss = 0
+    for i, level in enumerate(["C", "A", "T", "H"]):
+        pred = _get_predictions_for_level(cath_level=level, y_pred=y_pred, labels=labels)
+        true = _get_predictions_for_level(cath_level=level, y_pred=y_true, labels=labels)
+        loss += weights[i] * loss_function(pred, true)
+    return loss
+
+
+def _get_predictions_for_level(
+    cath_level: Literal["C", "A", "T", "H"], y_pred: torch.Tensor, labels: List[str]
+) -> torch.Tensor:
+    level = "CATH".index(cath_level)
+    new_preds = []
+
+    for pred in y_pred:
+        prev_label = ".".join(labels[0].split(".")[: level + 1])
+        new_pred = []
+        p_level = 0
+        for i, p in enumerate(pred):
+            if labels[i].startswith(prev_label):
+                p_level += p
+            else:
+                new_pred.append(p_level)
+                p_level = p
+                prev_label = ".".join(labels[i].split(".")[: level + 1])
+
+        new_pred.append(p_level)
+        new_preds.append(new_pred)
+
+    return torch.tensor(new_preds)
 
 
 class DistanceModel(ModelInterface):
