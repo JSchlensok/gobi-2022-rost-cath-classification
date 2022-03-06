@@ -1,5 +1,7 @@
 import math
 import sys
+import uuid
+
 from pathlib import Path
 from typing import List, Optional, Dict
 from typing_extensions import Literal
@@ -52,8 +54,9 @@ class RandomForestModel(ModelInterface):
         df = pd.DataFrame(data=predictions, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
+    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+        torch.save(self, str(save_to_dir))
+        print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {save_to_dir}")
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
         raise NotImplementedError
@@ -79,8 +82,9 @@ class GaussianNaiveBayesModel(ModelInterface):
         df = pd.DataFrame(data=predictions_proba, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
+    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+        torch.save(self, str(save_to_dir))
+        print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {save_to_dir}")
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
         raise NotImplementedError
@@ -176,8 +180,9 @@ class NeuralNetworkModel(ModelInterface):
         ).astype("float")
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
+    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+        torch.save(self.model, str(save_to_dir))
+        print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {save_to_dir}")
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
         raise NotImplementedError
@@ -222,8 +227,9 @@ class DistanceModel(ModelInterface):
         df = pd.DataFrame(data=pred, columns=self.class_names)
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
+    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+        torch.save(self, str(save_to_dir))
+        print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {save_to_dir}")
 
     def load_model_from_checkpoint(self, load_from_dir: Path):
         raise NotImplementedError
