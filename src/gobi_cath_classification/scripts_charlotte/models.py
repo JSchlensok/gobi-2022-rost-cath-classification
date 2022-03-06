@@ -98,6 +98,7 @@ class NeuralNetworkModel(ModelInterface):
         class_weights: torch.Tensor,
         rng: np.random.RandomState,
         random_seed: int = 42,
+        weight_decay: float = 0.0,
     ):
         assert len(layer_sizes) == len(dropout_sizes)
         self.device = torch_utils.get_device()
@@ -142,7 +143,7 @@ class NeuralNetworkModel(ModelInterface):
                 ),
             )
 
-        model.add_module("Softmax", nn.Softmax())
+        # model.add_module("Softmax", nn.Softmax())
         self.model = model.to(self.device)
         self.loss_function = torch.nn.CrossEntropyLoss(
             weight=class_weights.to(self.device) if class_weights is not None else None,
@@ -150,7 +151,7 @@ class NeuralNetworkModel(ModelInterface):
         if optimizer == "sgd":
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         elif optimizer == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         else:
             raise ValueError(f"Optimizer is not valid: {optimizer}")
 
