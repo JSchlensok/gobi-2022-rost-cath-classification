@@ -45,7 +45,7 @@ dataset = load_data(
 )
 
 sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
-class_weights = torch.tensor(np.sqrt(compute_class_weights(labels=dataset.y_train)))
+class_weights = torch.tensor(compute_class_weights(labels=dataset.y_train))
 class_names = dataset.train_labels
 
 model = BRNN(
@@ -53,7 +53,7 @@ model = BRNN(
     num_layers=1,
     class_names=class_names,
     class_weights=class_weights,
-    lr=1e-4,
+    lr=1e-3,
     batch_size=32,
 )
 X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)

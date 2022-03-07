@@ -152,7 +152,7 @@ class BRNN(nn.Module):
         out, _ = self.lstm(x, (h0, c0))
         out_forward = out[:, -1, :self.hidden_size]
         out_backward = out[:, 0, self.hidden_size:]
-        out = self.ReLU(torch.cat((out_forward, out_backward), dim=1))
+        out = torch.cat((out_forward, out_backward), dim=1)
         out = self.fc(out)
         out = self.softmax(out)
 
@@ -191,7 +191,6 @@ class BRNN(nn.Module):
                 print(f"\t\t{i + self.batch_size}/{len(sequences)} done")
             counter += 1
 
-        print(y_pred)
         loss_avg = float(loss_sum / (math.ceil(len(sequences) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
         return model_specific_metrics
