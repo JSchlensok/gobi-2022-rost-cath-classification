@@ -108,9 +108,9 @@ def main():
             "class_weights": tune.choice(["inverse"]),
             "model": {
                 "model_class": BRNN.__name__,
-                "num_epochs": 2,
-                "lr": tune.choice([0.01, 0.001, 0.0001]),
-                "batch_size": tune.choice([32, 64]),
+                "num_epochs": 60,
+                "lr": tune.grid_search([0.01, 0.001, 0.0001]),
+                "batch_size": tune.grid_search([32, 64]),
                 "optimizer": tune.choice(["adam"]),
                 "hidden_dim": tune.grid_search([1024]),
                 "num_layers": 1,
