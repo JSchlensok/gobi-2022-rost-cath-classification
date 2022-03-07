@@ -1,6 +1,8 @@
 import math
+import sys
 from pathlib import Path
 from typing import List, Optional, Dict
+from typing_extensions import Literal
 
 import numpy as np
 import pandas as pd
@@ -46,7 +48,7 @@ class RandomForestModel(ModelInterface):
         return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
-        predictions = self.model.predict(X=embeddings)
+        predictions = self.model.predict_proba(X=embeddings)
         df = pd.DataFrame(data=predictions, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
@@ -172,6 +174,52 @@ class NeuralNetworkModel(ModelInterface):
         df = pd.DataFrame(
             predicted_probabilities, columns=[str(label) for label in self.class_names]
         ).astype("float")
+        return Prediction(probabilities=df)
+
+    def save_checkpoint(self, save_to_dir: Path):
+        raise NotImplementedError
+
+    def load_model_from_checkpoint(self, load_from_dir: Path):
+        raise NotImplementedError
+
+
+class DistanceModel(ModelInterface):
+    def __init__(
+        self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int
+    ):
+        self.device = torch_utils.get_device()
+        self.X_train_tensor = torch.tensor(embeddings).to(self.device)
+        self.y_train = labels
+        self.class_names = sorted(list(set([str(cn) for cn in class_names])))
+        if distance_ord < 0:
+            raise ValueError(f"Distance order must be >= 0, but it is: {distance_ord}")
+        self.distance_ord = distance_ord
+
+    def train_one_epoch(
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
+    ) -> Dict[str, float]:
+        return {}
+
+    def predict(self, embeddings: np.ndarray) -> Prediction:
+        emb_tensor = torch.tensor(embeddings).to(self.device)
+        pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08).to(self.device)
+
+        distances = [
+            [pdist(emb, emb_lookup) for emb_lookup in self.X_train_tensor] for emb in emb_tensor
+        ]
+        distances = np.array(torch.tensor(distances).cpu())
+
+        pred_labels = np.array([self.y_train[i] for i in np.argmin(distances, axis=1)])
+        pred_indices = [self.class_names.index(label) for label in pred_labels]
+        pred = np.zeros(shape=(len(embeddings), len(self.class_names)))
+        for row, index in enumerate(pred_indices):
+            pred[row, index] = 1
+
+        df = pd.DataFrame(data=pred, columns=self.class_names)
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):

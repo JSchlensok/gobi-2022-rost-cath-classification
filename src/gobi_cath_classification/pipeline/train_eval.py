@@ -11,7 +11,7 @@ from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
     compute_class_weights,
 )
-from gobi_cath_classification.pipeline.data import Dataset, load_data, DATA_DIR
+from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
@@ -19,6 +19,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     RandomForestModel,
     NeuralNetworkModel,
     GaussianNaiveBayesModel,
+    DistanceModel,
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
@@ -41,7 +42,7 @@ def training_function(config: dict) -> None:
     )
     dataset.scale()
 
-    embeddings_train, y_train_labels = dataset.get_split("train", as_tensors=False, zipped=False)
+    embeddings_train, y_train_labels = dataset.get_split(split="train", zipped=False)
     embeddings_train_tensor = torch.tensor(embeddings_train)
     class_names = dataset.train_labels
 
@@ -49,9 +50,8 @@ def training_function(config: dict) -> None:
 
     # get hyperparameters from config dict
     print(f"config = {config}")
-
-    num_epochs = config["model"]["num_epochs"]
     model_class = config["model"]["model_class"]
+    num_epochs = config["model"]["num_epochs"] if "num_epochs" in config["model"].keys() else 1
 
     if config["class_weights"] == "none":
         sample_weights = None
@@ -83,6 +83,14 @@ def training_function(config: dict) -> None:
 
     elif model_class == GaussianNaiveBayesModel.__name__:
         model = GaussianNaiveBayesModel()
+
+    elif model_class == DistanceModel.__name__:
+        model = DistanceModel(
+            class_names=class_names,
+            embeddings=dataset.X_train,
+            labels=[str(y) for y in dataset.y_train],
+            distance_ord=config["model"]["distance_order"],
+        )
 
     elif model_class == SupportVectorMachine.__name__:
         model = SupportVectorMachine(
