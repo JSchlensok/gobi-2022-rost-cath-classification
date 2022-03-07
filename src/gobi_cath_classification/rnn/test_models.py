@@ -49,11 +49,11 @@ class_weights = torch.tensor(compute_class_weights(labels=dataset.y_train))
 class_names = dataset.train_labels
 
 model = BRNN(
-    hidden_size=1024,
+    hidden_size=1600,
     num_layers=1,
     class_names=class_names,
     class_weights=class_weights,
-    lr=1e-3,
+    lr=1e-4,
     batch_size=32,
 )
 X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
