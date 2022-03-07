@@ -40,7 +40,7 @@ def training_function(config: dict) -> None:
         shuffle_data=True,
         reloading_allowed=True,
     )
-    if config["model"]["scale"] == True:
+    if config["model"]["scale"]:
         dataset.scale()
 
     embeddings_train, y_train_labels = dataset.get_split(split="train", zipped=False)
@@ -189,7 +189,7 @@ def main():
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
                         "layer_sizes": [1024, 2048],
-                        "dropout_sizes": [0.2, None]
+                        "dropout_sizes": [0.2, None],
                     },
                     {
                         "model_class": GaussianNaiveBayesModel.__name__,

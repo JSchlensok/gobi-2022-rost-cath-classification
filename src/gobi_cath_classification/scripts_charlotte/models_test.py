@@ -32,6 +32,7 @@ class TestNeuralNetwork:
             NeuralNetworkModel(
                 lr=0.1,
                 layer_sizes=[num_features],
+                dropout_sizes=[None],
                 class_names=class_names,
                 class_weights=torch.Tensor(np.array([0.5, 1, 0.3])),
                 batch_size=32,
