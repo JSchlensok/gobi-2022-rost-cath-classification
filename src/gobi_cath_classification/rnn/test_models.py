@@ -66,7 +66,9 @@ for e in range(100):
     print(metrics)
     if (e % 9) == 0:
         torch.save(model, (DATA_DIR / "brnn.pth"))
-    y_pred = model.predict(X_val)
-    print(evaluate(y_val, y_pred, class_names))
+    torch.cuda.empty_cache()
+    with torch.evaluate():
+        y_pred = model.predict(X_val)
+        print(evaluate(y_val, y_pred, class_names))
 
 torch.save(model, (DATA_DIR / "brnn.pth"))
