@@ -1,5 +1,7 @@
 import datetime
 import os
+from os import listdir
+
 from pathlib import Path
 
 import ray
@@ -27,8 +29,6 @@ from gobi_cath_classification.scripts_charlotte.models import (
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 from gobi_cath_classification.scripts_david.save_checkpoint import (
-    save_model_configuration,
-    save_model_results,
     load_configuration,
     load_results,
     load_model,
@@ -37,21 +37,31 @@ from gobi_cath_classification.scripts_david.save_checkpoint import (
 
 
 def training_function(config: dict) -> None:
-    if "unique_ID_dir" in config["model"].keys():
-        resume_training = True
-        unique_ID = str(config["model"]["unique_ID_dir"]).split("/")[-1].split(" ")[-1]
-        print(f"Attempting to resume training for ID {unique_ID}...")
-        print("Reading in configuration...")
-        path_to_model = REPO_ROOT_DIR / "model checkpoints" / config["model"]["unique_ID_dir"]
+    checkpoint_dir = os.getcwd()
+    print(f"checkpoint_dir = {checkpoint_dir}")
 
-        config = load_configuration(
-            unique_ID=unique_ID,
-            directory=path_to_model,
-        )
+    if "unique_ID" in config["model"].keys():
+        resume_training = True
+        unique_ID = config["model"]["unique_ID"]
+        print(f"Attempting to resume training for ID {unique_ID}...")
+        # TODO iterate over all (sub-)directories in (REPO_ROOT_DIR / "model checkpoints") and find
+        #  directory which contains unique_ID in name
+        #  geht wsl. auch eleganter, so funktionierts aber erstmal..
+        for dir in listdir(REPO_ROOT_DIR / "model checkpoints"):
+            if not dir.startswith("."):
+                for sub_dir in listdir(REPO_ROOT_DIR / "model checkpoints" / dir):
+                    if str(sub_dir).startswith(str(unique_ID)):
+                        path_to_model = REPO_ROOT_DIR / "model checkpoints" / dir / sub_dir
+                        print(f"Reading in configuration from {path_to_model}")
+                        config = load_configuration(
+                            directory=path_to_model,
+                        )
     else:
         resume_training = False
         # Create a unique ID to later identify the model later
         unique_ID = uuid.uuid4()
+        # TODO extract unique_ID from checkpoint_dir, set by ray tune, maybe like this:
+        unique_ID = "_".join(str(checkpoint_dir).split("/")[-1].split("_")[:5])
         print(f"CURRENT MODEL'S ASSIGNED UNIQUE ID - {unique_ID}")
 
     # set random seeds
@@ -137,15 +147,10 @@ def training_function(config: dict) -> None:
     n_bad = 0
     n_thresh = 20
 
-    # create checkpoint directory
-    checkpoint_dir = config["checkpoint_dir"] / f"{model_class} {unique_ID}"
-    if not os.path.isdir(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
-
     if resume_training:
         print("Reading in model and previous results...")
-        model, epoch = load_model(unique_ID=unique_ID, directory=checkpoint_dir)
-        eval_dict, highest_h_accuracy = load_results(unique_ID=unique_ID, directory=path_to_model)
+        model, epoch = load_model(directory=path_to_model)
+        eval_dict, highest_h_accuracy = load_results(directory=path_to_model)
         tune.report(**eval_dict)
         print(
             f"unique ID: {unique_ID}, model: {model}, epoch: {epoch}, h-accuracy {highest_h_accuracy}, eval-dict:\n{eval_dict}"
@@ -154,12 +159,6 @@ def training_function(config: dict) -> None:
 
     else:
         print(f"Training model {model.__class__.__name__}...")
-        # Save the model configuration before running training
-        save_model_configuration(
-            model_class=model_class,
-            dict_config=config,
-            directory_path=checkpoint_dir,
-        )
 
     for epoch in range(num_epochs):
         model_metrics_dict = model.train_one_epoch(
@@ -181,27 +180,19 @@ def training_function(config: dict) -> None:
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
         # Save the model if the average accuracy has risen during the last epoch and check for early stopping
-        acc_h = eval_dict["accuracy_h"]
-        if acc_h > highest_acc_h:
-            highest_acc_h = acc_h
+        if eval_dict["accuracy_h"] > highest_acc_h:
+            highest_acc_h = eval_dict["accuracy_h"]
             n_bad = 0
             print(f"New best performance found: accuracy_h = {highest_acc_h}")
 
-            remove_files(filetype="Model Checkpoint", unique_ID=unique_ID, directory=checkpoint_dir)
+            remove_files(filetype="Model Checkpoint", directory=checkpoint_dir)
             print(f"Attempting to save {model_class} as intermediate checkpoint...")
             model.save_checkpoint(
                 save_to_dir=checkpoint_dir,
                 filename=f"{model_class} Model Checkpoint - Epoch {epoch}.pt",
-                unique_ID=unique_ID,
                 epoch=epoch,
             )
-            save_model_results(
-                model_class=model_class,
-                unique_ID=unique_ID,
-                eval_dict=eval_dict,
-                epoch=epoch,
-                directory_path=checkpoint_dir,
-            )
+
         else:
             n_bad += 1
             if n_bad >= n_thresh:
@@ -238,9 +229,7 @@ def main():
     )
 
     # create checkpoint directory
-    time = str(datetime.datetime.now()).replace(" ", "-").replace(":", "-").replace(".", "-")
-    checkpoint_dir = REPO_ROOT_DIR / "model checkpoints" / time
-
+    checkpoint_dir = REPO_ROOT_DIR / "model checkpoints"
     if not os.path.isdir(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -248,20 +237,15 @@ def main():
     analysis = tune.run(
         training_function,
         trial_dirname_creator=trial_dirname_creator,
+        local_dir=checkpoint_dir,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "checkpoint_dir": checkpoint_dir,
             "random_seed": RANDOM_SEED,
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
             "model": tune.grid_search(
                 [
-                    {
-                        # unique_ID_dir = Path from within "model checkpoints" folder to model
-                        "unique_ID_dir": Path(
-                            "2022-03-06-23-11-26-522867/GaussianNaiveBayesModel 240b9462-e290-4f63-b077-c4ea831dd294"
-                        ),
-                    },
+                    {"unique_ID": "training_function_79c3c_00000_0"},
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 100,

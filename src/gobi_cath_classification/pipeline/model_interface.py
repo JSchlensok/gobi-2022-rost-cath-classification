@@ -65,7 +65,7 @@ class ModelInterface:
         """
 
     @abstractmethod
-    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+    def save_checkpoint(self, epoch: int, save_to_dir: Path, filename: str):
         """
 
         Save a checkpoint to given directory.
