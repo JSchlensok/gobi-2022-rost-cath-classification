@@ -1,3 +1,7 @@
+import datetime
+import os
+from pathlib import Path
+
 import ray
 import uuid
 import torch
@@ -11,7 +15,7 @@ from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
     compute_class_weights,
 )
-from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
+from gobi_cath_classification.pipeline.data import load_data, DATA_DIR, REPO_ROOT_DIR
 
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
@@ -25,14 +29,31 @@ from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 from gobi_cath_classification.scripts_david.save_checkpoint import (
     save_model_configuration,
     save_model_results,
-    save_model,
     load_configuration,
     load_results,
     load_model,
+    remove_files,
 )
 
 
 def training_function(config: dict) -> None:
+    if "unique_ID_dir" in config["model"].keys():
+        resume_training = True
+        unique_ID = str(config["model"]["unique_ID_dir"]).split("/")[-1].split(" ")[-1]
+        print(f"Attempting to resume training for ID {unique_ID}...")
+        print("Reading in configuration...")
+        path_to_model = REPO_ROOT_DIR / "model checkpoints" / config["model"]["unique_ID_dir"]
+
+        config = load_configuration(
+            unique_ID=unique_ID,
+            directory=path_to_model,
+        )
+    else:
+        resume_training = False
+        # Create a unique ID to later identify the model later
+        unique_ID = uuid.uuid4()
+        print(f"CURRENT MODEL'S ASSIGNED UNIQUE ID - {unique_ID}")
+
     # set random seeds
     random_seed = config["random_seed"]
     set_random_seeds(seed=random_seed)
@@ -113,21 +134,32 @@ def training_function(config: dict) -> None:
 
     # set variables for early stopping
     highest_acc_h = 0
-    highest_acc_avg = 0
     n_bad = 0
     n_thresh = 20
 
-    # Create a unique ID to later identify the model later
-    index_uniqueID = uuid.uuid4()
-    print(f"CURRENT MODEL'S ASSIGNED UNIQUE ID - {index_uniqueID}")
+    # create checkpoint directory
+    checkpoint_dir = config["checkpoint_dir"] / f"{model_class} {unique_ID}"
+    if not os.path.isdir(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
 
-    print(f"Training model {model.__class__.__name__}...")
+    if resume_training:
+        print("Reading in model and previous results...")
+        model, epoch = load_model(unique_ID=unique_ID, directory=checkpoint_dir)
+        eval_dict, highest_h_accuracy = load_results(unique_ID=unique_ID, directory=path_to_model)
+        tune.report(**eval_dict)
+        print(
+            f"unique ID: {unique_ID}, model: {model}, epoch: {epoch}, h-accuracy {highest_h_accuracy}, eval-dict:\n{eval_dict}"
+        )
+        print(f"Resuming training on model {model.__class__.__name__}...")
 
-    # Make eval_dict available outside the for loop
-    eval_dict = None
-
-    # Save the model configuration before running training
-    save_model_configuration(model_class=model_class, unique_ID=index_uniqueID, dict_config=config)
+    else:
+        print(f"Training model {model.__class__.__name__}...")
+        # Save the model configuration before running training
+        save_model_configuration(
+            model_class=model_class,
+            dict_config=config,
+            directory_path=checkpoint_dir,
+        )
 
     for epoch in range(num_epochs):
         model_metrics_dict = model.train_one_epoch(
@@ -148,23 +180,28 @@ def training_function(config: dict) -> None:
         )
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
-        # Save the model if the average accuracy has risen during the last epoch
-        if eval_dict["accuracy_avg"] > highest_acc_avg:
-            highest_acc_avg = eval_dict["accuracy_avg"]
-            # UPDATE - David Mauder 01.03.2022
-            # Attempting to save the current model state after one training epoch
-            save_model(model=model, model_class=model_class, unique_ID=index_uniqueID, epoch=epoch)
-            # Attempting to save the current model results after evaluation
-            save_model_results(
-                model_class=model_class, unique_ID=index_uniqueID, eval_dict=eval_dict, epoch=epoch
-            )
-
-        # check for early stopping
+        # Save the model if the average accuracy has risen during the last epoch and check for early stopping
         acc_h = eval_dict["accuracy_h"]
         if acc_h > highest_acc_h:
             highest_acc_h = acc_h
             n_bad = 0
             print(f"New best performance found: accuracy_h = {highest_acc_h}")
+
+            remove_files(filetype="Model Checkpoint", unique_ID=unique_ID, directory=checkpoint_dir)
+            print(f"Attempting to save {model_class} as intermediate checkpoint...")
+            model.save_checkpoint(
+                save_to_dir=checkpoint_dir,
+                filename=f"{model_class} Model Checkpoint - Epoch {epoch}.pt",
+                unique_ID=unique_ID,
+                epoch=epoch,
+            )
+            save_model_results(
+                model_class=model_class,
+                unique_ID=unique_ID,
+                eval_dict=eval_dict,
+                epoch=epoch,
+                directory_path=checkpoint_dir,
+            )
         else:
             n_bad += 1
             if n_bad >= n_thresh:
@@ -185,118 +222,6 @@ def trial_dirname_creator(trial: trial.Trial) -> str:
         return trial_dirname
 
 
-def resume_training(config: dict) -> None:
-    ########################################################################################
-    # FUNCTION NAME     : resume_training()
-    # INPUT PARAMETERS  : config: dict
-    # OUTPUT PARAMETERS : none
-    # DESCRIPTION       : resumes training of a previously saved model state
-    # AUTHOR            : D. Mauder
-    # CREATE DATE       : 03.03.2022
-    # UPDATE            : ---
-    ########################################################################################
-    unique_ID = config["unique_ID"]
-    print(f"Attempting to resume training for ID {unique_ID}...")
-    print("Reading in configuration...")
-    config = load_configuration(unique_ID=unique_ID)
-
-    # set random seeds
-    random_seed = int(config["random_seed"].strip())
-    set_random_seeds(seed=random_seed)
-    rng = np.random.RandomState(random_seed)
-    print(f"rng = {rng}")
-
-    # load data
-    data_dir = DATA_DIR
-    dataset = load_data(
-        data_dir=data_dir,
-        rng=rng,
-        without_duplicates=True,
-        shuffle_data=True,
-        reloading_allowed=True,
-    )
-    dataset.scale()
-
-    embeddings_train, y_train_labels = dataset.get_split(split="train", zipped=False)
-    embeddings_train_tensor = torch.tensor(embeddings_train)
-    class_names = dataset.train_labels
-
-    print(f"len(class_names = {len(class_names)}")
-
-    # get hyperparameters from config dict
-    print(f"config = {config}")
-    model_class = config["model_class"]
-    num_epochs = int(config["num_epochs"].strip()) if "num_epochs" in config.keys() else 1
-
-    if config["class_weights"] == "none":
-        sample_weights = None
-        class_weights = None
-    elif config["class_weights"] == "inverse":
-        sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
-        class_weights = compute_class_weights(labels=dataset.y_train)
-    elif config["class_weights"] == "sqrt_inverse":
-        sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
-        class_weights = np.sqrt(compute_class_weights(labels=dataset.y_train))
-    else:
-        raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
-
-    print("Reading in model and previous results...")
-    model, epoch, uniqueID = load_model(unique_ID=unique_ID)
-    eval_dict, highest_acc_avg, highest_acc_h = load_results(unique_ID=unique_ID)
-    tune.report(**eval_dict)
-    print(
-        f"unique ID: {uniqueID}, model: {model}, epoch: {epoch}, avg-accuracy {highest_acc_avg}, eval-dict:\n{eval_dict}"
-    )
-
-    print(f"Resuming training on model {model.__class__.__name__}...")
-
-    # set variables for early stopping
-    n_bad = 0
-    n_thresh = 20
-
-    for epoch in range(num_epochs):
-        model_metrics_dict = model.train_one_epoch(
-            embeddings=embeddings_train,
-            embeddings_tensor=embeddings_train_tensor,
-            labels=[str(label) for label in y_train_labels],
-            sample_weights=sample_weights if sample_weights is not None else None,
-        )
-
-        print(f"Predicting for X_val with model {model.__class__.__name__}...")
-        y_pred_val = model.predict(embeddings=dataset.X_val)
-
-        # evaluate and save results in ray tune
-        eval_dict = evaluate(
-            y_true=dataset.y_val,
-            y_pred=y_pred_val,
-            class_names_training=dataset.train_labels,
-        )
-        tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
-
-        # Save the model if the accuracy has risen during the last epoch
-        # if eval_dict["accuracy_avg"] > highest_acc_avg:
-        if eval_dict["accuracy_h"] > highest_acc_h:
-            # highest_acc_avg = eval_dict["accuracy_avg"]
-            # UPDATE - David Mauder 01.03.2022
-            # Attempting to save the current model state after one training epoch
-            save_model(model=model, model_class=model_class, unique_ID=unique_ID, epoch=epoch)
-            # Attempting to save the current model results after evaluation
-            save_model_results(
-                model_class=model_class, unique_ID=unique_ID, eval_dict=eval_dict, epoch=epoch
-            )
-
-        # check for early stopping
-        acc_h = eval_dict["accuracy_h"]
-        if acc_h > highest_acc_h:
-            highest_acc_h = acc_h
-            n_bad = 0
-            print(f"New best performance found: accuracy_h = {highest_acc_h}")
-        else:
-            n_bad += 1
-            if n_bad >= n_thresh:
-                break
-
-
 def main():
     print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
     device = torch_utils.get_device()
@@ -312,6 +237,13 @@ def main():
         infer_limit=10,
     )
 
+    # create checkpoint directory
+    time = str(datetime.datetime.now()).replace(" ", "-").replace(":", "-").replace(".", "-")
+    checkpoint_dir = REPO_ROOT_DIR / "model checkpoints" / time
+
+    if not os.path.isdir(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+
     ray.init()
     analysis = tune.run(
         training_function,
@@ -319,10 +251,17 @@ def main():
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
+            "checkpoint_dir": checkpoint_dir,
             "random_seed": RANDOM_SEED,
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
             "model": tune.grid_search(
                 [
+                    {
+                        # unique_ID_dir = Path from within "model checkpoints" folder to model
+                        "unique_ID_dir": Path(
+                            "2022-03-06-23-11-26-522867/GaussianNaiveBayesModel 240b9462-e290-4f63-b077-c4ea831dd294"
+                        ),
+                    },
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 100,

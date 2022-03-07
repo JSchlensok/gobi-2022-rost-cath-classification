@@ -1,3 +1,4 @@
+import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Dict
@@ -64,7 +65,7 @@ class ModelInterface:
         """
 
     @abstractmethod
-    def save_checkpoint(self, save_to_dir: Path):
+    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
         """
 
         Save a checkpoint to given directory.
