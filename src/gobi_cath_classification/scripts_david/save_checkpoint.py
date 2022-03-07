@@ -11,83 +11,9 @@ from decimal import *
 import torch
 
 # Import own classes needed in this script
-from gobi_cath_classification.scripts_david.models import (
-    RandomForestModel,
-    NeuralNetworkModel,
-    GaussianNaiveBayesModel,
-)
-from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
 
-def save_model_configuration(
-    model_class: str,
-    dict_config: dict,
-    directory_path: Path,
-):
-    ########################################################################################
-    # FUNCTION NAME     : save_model_configuration()
-    # INPUT PARAMETERS  : model_class: str, unique_ID: uuid, dict_config: dict,
-    # OUTPUT PARAMETERS : none
-    # DESCRIPTION       : Saves the configuration of a model into a file
-    # AUTHOR            : D. Mauder
-    # CREATE DATE       : 03.03.2022
-    # UPDATE            : ---
-    ########################################################################################
-    # TODO macht ray schon
-    # Direct the filepath into the model checkpoint folder and append the file name
-    file_path = directory_path / f"{model_class} Model Configuration"
-    # Create and open the file
-    checkpoint_file = open(file_path, "w")
-    # Write the file header
-    checkpoint_file.write(
-        f"CHECKPOINT FILE - SAVED CONFIGURATION\nConfiguration for : {model_class}\nCreated on: "
-        f"{datetime.datetime.now()}\nDo not alter the structure of this file to ensure no disturbance"
-        f" in program flow while reading in the checkpoint!\n--->>><<<---\n"
-    )
-    # Write the given configuration into the file
-    for parameter in dict_config:
-        checkpoint_file.write(f"{parameter} -:- {dict_config[parameter]}\n")
-    # Write footer and close the file
-    checkpoint_file.write("--->>><<<---")
-    checkpoint_file.close()
-
-
-def save_model_results(
-    model_class: str,
-    unique_ID: uuid,
-    eval_dict: dict,
-    epoch: int,
-    directory_path: Path,
-):
-    ########################################################################################
-    # FUNCTION NAME     : save_model_results()
-    # INPUT PARAMETERS  : model_class: str, unique_ID: uuid, eval_dict: dict,
-    # OUTPUT PARAMETERS : none
-    # DESCRIPTION       : Saves the results of a model after training
-    # AUTHOR            : D. Mauder
-    # CREATE DATE       : 02.03.2022
-    # UPDATE            : ---
-    ########################################################################################
-    # TODO macht ray schon
-    # Remove all previous checkpoints
-    remove_files(filetype="Model Results", unique_ID=unique_ID, directory=directory_path)
-    # Direct the filepath into the model checkpoint folder and append the file name
-    file_name = directory_path / f"{model_class} Model Results - Epoch {epoch}.rs"
-    # Create and open the file
-    checkpoint_file = open(file_name, "w")
-    # Write the file header
-    checkpoint_file.write(
-        f"RESULT FILE\nResults for : {model_class}\nCreated on: "
-        f"{datetime.datetime.now()}\n\nSaved on Epoch - {str(epoch)}\n"
-    )
-    # Write the given configuration into the file
-    for result in eval_dict:
-        checkpoint_file.write(f"{result} -:- {eval_dict[result]}\n")
-    # close the file
-    checkpoint_file.close()
-
-
-def load_configuration(unique_ID: uuid, directory: Path):
+def load_configuration(directory: Path) -> dict:
     ########################################################################################
     # FUNCTION NAME     : load_model()
     # INPUT PARAMETERS  : unique_ID: uuid
@@ -97,7 +23,7 @@ def load_configuration(unique_ID: uuid, directory: Path):
     # CREATE DATE       : 02.03.2022
     # UPDATE            : ---
     ########################################################################################
-    # TODO json.load()
+    # TODO: use json.load() to load config dict from params.json
     modelConfiguration = None
     for file in listdir(str(directory)):
         if str(file).__contains__(f"Model Configuration"):
@@ -122,7 +48,7 @@ def load_configuration(unique_ID: uuid, directory: Path):
     return config_dict
 
 
-def load_results(unique_ID: uuid, directory: Path):
+def load_results(directory: Path):
     ########################################################################################
     # FUNCTION NAME     : load_results()
     # INPUT PARAMETERS  : unique_ID: uuid
@@ -132,6 +58,8 @@ def load_results(unique_ID: uuid, directory: Path):
     # CREATE DATE       : 02.03.2022
     # UPDATE            : ---
     ########################################################################################
+    # TODO: use json.load() to load results dict from result.json and maybe iterate over dict
+    #  to get the highest accuracy and the according epoch.
     modelResults = None
     for file in listdir(str(directory)):
         if str(file).__contains__(f"Model Results"):
@@ -151,7 +79,7 @@ def load_results(unique_ID: uuid, directory: Path):
     return eval_dict, Decimal(eval_dict["accuracy_h"])
 
 
-def load_model(unique_ID: uuid, directory: Path):
+def load_model(directory: Path):
     ########################################################################################
     # FUNCTION NAME     : load_model()
     # INPUT PARAMETERS  : unique_ID: uuid
@@ -177,7 +105,7 @@ def load_model(unique_ID: uuid, directory: Path):
     )
 
 
-def remove_files(filetype: str, unique_ID: uuid, directory: Path):
+def remove_files(filetype: str, directory: Path):
     ########################################################################################
     # FUNCTION NAME     : remove_files()
     # INPUT PARAMETERS  : filetype: str, unique_ID: uuid
@@ -190,13 +118,18 @@ def remove_files(filetype: str, unique_ID: uuid, directory: Path):
     # Find the correct directory in the folder
     allFilesInDirectory = [file for file in listdir(str(directory))]
     # Get the folder with the correct UUID
-    myDirectory = None
-    for file in allFilesInDirectory:
-        if str(file).__contains__(f"{unique_ID}"):
-            myDirectory = file
+    # TODO: instead of searching for correct directory I would recommend to forward the correct
+    #  directory in the input parameter "directory"
+    # myDirectory = None
+    # for file in allFilesInDirectory:
+    #     if str(file).__contains__(f"{unique_ID}"):
+    #         myDirectory = file
     # Find the correct model file
-    if myDirectory is not None:
-        allFilesInDirectory = [file for file in listdir(str(directory / str(myDirectory)))]
-        for file in allFilesInDirectory:
-            if str(file).__contains__(f"{filetype}"):
-                os.remove(directory / file)
+    # if myDirectory is not None:
+    #     allFilesInDirectory = [file for file in listdir(str(directory / str(myDirectory)))]
+    #     for file in allFilesInDirectory:
+    #         if str(file).__contains__(f"{filetype}"):
+    #             os.remove(directory / file)
+    for file in listdir(str(directory)):
+        if str(file).__contains__(f"{filetype}"):
+            os.remove(directory / file)

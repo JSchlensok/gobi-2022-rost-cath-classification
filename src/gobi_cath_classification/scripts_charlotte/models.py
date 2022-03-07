@@ -54,7 +54,7 @@ class RandomForestModel(ModelInterface):
         df = pd.DataFrame(data=predictions, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+    def save_checkpoint(self, epoch: int, save_to_dir: Path, filename: str):
         torch.save(self, str(save_to_dir))
         print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {save_to_dir}")
 
@@ -82,7 +82,7 @@ class GaussianNaiveBayesModel(ModelInterface):
         df = pd.DataFrame(data=predictions_proba, columns=self.model.classes_)
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+    def save_checkpoint(self, epoch: int, save_to_dir: Path, filename: str):
         torch.save(self, str(save_to_dir))
         print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {save_to_dir}")
 
@@ -180,7 +180,7 @@ class NeuralNetworkModel(ModelInterface):
         ).astype("float")
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+    def save_checkpoint(self, epoch: int, save_to_dir: Path, filename: str):
         torch.save(self.model, str(save_to_dir))
         print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {save_to_dir}")
 
@@ -227,7 +227,7 @@ class DistanceModel(ModelInterface):
         df = pd.DataFrame(data=pred, columns=self.class_names)
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+    def save_checkpoint(self, epoch: int, save_to_dir: Path, filename: str):
         torch.save(self, str(save_to_dir))
         print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {save_to_dir}")
 
