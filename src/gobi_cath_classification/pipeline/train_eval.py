@@ -37,13 +37,17 @@ from gobi_cath_classification.scripts_david.save_checkpoint import (
 
 
 def training_function(config: dict) -> None:
+    checkpoint_dir = os.getcwd()
+    print(f"checkpoint_dir = {checkpoint_dir}")
+
     if "unique_ID_dir" in config["model"].keys():
         resume_training = True
+        # TODO unique id extraction anpassen
         unique_ID = str(config["model"]["unique_ID_dir"]).split("/")[-1].split(" ")[-1]
         print(f"Attempting to resume training for ID {unique_ID}...")
         print("Reading in configuration...")
         path_to_model = REPO_ROOT_DIR / "model checkpoints" / config["model"]["unique_ID_dir"]
-
+        # TODO load model mit json.load()
         config = load_configuration(
             unique_ID=unique_ID,
             directory=path_to_model,
@@ -137,14 +141,9 @@ def training_function(config: dict) -> None:
     n_bad = 0
     n_thresh = 20
 
-    # create checkpoint directory
-    checkpoint_dir = config["checkpoint_dir"] / f"{model_class} {unique_ID}"
-    if not os.path.isdir(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
-
     if resume_training:
         print("Reading in model and previous results...")
-        model, epoch = load_model(unique_ID=unique_ID, directory=checkpoint_dir)
+        model, epoch = load_model(unique_ID=unique_ID, directory=path_to_model)
         eval_dict, highest_h_accuracy = load_results(unique_ID=unique_ID, directory=path_to_model)
         tune.report(**eval_dict)
         print(
@@ -155,6 +154,7 @@ def training_function(config: dict) -> None:
     else:
         print(f"Training model {model.__class__.__name__}...")
         # Save the model configuration before running training
+        # TODO macht ray schon
         save_model_configuration(
             model_class=model_class,
             dict_config=config,
@@ -238,9 +238,7 @@ def main():
     )
 
     # create checkpoint directory
-    time = str(datetime.datetime.now()).replace(" ", "-").replace(":", "-").replace(".", "-")
-    checkpoint_dir = REPO_ROOT_DIR / "model checkpoints" / time
-
+    checkpoint_dir = REPO_ROOT_DIR / "model checkpoints"
     if not os.path.isdir(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -248,10 +246,10 @@ def main():
     analysis = tune.run(
         training_function,
         trial_dirname_creator=trial_dirname_creator,
+        local_dir=checkpoint_dir,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "checkpoint_dir": checkpoint_dir,
             "random_seed": RANDOM_SEED,
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
             "model": tune.grid_search(

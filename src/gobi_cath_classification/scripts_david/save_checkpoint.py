@@ -33,6 +33,7 @@ def save_model_configuration(
     # CREATE DATE       : 03.03.2022
     # UPDATE            : ---
     ########################################################################################
+    # TODO macht ray schon
     # Direct the filepath into the model checkpoint folder and append the file name
     file_path = directory_path / f"{model_class} Model Configuration"
     # Create and open the file
@@ -67,6 +68,7 @@ def save_model_results(
     # CREATE DATE       : 02.03.2022
     # UPDATE            : ---
     ########################################################################################
+    # TODO macht ray schon
     # Remove all previous checkpoints
     remove_files(filetype="Model Results", unique_ID=unique_ID, directory=directory_path)
     # Direct the filepath into the model checkpoint folder and append the file name
@@ -85,50 +87,6 @@ def save_model_results(
     checkpoint_file.close()
 
 
-# def save_model(
-#         model,
-#         model_class: str,
-#         unique_ID: uuid,
-#         epoch: int,
-# ):
-#     ########################################################################################
-#     # FUNCTION NAME     : save_model()
-#     # INPUT PARAMETERS  : model, model_class: str
-#     # OUTPUT PARAMETERS : none
-#     # DESCRIPTION       : Saves the models current state
-#     # AUTHOR            : D. Mauder
-#     # CREATE DATE       : 01.03.2022
-#     # UPDATE            : ---
-#     ########################################################################################
-#     # Remove all previous checkpoints
-#     remove_files(filetype="Model Checkpoint", unique_ID=unique_ID)
-#     # Direct the filepath into the model checkpoint folder and append the file name
-#     directory = Path(os.path.abspath(__file__)).parent.parent.absolute()
-#     # Format the filepath to a distinguishable name
-#     directory_path = f"{str(directory)}\\model checkpoints\\{str(model_class)} {str(unique_ID)}"
-#     # Create the directory if not existent
-#     if not os.path.isdir(directory_path):
-#         os.makedirs(directory_path)
-#     # Append the actual filename to the path
-#     file_path = directory_path + f"\\{model_class} Model Checkpoint - Epoch {str(epoch)}.pt"
-#     print(f"Attempting to save {model_class} as intermediate checkpoint...")
-#     # Saving the model as intermediate checkpoint using torch
-#     if model_class == NeuralNetworkModel.__name__:  # CLASS - Neural Network
-#         torch.save(model, file_path)
-#         print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {file_path}")
-#     elif model_class == RandomForestModel.__name__:  # CLASS - Random Forest
-#         torch.save(model, file_path)
-#         print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {file_path}")
-#     elif model_class == GaussianNaiveBayesModel.__name__:  # CLASS - Gaussian Naive Bayes
-#         torch.save(model, file_path)
-#         print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {file_path}")
-#     elif model_class == SupportVectorMachine.__name__:  # CLASS - Support Vector Machine
-#         torch.save(model, file_path)
-#         print(f"Successfully saved the models state on epoch : {str(epoch)} - to : {file_path}")
-#     else:
-#         raise ValueError(f"Model class {model_class} does not exist and can not be saved.")
-
-
 def load_configuration(unique_ID: uuid, directory: Path):
     ########################################################################################
     # FUNCTION NAME     : load_model()
@@ -139,7 +97,7 @@ def load_configuration(unique_ID: uuid, directory: Path):
     # CREATE DATE       : 02.03.2022
     # UPDATE            : ---
     ########################################################################################
-
+    # TODO json.load()
     modelConfiguration = None
     for file in listdir(str(directory)):
         if str(file).__contains__(f"Model Configuration"):
