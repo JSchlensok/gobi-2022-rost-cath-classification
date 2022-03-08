@@ -5,6 +5,7 @@ from os import listdir
 from pathlib import Path
 
 
+
 def save_configuration(checkpoint_dir: Path, config: dict):
     ########################################################################################
     # FUNCTION NAME     : save_configuration()
@@ -41,7 +42,9 @@ def load_results(checkpoint_dir: Path):
     return json.loads(config_content)
 
 
+
 def load_configuration(checkpoint_dir: Path):
+
     ########################################################################################
     # FUNCTION NAME     : load_configuration()
     # INPUT PARAMETERS  : checkpoint_dir: Path
@@ -61,6 +64,7 @@ def load_configuration(checkpoint_dir: Path):
 
 
 def remove_files(checkpoint_dir: Path, filetype: str):
+
     ########################################################################################
     # FUNCTION NAME     : remove_files()
     # INPUT PARAMETERS  : filetype: str, unique_ID: uuid
@@ -77,3 +81,4 @@ def remove_files(checkpoint_dir: Path, filetype: str):
         if str(file).__contains__(f"{filetype}"):
             # If the filename contains the specified filetype --> delete
             os.remove(os.path.join(checkpoint_dir, file))
+

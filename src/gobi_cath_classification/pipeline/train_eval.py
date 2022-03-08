@@ -1,5 +1,7 @@
 import datetime
 import os
+from os import listdir
+
 from pathlib import Path
 
 import ray
@@ -26,7 +28,6 @@ from gobi_cath_classification.scripts_charlotte.models import (
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 from gobi_cath_classification.scripts_david.save_checkpoint import (
-    save_configuration,
     load_configuration,
     load_results,
     remove_files,
@@ -186,9 +187,8 @@ def training_function(config: dict) -> None:
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
         # Save the model if the average accuracy has risen during the last epoch and check for early stopping
-        acc_h = eval_dict["accuracy_h"]
-        if acc_h > highest_acc_h:
-            highest_acc_h = acc_h
+        if eval_dict["accuracy_h"] > highest_acc_h:
+            highest_acc_h = eval_dict["accuracy_h"]
             n_bad = 0
             print(f"New best performance found: accuracy_h = {highest_acc_h}")
             print(f"Attempting to save {model_class} as intermediate checkpoint...")
@@ -240,6 +240,7 @@ def main():
     analysis = tune.run(
         training_function,
         trial_dirname_creator=trial_dirname_creator,
+        local_dir=checkpoint_dir,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
