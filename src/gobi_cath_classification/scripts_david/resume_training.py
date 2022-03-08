@@ -41,12 +41,14 @@ def main():
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "checkpoint_dir": tune.choice([
+            "checkpoint_dir": tune.choice(
+                [
                     "training_function_2022-03-08_10-51-03\\training_function_4493d_00000_0_checkpoint_dir=training_function_2022-03-08_10-08-15\\training_function_49a1a_00002_2_class_weights_2022-03-08_10-51-03"
-            ]),
+                ]
+            ),
         },
         progress_reporter=reporter,
-        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints"
+        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints",
     )
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
 

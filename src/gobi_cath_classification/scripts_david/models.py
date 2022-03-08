@@ -56,11 +56,11 @@ class SupportVectorMachine(ModelInterface):
         self.model.cache_size = 1000  # Make more MBs of RAM available for model cache
 
     def train_one_epoch(
-            self,
-            embeddings: np.ndarray,
-            embeddings_tensor: torch.Tensor,
-            labels: List[str],
-            sample_weights: Optional[np.ndarray],
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
         ########################################################################################
         # FUNCTION NAME     : train_one_epoch()

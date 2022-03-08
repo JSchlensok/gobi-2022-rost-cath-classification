@@ -56,7 +56,7 @@ def main():
             },
         },
         progress_reporter=reporter,
-        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints"
+        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints",
     )
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
 

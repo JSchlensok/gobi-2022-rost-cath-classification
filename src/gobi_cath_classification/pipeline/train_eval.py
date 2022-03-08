@@ -40,15 +40,18 @@ def training_function(config: dict) -> None:
     if "checkpoint_dir" in config.keys():
         # Mark training function to resume training
         resume_training = True
-        print(f"Attempting to resume training from checkpoint {str(config['checkpoint_dir']).split('/')[-1]} ...")
+        print(
+            f"Attempting to resume training from checkpoint {str(config['checkpoint_dir']).split('/')[-1]} ..."
+        )
         print("Reading in configuration...")
         # Get the backup-directory of the given model
-        backup_dir = Path(config['checkpoint_dir'])
-        backup_dir = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, "model checkpoints" / backup_dir)
-        # Read in the models saved configuration
-        config = load_configuration(
-            checkpoint_dir=Path(backup_dir)
+        backup_dir = Path(config["checkpoint_dir"])
+        backup_dir = os.path.join(
+            Path(os.path.dirname(os.path.realpath(__file__))).parent,
+            "model checkpoints" / backup_dir,
         )
+        # Read in the models saved configuration
+        config = load_configuration(checkpoint_dir=Path(backup_dir))
         # Print read in config
         for key in config.keys():
             print(f"Config: {key} = {config[key]}")
