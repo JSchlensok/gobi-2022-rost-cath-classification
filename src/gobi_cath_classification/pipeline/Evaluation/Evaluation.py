@@ -1,8 +1,6 @@
-from typing import List, Optional, Dict
+from typing import List
 from typing_extensions import Literal
 import numpy as np
-from tqdm import tqdm
-import time
 
 from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef, f1_score
 from gobi_cath_classification.pipeline.utils import CATHLabel
@@ -26,10 +24,9 @@ class Evaluation:
     Note: only the metrics that were specified in the compute_metric() function are available in the dict
     """
 
-    def __init__(self,
-                 y_true: List[CATHLabel],
-                 predictions: Prediction,
-                 train_labels: List[CATHLabel]):
+    def __init__(
+        self, y_true: List[CATHLabel], predictions: Prediction, train_labels: List[CATHLabel]
+    ):
         """
         Create a Evaluation class with the true labels, the Prediction object from the predict method of the model
         and all the labels that wre used in the training
@@ -47,14 +44,15 @@ class Evaluation:
         self.eval_dict = None
         self.error_dict = None
 
-    def compute_metrics(self,
-                        accuracy: bool = False,
-                        mcc: bool = False,
-                        f1: bool = False,
-                        kappa: bool = False,
-                        _y_true: List = None,
-                        _y_hats: List = None
-                        ):
+    def compute_metrics(
+        self,
+        accuracy: bool = False,
+        mcc: bool = False,
+        f1: bool = False,
+        kappa: bool = False,
+        _y_true: List = None,
+        _y_hats: List = None,
+    ):
         """
         Usage: set the desired metrics to "TRUE"
         -> creates an evaluation dictionary containing all the specified metrics
@@ -74,7 +72,9 @@ class Evaluation:
         """
 
         CATH_levels = ["C", "A", "T", "H"]
-        assert (accuracy or mcc or f1 or kappa) is True, print("At least on metric must be selected")
+        assert (accuracy or mcc or f1 or kappa) is True, print(
+            "At least on metric must be selected"
+        )
 
         # set class parameters if no external lists are given
         bootstrap = True
@@ -90,9 +90,11 @@ class Evaluation:
         if accuracy:
             # calculating accuracy using dict comprehension
             accuracy_dict = {
-                f"accuracy_{i.lower()}":
-                    metric_for_level(_y_true, _y_hats, self.train_labels, i, "acc")
-                for i in CATH_levels}
+                f"accuracy_{i.lower()}": metric_for_level(
+                    _y_true, _y_hats, self.train_labels, i, "acc"
+                )
+                for i in CATH_levels
+            }
 
             # average accuracy over all levels
             accuracy_dict["accuracy_avg"] = sum(accuracy_dict.values()) / len(CATH_levels)
@@ -103,8 +105,7 @@ class Evaluation:
         # calculate f1 for each level
         if mcc:
             mcc_dict = {
-                f"mcc_{i.lower()}":
-                    metric_for_level(_y_true, _y_hats, self.train_labels, i, "mcc")
+                f"mcc_{i.lower()}": metric_for_level(_y_true, _y_hats, self.train_labels, i, "mcc")
                 for i in CATH_levels
             }
             mcc_dict["mcc_avg"] = sum(mcc_dict.values()) / len(CATH_levels)
@@ -114,8 +115,7 @@ class Evaluation:
         # calculating f1 for each level
         if f1:
             f1_dict = {
-                f"f1_{i.lower()}":
-                    metric_for_level(_y_true, _y_hats, self.train_labels, i, "f1")
+                f"f1_{i.lower()}": metric_for_level(_y_true, _y_hats, self.train_labels, i, "f1")
                 for i in CATH_levels
             }
             f1_dict["f1_avg"] = sum(f1_dict.values()) / len(CATH_levels)
@@ -125,8 +125,9 @@ class Evaluation:
         # calculating cohen's kappa for each level
         if kappa:
             kappa_dict = {
-                f"kappa_{i.lower()}":
-                    metric_for_level(_y_true, _y_hats, self.train_labels, i, "kappa")
+                f"kappa_{i.lower()}": metric_for_level(
+                    _y_true, _y_hats, self.train_labels, i, "kappa"
+                )
                 for i in CATH_levels
             }
             kappa_dict["kappa_avg"] = sum(kappa_dict.values()) / len(CATH_levels)
@@ -139,9 +140,7 @@ class Evaluation:
         else:
             self.eval_dict = eval_dict
 
-    def compute_std_err(self,
-                        bootstrap_n: int = 1000
-                        ):
+    def compute_std_err(self, bootstrap_n: int = 1000):
         """
         compute the standard error for the metrics currently in the evaluation dict using 1000 bootstrap intervals
         in each bootstrap interval, choose samples with replacement and compute the given metric
@@ -154,10 +153,12 @@ class Evaluation:
         """
 
         # what metrics are available and what metrics are there in general
-        available_metrics = ["accuracy" in self.eval_dict,
-                             "mcc" in self.eval_dict,
-                             "f1" in self.eval_dict,
-                             "kappa" in self.eval_dict]
+        available_metrics = [
+            "accuracy" in self.eval_dict,
+            "mcc" in self.eval_dict,
+            "f1" in self.eval_dict,
+            "kappa" in self.eval_dict,
+        ]
         metrics = ["accuracy", "mcc", "f1", "kappa"]
 
         n_pred = len(self.y_true)
@@ -171,11 +172,7 @@ class Evaluation:
                 sample = np.random.choice(indexes, n_pred, replace=True)
                 y_true = [self.y_true[idx] for idx in sample]
                 y_hats = [self.yhats[idx] for idx in sample]
-                tmp_eval = self.compute_metrics(
-                    *available_metrics,
-                    _y_true=y_true,
-                    _y_hats=y_hats
-                )
+                tmp_eval = self.compute_metrics(*available_metrics, _y_true=y_true, _y_hats=y_hats)
 
                 bootstrap_dicts.append(tmp_eval)
 
@@ -188,9 +185,14 @@ class Evaluation:
                     for level in ["c", "a", "t", "h", "avg"]:
 
                         # for all available metrics calculate the standard error for all levels
-                        error_dict[f"{metrics[i]}"][f"{metrics[i]}_{level}"] = 1.96*np.std(
-                            np.array([boot[metrics[i]][f"{metrics[i]}_{level}"] for boot in bootstrap_dicts]),
-                            ddof=1
+                        error_dict[f"{metrics[i]}"][f"{metrics[i]}_{level}"] = 1.96 * np.std(
+                            np.array(
+                                [
+                                    boot[metrics[i]][f"{metrics[i]}_{level}"]
+                                    for boot in bootstrap_dicts
+                                ]
+                            ),
+                            ddof=1,
                         )
 
             self.error_dict = error_dict
@@ -199,11 +201,11 @@ class Evaluation:
 
 
 def metric_for_level(
-        y_true: List[CATHLabel],
-        y_hat: List[CATHLabel],
-        train_labels: List[CATHLabel],
-        cath_level: Literal["C", "A", "T", "H"],
-        metric: Literal["acc", "mcc", "f1", "kappa"]
+    y_true: List[CATHLabel],
+    y_hat: List[CATHLabel],
+    train_labels: List[CATHLabel],
+    cath_level: Literal["C", "A", "T", "H"],
+    metric: Literal["acc", "mcc", "f1", "kappa"],
 ) -> float:
     """
     Calculates the specific metric according to a given CATH-level.
@@ -245,19 +247,13 @@ def metric_for_level(
             y_pred=y_pred_for_level,
         )
     if metric == "mcc":
-        return matthews_corrcoef(
-            y_true=y_true_for_level,
-            y_pred=y_pred_for_level
-        )
+        return matthews_corrcoef(y_true=y_true_for_level, y_pred=y_pred_for_level)
     if metric == "f1":
         return f1_score(
             y_true=y_true_for_level,
             y_pred=y_pred_for_level,
             # TODO: changing averaging technique
-            average="macro"
+            average="macro",
         )
     if metric == "kappa":
-        return cohen_kappa_score(
-            y1=y_true_for_level,
-            y2=y_pred_for_level
-        )
+        return cohen_kappa_score(y1=y_true_for_level, y2=y_pred_for_level)
