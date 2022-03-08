@@ -43,13 +43,17 @@ start = time.perf_counter()
 eval1.compute_metrics(accuracy=True, mcc=True)
 end = time.perf_counter()
 print(f"time to compute the metrics: {end-start}")
-
-eval1.compute_std_err()
 print(f"the accuracys for the random baseline without class balance are: {eval1.eval_dict}")
+
+start = time.perf_counter()
+eval1.compute_std_err(bootstrap_n=10)
+end = time.perf_counter()
+print(f"time to compute the standard error: {end-start}")
+
 
 
 """
-evaluation1 = evaluate(data_set.y_val, predictions1, data_set.train_labels)
+evaluation1 = evaluate(data_set.y_test, predictions1, data_set.train_labels)
 evaluation2 = evaluate(data_set.y_val, predictions2, data_set.train_labels)
 evaluation3 = evaluate(data_set.y_val, predictions3, data_set.train_labels)
 

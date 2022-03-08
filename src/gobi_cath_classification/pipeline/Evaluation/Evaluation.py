@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from typing_extensions import Literal
 import numpy as np
 from tqdm import tqdm
@@ -25,6 +25,7 @@ class Evaluation:
 
     Note: only the metrics that were specified in the compute_metric() function are available in the dict
     """
+
     def __init__(self,
                  y_true: List[CATHLabel],
                  predictions: Prediction,
@@ -44,6 +45,7 @@ class Evaluation:
         self.yhats = [CATHLabel(label) for label in predictions.argmax_labels()]
         self.train_labels = train_labels
         self.eval_dict = None
+        self.error_dict = None
 
     def compute_metrics(self,
                         accuracy: bool = False,
@@ -138,8 +140,8 @@ class Evaluation:
             self.eval_dict = eval_dict
 
     def compute_std_err(self,
-                        bootstrap_n: int = 10
-                        ) -> None:
+                        bootstrap_n: int = 1000
+                        ):
         """
         compute the standard error for the metrics currently in the evaluation dict using 1000 bootstrap intervals
         in each bootstrap interval, choose samples with replacement and compute the given metric
@@ -148,19 +150,21 @@ class Evaluation:
             bootstrap_n: number of bootstrap intervals
 
         Returns:
-            creates a new dict with the standard errors for each of the metrics
+            creates a new dict with the 95% confidence intervals for the available metrics
         """
 
-        # tuple of bools with the available metrics
-        available_metrics = ("accuracy" in self.eval_dict,
+        # what metrics are available and what metrics are there in general
+        available_metrics = ["accuracy" in self.eval_dict,
                              "mcc" in self.eval_dict,
                              "f1" in self.eval_dict,
-                             "kappa" in self.eval_dict)
+                             "kappa" in self.eval_dict]
+        metrics = ["accuracy", "mcc", "f1", "kappa"]
 
         n_pred = len(self.y_true)
         indexes = range(n_pred)
         bootstrap_dicts = list()
 
+        # only if the eval_dict contains metrics we can calculate the error
         if self.eval_dict is not None:
             for _ in range(bootstrap_n):
                 # choose n_pred indices with replacement
@@ -175,22 +179,31 @@ class Evaluation:
 
                 bootstrap_dicts.append(tmp_eval)
 
+            # extract the bootstrapped metrics
+            error_dict = {}
 
+            for i, available in enumerate(available_metrics):
+                if available:
+                    error_dict[metrics[i]] = {}
+                    for level in ["c", "a", "t", "h", "avg"]:
 
+                        # for all available metrics calculate the standard error for all levels
+                        error_dict[f"{metrics[i]}"][f"{metrics[i]}_{level}"] = 1.96*np.std(
+                            np.array([boot[metrics[i]][f"{metrics[i]}_{level}"] for boot in bootstrap_dicts]),
+                            ddof=1
+                        )
 
-
-
-
-
-
+            self.error_dict = error_dict
+        else:
+            raise ValueError("The eval_dict does not contain any metrics yet")
 
 
 def metric_for_level(
-    y_true: List[CATHLabel],
-    y_hat: List[CATHLabel],
-    train_labels: List[CATHLabel],
-    cath_level: Literal["C", "A", "T", "H"],
-    metric: Literal["acc", "mcc", "f1", "kappa"]
+        y_true: List[CATHLabel],
+        y_hat: List[CATHLabel],
+        train_labels: List[CATHLabel],
+        cath_level: Literal["C", "A", "T", "H"],
+        metric: Literal["acc", "mcc", "f1", "kappa"]
 ) -> float:
     """
     Calculates the specific metric according to a given CATH-level.
@@ -213,8 +226,8 @@ def metric_for_level(
     """
 
     class_names_for_level = list(set([label[cath_level] for label in train_labels]))
-    y_true_for_level = [label[cath_level] for label in y_true]
-    y_pred_for_level = [label[cath_level] for label in y_hat]
+    y_true_for_level = [str(label[cath_level]) for label in y_true]
+    y_pred_for_level = [str(label[cath_level]) for label in y_hat]
 
     # delete all entries where the ground truth label does not occur in training class names.
     n = len(y_true_for_level) - 1
@@ -228,23 +241,23 @@ def metric_for_level(
     # compute the specified metric
     if metric == "acc":
         return accuracy_score(
-            y_true=[str(label) for label in y_true_for_level],
-            y_pred=[str(label) for label in y_pred_for_level],
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level,
         )
     if metric == "mcc":
         return matthews_corrcoef(
-            y_true=[str(label) for label in y_true_for_level],
-            y_pred=[str(label) for label in y_pred_for_level]
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level
         )
     if metric == "f1":
         return f1_score(
-            y_true=[str(label) for label in y_true_for_level],
-            y_pred=[str(label) for label in y_pred_for_level],
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level,
             # TODO: changing averaging technique
             average="macro"
         )
     if metric == "kappa":
         return cohen_kappa_score(
-            y1=[str(label) for label in y_true_for_level],
-            y2=[str(label) for label in y_pred_for_level]
+            y1=y_true_for_level,
+            y2=y_pred_for_level
         )
