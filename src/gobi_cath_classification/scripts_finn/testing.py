@@ -1,4 +1,6 @@
 import numpy as np
+import time
+
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
@@ -37,8 +39,12 @@ eval1 = Evaluation(
     predictions=predictions1,
     train_labels=data_set.train_labels
 )
+start = time.perf_counter()
+eval1.compute_metrics(accuracy=True, mcc=True)
+end = time.perf_counter()
+print(f"time to compute the metrics: {end-start}")
 
-eval1.compute_metrics(accuracy=True, kappa=True)
+eval1.compute_std_err()
 print(f"the accuracys for the random baseline without class balance are: {eval1.eval_dict}")
 
 
