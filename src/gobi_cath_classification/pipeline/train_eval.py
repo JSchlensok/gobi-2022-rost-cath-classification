@@ -28,7 +28,6 @@ from gobi_cath_classification.scripts_charlotte.models import (
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 from gobi_cath_classification.scripts_david.save_checkpoint import (
-    save_configuration,
     load_configuration,
     load_results,
     remove_files,
@@ -37,15 +36,15 @@ from gobi_cath_classification.scripts_david.save_checkpoint import (
 
 def training_function(config: dict) -> None:
     # Check if checkpoint_dir is available in config --> If yes, resume training
-    if "checkpoint_dir" in config.keys():
+    if "checkpoint_dir" in config["model"].keys():
         # Mark training function to resume training
         resume_training = True
         print(
-            f"Attempting to resume training from checkpoint {str(config['checkpoint_dir']).split('/')[-1]} ..."
+            f"Attempting to resume training from checkpoint {str(config['model']['checkpoint_dir']).split('/')[-1]} ..."
         )
         print("Reading in configuration...")
         # Get the backup-directory of the given model
-        backup_dir = Path(config["checkpoint_dir"])
+        backup_dir = Path(config["model"]["checkpoint_dir"])
         backup_dir = os.path.join(
             Path(os.path.dirname(os.path.realpath(__file__))).parent,
             "model checkpoints" / backup_dir,
@@ -67,8 +66,6 @@ def training_function(config: dict) -> None:
         # Mark as new checkpoint dir
         checkpoint_dir = Path(checkpoint_dir_sub).parent
         # os.remove(checkpoint_dir_sub)
-    # Save config incl last epoch
-    save_configuration(checkpoint_dir=checkpoint_dir, config=config)
 
     # set random seeds
     random_seed = config["random_seed"]
@@ -162,7 +159,7 @@ def training_function(config: dict) -> None:
         # Read in previous results
         eval_dict = load_results(checkpoint_dir=Path(backup_dir))
         highest_acc_h = eval_dict["accuracy_h"]
-        epoch_start = config["last_epoch"] + 1
+        epoch_start = config["model"]["last_epoch"] + 1
         tune.report(**eval_dict)
         print(
             f"model: {model}\n epoch: {config['last_epoch']}\n h-accuracy {highest_acc_h}\n eval-dict:\n{eval_dict}"
@@ -201,10 +198,6 @@ def training_function(config: dict) -> None:
             model.save_checkpoint(
                 save_to_dir=checkpoint_dir,
             )
-            # Remove old config file
-            remove_files(checkpoint_dir=checkpoint_dir, filetype="model_configuration")
-            # Save updated config file
-            save_configuration(checkpoint_dir=checkpoint_dir, config=config)
         else:
             n_bad += 1
             if n_bad >= n_thresh:

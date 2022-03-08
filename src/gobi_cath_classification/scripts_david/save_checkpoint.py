@@ -5,23 +5,6 @@ from os import listdir
 from pathlib import Path
 
 
-def save_configuration(checkpoint_dir: Path, config: dict):
-    ########################################################################################
-    # FUNCTION NAME     : save_configuration()
-    # INPUT PARAMETERS  : checkpoint_dir: Path, config: dict
-    # OUTPUT PARAMETERS : none
-    # DESCRIPTION       : Saves the models configuration
-    # AUTHOR            : D. Mauder
-    # CREATE DATE       : 07.03.2022
-    # UPDATE            : Switch on json format
-    ########################################################################################
-    # Create file path
-    file_path = os.path.join(checkpoint_dir, "model_configuration.json")
-    # Open filepath and dump dict using json
-    with open(file_path, "w") as outfile:
-        json.dump(config, outfile)
-
-
 def load_results(checkpoint_dir: Path):
     ########################################################################################
     # FUNCTION NAME     : load_results()
@@ -36,7 +19,10 @@ def load_results(checkpoint_dir: Path):
     file_path = os.path.join(checkpoint_dir, "result.json")
     # read file
     with open(file_path, "r") as config_file:
-        config_content = config_file.read().split("\n")[:-1][-1]
+        for line in config_file.read().split("\n"):
+            if line != "":
+                config_content = line
+
     # parse file
     return json.loads(config_content)
 
@@ -53,7 +39,7 @@ def load_configuration(checkpoint_dir: Path):
     # UPDATE            : Switch on json format
     ########################################################################################
     # Create file path
-    file_path = os.path.join(checkpoint_dir, "model_configuration.json")
+    file_path = os.path.join(checkpoint_dir, "params.json")
     # read file
     with open(file_path, "r") as config_file:
         config_content = config_file.read()
