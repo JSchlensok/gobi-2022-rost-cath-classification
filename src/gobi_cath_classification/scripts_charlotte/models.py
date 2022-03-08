@@ -154,7 +154,7 @@ class NeuralNetworkModel(ModelInterface):
             )
         elif loss_function == "HierarchicalLogLoss":
             self.loss_function = HierarchicalLogLoss(
-                class_names=self.class_names, hierarchical_weights=loss_weights.to(self.device)
+                class_names=self.class_names, hierarchical_weights=loss_weights.to(self.device), device=self.device
             )
         else:
             raise ValueError(f"Loss_function is not valid: {loss_function}")
@@ -218,15 +218,15 @@ class NeuralNetworkModel(ModelInterface):
 
 
 class HierarchicalLogLoss:
-    def __init__(self, class_names: List[str], hierarchical_weights: torch.Tensor):
+    def __init__(self, class_names: List[str], hierarchical_weights: torch.Tensor, device):
         self.class_names = class_names
         assert len(hierarchical_weights) == 4
-        assert torch.allclose(torch.sum(hierarchical_weights), torch.tensor([1.0]))
+        assert torch.allclose(torch.sum(hierarchical_weights).to(device), torch.tensor([1.0]).to(device))
         self.weights = hierarchical_weights
 
-        self.H_to_C_matrix = H_to_level_matrix(class_names=class_names, level="C")
-        self.H_to_A_matrix = H_to_level_matrix(class_names=class_names, level="A")
-        self.H_to_T_matrix = H_to_level_matrix(class_names=class_names, level="T")
+        self.H_to_C_matrix = H_to_level_matrix(class_names=class_names, level="C").to(device)
+        self.H_to_A_matrix = H_to_level_matrix(class_names=class_names, level="A").to(device)
+        self.H_to_T_matrix = H_to_level_matrix(class_names=class_names, level="T").to(device)
 
     def __call__(self, y_pred: torch.Tensor, y_true: torch.Tensor):
         loss_C = log_loss(
