@@ -75,6 +75,7 @@ def training_function(config: dict) -> None:
             dropout_sizes=config["model"]["dropout_sizes"],
             batch_size=config["model"]["batch_size"],
             optimizer=config["model"]["optimizer"],
+            loss_function=config["model"]["loss_function"],
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
             random_seed=RANDOM_SEED,
@@ -112,6 +113,7 @@ def training_function(config: dict) -> None:
 
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(num_epochs):
+        n = 100
         model_metrics_dict = model.train_one_epoch(
             embeddings=embeddings_train,
             embeddings_tensor=embeddings_train_tensor,
@@ -188,6 +190,7 @@ def main():
                         "lr": tune.choice([1e-2, 1e-3, 1e-4, 1e-5, 1e-6]),
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
+                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLoss"]),
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],
                     },

@@ -130,6 +130,8 @@ class Dataset:
     def scale(self) -> None:
         scaler = StandardScaler()
         scaler.fit(X=self.X_train)
+        print(f"scaler.var_ = {scaler.var_}")
+        print(f"scaler.mean_ = {scaler.mean_}")
         self.X_train = scaler.transform(self.X_train)
         self.X_val = scaler.transform(self.X_val)
         self.X_test = scaler.transform(self.X_test)

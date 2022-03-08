@@ -95,6 +95,7 @@ class NeuralNetworkModel(ModelInterface):
         dropout_sizes: List[Optional[float]],
         batch_size: int,
         optimizer: str,
+        loss_function: Literal["CrossEntropyLoss", "HierarchicalLoss"],
         class_weights: torch.Tensor,
         rng: np.random.RandomState,
         random_seed: int = 42,
@@ -145,9 +146,15 @@ class NeuralNetworkModel(ModelInterface):
 
         # model.add_module("Softmax", nn.Softmax())
         self.model = model.to(self.device)
-        self.loss_function = torch.nn.CrossEntropyLoss(
-            weight=class_weights.to(self.device) if class_weights is not None else None,
-        )
+        if loss_function == "CrossEntropyLoss":
+            self.loss_function = torch.nn.CrossEntropyLoss(
+                weight=class_weights.to(self.device) if class_weights is not None else None,
+            )
+        elif loss_function == "HierarchicalLoss":
+            self.loss_function = hierarchical_loss
+        else:
+            raise ValueError(f"Loss_function is not valid: {loss_function}")
+
         if optimizer == "sgd":
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         elif optimizer == "adam":
@@ -179,7 +186,16 @@ class NeuralNetworkModel(ModelInterface):
             batch_X = X[indices].float()
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
-            loss = self.loss_function(y_pred, batch_y)
+            if self.loss_function == torch.nn.CrossEntropyLoss:
+                loss = self.loss_function(y_pred, batch_y)
+            else:
+                loss = self.loss_function(
+                    y_pred=y_pred,
+                    y_true=batch_y,
+                    labels=labels,
+                    weights=[0.1, 0.1, 0.1, 0.7],
+                    loss_function=torch.nn.CrossEntropyLoss,
+                )
             loss_sum += loss
             loss.backward()
             self.optimizer.step()
@@ -208,13 +224,20 @@ def hierarchical_loss(
     labels: List[str],
     weights: np.ndarray,
     loss_function,
-) -> float:
+) -> torch.Tensor:
     loss = 0
     for i, level in enumerate(["C", "A", "T", "H"]):
         pred = _get_predictions_for_level(cath_level=level, y_pred=y_pred, labels=labels)
         true = _get_predictions_for_level(cath_level=level, y_pred=y_true, labels=labels)
+
+        print(f"type(pred) = {type(pred)}")
+        print(f"type(true) = {type(true)}")
+        print(f"type(loss_function(pred, true)) = {type(loss_function(pred, true))}")
+        print(f"loss_function(pred, true) = {loss_function(pred, true)}")
+
         loss += weights[i] * loss_function(pred, true)
-    return loss
+
+    return torch.Tensor(loss)
 
 
 def _get_predictions_for_level(
@@ -223,16 +246,16 @@ def _get_predictions_for_level(
     level = "CATH".index(cath_level)
     new_preds = []
 
-    for pred in y_pred:
+    for proba_dist in y_pred:
         prev_label = ".".join(labels[0].split(".")[: level + 1])
         new_pred = []
         p_level = 0
-        for i, p in enumerate(pred):
+        for i, p in enumerate(proba_dist):
             if labels[i].startswith(prev_label):
-                p_level += p
+                p_level += int(p)
             else:
                 new_pred.append(p_level)
-                p_level = p
+                p_level = int(p)
                 prev_label = ".".join(labels[i].split(".")[: level + 1])
 
         new_pred.append(p_level)

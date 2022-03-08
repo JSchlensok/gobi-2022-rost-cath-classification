@@ -37,6 +37,7 @@ class TestNeuralNetwork:
                 class_weights=torch.Tensor(np.array([0.5, 1, 0.3])),
                 batch_size=32,
                 optimizer="adam",
+                loss_function="HierarchicalLoss",
                 rng=np.random.RandomState(random_seed),
                 random_seed=random_seed,
             ),
