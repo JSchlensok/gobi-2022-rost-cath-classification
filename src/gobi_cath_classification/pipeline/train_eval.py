@@ -68,14 +68,18 @@ def training_function(config: dict) -> None:
 
     # set model
     if model_class == NeuralNetworkModel.__name__:
+        loss_weights = None
+        if "loss_weights" in config["model"].keys():
+            loss_weights = torch.tensor(config["model"]["loss_weights"])
         model = NeuralNetworkModel(
             lr=config["model"]["lr"],
-            class_names=class_names,
+            class_names=[str(cn) for cn in class_names],
             layer_sizes=config["model"]["layer_sizes"],
             dropout_sizes=config["model"]["dropout_sizes"],
             batch_size=config["model"]["batch_size"],
             optimizer=config["model"]["optimizer"],
             loss_function=config["model"]["loss_function"],
+            loss_weights=loss_weights,
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
             random_seed=RANDOM_SEED,
@@ -113,7 +117,6 @@ def training_function(config: dict) -> None:
 
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(num_epochs):
-        n = 100
         model_metrics_dict = model.train_one_epoch(
             embeddings=embeddings_train,
             embeddings_tensor=embeddings_train_tensor,
@@ -191,6 +194,7 @@ def main():
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
                         "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLoss"]),
+                        "loss_weights": [1/4, 1/4, 1/4, 1/4],
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],
                     },

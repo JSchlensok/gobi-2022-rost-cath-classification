@@ -7,8 +7,9 @@ from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
     DistanceModel,
-    _get_predictions_for_level,
-    hierarchical_loss,
+    mean_squared_error,
+    H_to_level_matrix,
+    log_loss,
 )
 from gobi_cath_classification.pipeline.torch_utils import get_device
 
@@ -19,7 +20,7 @@ class TestNeuralNetwork:
         class_names = ["1.200.45.10", "3.20.25.40", "3.200.10.75"]
         random_seed = 42
 
-        num_data = 200
+        num_data = 2
         embeddings = np.random.randn(num_data, num_features)
         labels = [
             "1.200.45.10"
@@ -35,9 +36,10 @@ class TestNeuralNetwork:
                 dropout_sizes=[None],
                 class_names=class_names,
                 class_weights=torch.Tensor(np.array([0.5, 1, 0.3])),
-                batch_size=32,
+                batch_size=200,
                 optimizer="adam",
-                loss_function="HierarchicalLoss",
+                loss_function="HierarchicalLogLoss",
+                loss_weights=torch.Tensor([1/10, 2/10, 3/10, 4/10]),
                 rng=np.random.RandomState(random_seed),
                 random_seed=random_seed,
             ),
@@ -79,44 +81,61 @@ class TestNeuralNetwork:
             print(f"eval_dict = {eval_dict}")
 
 
-def test_get_predictions_for_level_C():
-    labels = ["1.10.20.20", "1.35.20.20", "2.400.20.20"]
-    y_pred = np.array(
-        [
-            [0.1, 0.2, 0.7],
-            [0.3, 0.6, 0.1],
-        ]
-    )
-    y_pred_level_C = _get_predictions_for_level(cath_level="C", y_pred=y_pred, labels=labels)
-    assert np.allclose(y_pred_level_C, np.array([[0.3, 0.7], [0.9, 0.1]]))
-    assert np.allclose(y_pred_level_C.shape, (2, 2))
+def test_H_to_level_matrix():
+    class_names = ["1.1.1.1", "2.2.3.3", "2.3.3.3", "2.3.4.4", "2.3.4.5"]
 
-
-def test_hierarchical_loss():
-    labels_in_train = ["1.10.20.20", "2.35.20.20", "2.400.30.10"]
-    y_true = torch.from_numpy(
-        np.array(
+    matrix_C = torch.transpose(
+        torch.Tensor(
             [
-                [0.0, 0.0, 1.0],
+                [1, 0, 0, 0, 0],
+                [0, 1, 1, 1, 1],
             ]
-        )
+        ),
+        0,
+        1,
     )
-
-    y_pred = torch.from_numpy(
-        np.array(
+    matrix_A = torch.transpose(
+        torch.Tensor(
             [
-                [0.0, 0.0, 3.0],
+                [1, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0],
+                [0, 0, 1, 1, 1],
             ]
-        )
+        ),
+        0,
+        1,
     )
-
-    loss_function = torch.nn.CrossEntropyLoss()
-
-    loss = hierarchical_loss(
-        y_pred=y_pred,
-        y_true=y_true,
-        labels=labels_in_train,
-        weights=[0.25, 0.25, 0.25, 0.25],
-        loss_function=loss_function,
+    matrix_T = torch.transpose(
+        torch.Tensor(
+            [
+                [1, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0],
+                [0, 0, 1, 0, 0],
+                [0, 0, 0, 1, 1],
+            ]
+        ),
+        0,
+        1,
     )
-    print(f"\nloss = {loss}")
+    matrix_H = torch.eye(n=len(class_names))
+
+    assert torch.equal(matrix_C, H_to_level_matrix(class_names=class_names, level="C"))
+    assert torch.equal(matrix_A, H_to_level_matrix(class_names=class_names, level="A"))
+    assert torch.equal(matrix_T, H_to_level_matrix(class_names=class_names, level="T"))
+    assert torch.equal(matrix_H, H_to_level_matrix(class_names=class_names, level="H"))
+
+
+def test_mean_squared_error():
+    y_true = torch.Tensor([[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]])
+    y_pred = torch.Tensor([[0.0, 0.1, 0.9], [0.0, 0.1, 0.9]])
+    mse = mean_squared_error(y_pred=y_pred, y_true=y_true)
+
+    assert torch.allclose(mse, torch.tensor([0.04]))
+
+
+def test_log_loss():
+    y_true = torch.Tensor([[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]])
+    y_pred = torch.Tensor([[0.0, 0.1, 0.9], [0.0, 0.1, 0.9]])
+    loss = log_loss(y_pred=y_pred, y_true=y_true)
+
+    assert torch.allclose(loss, torch.tensor([0.21072109043598175]))

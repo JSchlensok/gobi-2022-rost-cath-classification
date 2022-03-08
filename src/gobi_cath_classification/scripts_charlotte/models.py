@@ -12,6 +12,7 @@ from sklearn.naive_bayes import GaussianNB
 from torch import nn
 from torch.nn.functional import one_hot
 
+from gobi_cath_classification.pipeline.data_loading import label_for_level
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
@@ -95,11 +96,12 @@ class NeuralNetworkModel(ModelInterface):
         dropout_sizes: List[Optional[float]],
         batch_size: int,
         optimizer: str,
-        loss_function: Literal["CrossEntropyLoss", "HierarchicalLoss"],
+        loss_function: Literal["CrossEntropyLoss", "HierarchicalLogLoss"],
         class_weights: torch.Tensor,
         rng: np.random.RandomState,
         random_seed: int = 42,
         weight_decay: float = 0.0,
+        loss_weights: torch.Tensor = None,
     ):
         assert len(layer_sizes) == len(dropout_sizes)
         self.device = torch_utils.get_device()
@@ -132,26 +134,28 @@ class NeuralNetworkModel(ModelInterface):
 
         model.add_module(
             f"Linear_{len(layer_sizes) - 1}",
-            nn.Linear(in_features=layer_sizes[-1], out_features=len(self.class_names)).to(
-                self.device
-            ),
+            nn.Linear(in_features=layer_sizes[-1], out_features=len(self.class_names))
         )
         if dropout_sizes[-1] is not None:
             model.add_module(
-                f"Dropout_{len(dropout_sizes)-1}",
+                f"Dropout_{len(dropout_sizes) - 1}",
                 nn.Dropout(
                     p=dropout_sizes[-1],
                 ),
             )
+        if loss_function == "HierarchicalLogLoss":
+            model.add_module("Softmax", nn.Softmax())
 
-        # model.add_module("Softmax", nn.Softmax())
         self.model = model.to(self.device)
+
         if loss_function == "CrossEntropyLoss":
             self.loss_function = torch.nn.CrossEntropyLoss(
                 weight=class_weights.to(self.device) if class_weights is not None else None,
             )
-        elif loss_function == "HierarchicalLoss":
-            self.loss_function = hierarchical_loss
+        elif loss_function == "HierarchicalLogLoss":
+            self.loss_function = HierarchicalLogLoss(
+                class_names=self.class_names,
+                hierarchical_weights=loss_weights.to(self.device))
         else:
             raise ValueError(f"Loss_function is not valid: {loss_function}")
 
@@ -159,7 +163,7 @@ class NeuralNetworkModel(ModelInterface):
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         elif optimizer == "adam":
             self.optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=lr, weight_decay=weight_decay
+                self.model.parameters(), lr=lr, weight_decay=weight_decay,
             )
         else:
             raise ValueError(f"Optimizer is not valid: {optimizer}")
@@ -186,16 +190,9 @@ class NeuralNetworkModel(ModelInterface):
             batch_X = X[indices].float()
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
-            if self.loss_function == torch.nn.CrossEntropyLoss:
-                loss = self.loss_function(y_pred, batch_y)
-            else:
-                loss = self.loss_function(
-                    y_pred=y_pred,
-                    y_true=batch_y,
-                    labels=labels,
-                    weights=[0.1, 0.1, 0.1, 0.7],
-                    loss_function=torch.nn.CrossEntropyLoss,
-                )
+
+            loss = self.loss_function(y_pred, batch_y)
+
             loss_sum += loss
             loss.backward()
             self.optimizer.step()
@@ -218,50 +215,50 @@ class NeuralNetworkModel(ModelInterface):
         raise NotImplementedError
 
 
-def hierarchical_loss(
-    y_pred: torch.Tensor,
-    y_true: torch.Tensor,
-    labels: List[str],
-    weights: np.ndarray,
-    loss_function,
-) -> torch.Tensor:
-    loss = 0
-    for i, level in enumerate(["C", "A", "T", "H"]):
-        pred = _get_predictions_for_level(cath_level=level, y_pred=y_pred, labels=labels)
-        true = _get_predictions_for_level(cath_level=level, y_pred=y_true, labels=labels)
+class HierarchicalLogLoss:
+    def __init__(self, class_names: List[str], hierarchical_weights: torch.Tensor):
+        self.class_names = class_names
+        assert len(hierarchical_weights) == 4
+        assert torch.allclose(torch.sum(hierarchical_weights), torch.tensor([1.]))
+        self.weights = hierarchical_weights
 
-        print(f"type(pred) = {type(pred)}")
-        print(f"type(true) = {type(true)}")
-        print(f"type(loss_function(pred, true)) = {type(loss_function(pred, true))}")
-        print(f"loss_function(pred, true) = {loss_function(pred, true)}")
+        self.H_to_C_matrix = H_to_level_matrix(class_names=class_names, level="C")
+        self.H_to_A_matrix = H_to_level_matrix(class_names=class_names, level="A")
+        self.H_to_T_matrix = H_to_level_matrix(class_names=class_names, level="T")
 
-        loss += weights[i] * loss_function(pred, true)
+    def __call__(self, y_pred: torch.Tensor, y_true: torch.Tensor):
+        loss_C = log_loss(torch.matmul(y_pred, self.H_to_C_matrix), torch.matmul(y_true, self.H_to_C_matrix))
+        loss_A = log_loss(torch.matmul(y_pred, self.H_to_A_matrix), torch.matmul(y_true, self.H_to_A_matrix))
+        loss_T = log_loss(torch.matmul(y_pred, self.H_to_T_matrix), torch.matmul(y_true, self.H_to_T_matrix))
+        loss_H = log_loss(y_pred, y_true)
 
-    return torch.Tensor(loss)
+        loss = self.weights[0] * loss_C + self.weights[1] * loss_A + self.weights[2] * loss_T + self.weights[3] * loss_H
+        return loss
 
 
-def _get_predictions_for_level(
-    cath_level: Literal["C", "A", "T", "H"], y_pred: torch.Tensor, labels: List[str]
-) -> torch.Tensor:
-    level = "CATH".index(cath_level)
-    new_preds = []
+def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
+    assert level in ["C", "A", "T", "H"]
+    class_names_level = sorted(
+        list(set([label_for_level(cn, cath_level=level) for cn in class_names]))
+    )
+    matrix = []
+    for cn in class_names:
+        row = []
+        for cn_level in class_names_level:
+            row.append(1 if cn.startswith(cn_level) else 0)
+        matrix.append(row)
 
-    for proba_dist in y_pred:
-        prev_label = ".".join(labels[0].split(".")[: level + 1])
-        new_pred = []
-        p_level = 0
-        for i, p in enumerate(proba_dist):
-            if labels[i].startswith(prev_label):
-                p_level += int(p)
-            else:
-                new_pred.append(p_level)
-                p_level = int(p)
-                prev_label = ".".join(labels[i].split(".")[: level + 1])
+    return torch.Tensor(matrix)
 
-        new_pred.append(p_level)
-        new_preds.append(new_pred)
 
-    return torch.tensor(new_preds)
+def log_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
+    log_loss = (-1) * torch.sum(x_log_y)
+    return log_loss
+
+
+def mean_squared_error(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    return (y_pred - y_true).pow(2).sum()
 
 
 class DistanceModel(ModelInterface):
