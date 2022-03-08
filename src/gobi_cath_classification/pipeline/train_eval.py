@@ -28,6 +28,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 from gobi_cath_classification.scripts_david.save_checkpoint import (
+    save_configuration,
     load_configuration,
     load_results,
     remove_files,
@@ -240,7 +241,7 @@ def main():
     analysis = tune.run(
         training_function,
         trial_dirname_creator=trial_dirname_creator,
-        local_dir=checkpoint_dir,
+        local_dir="checkpoint_dir",
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
