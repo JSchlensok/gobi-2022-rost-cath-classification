@@ -3,7 +3,8 @@ import torch
 from ray import tune
 
 from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.train_eval import resume_training
+from gobi_cath_classification.pipeline.data import REPO_ROOT_DIR
+from gobi_cath_classification.pipeline.train_eval import training_function
 
 
 def main():
@@ -36,13 +37,16 @@ def main():
     ray.init()
     # Start tune run
     analysis = tune.run(
-        resume_training,
+        training_function,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "unique_ID": tune.choice(["b4bd828c-03e8-4ef2-827d-82b932364e78"]),
+            "checkpoint_dir": tune.choice([
+                    "training_function_2022-03-08_10-51-03\\training_function_4493d_00000_0_checkpoint_dir=training_function_2022-03-08_10-08-15\\training_function_49a1a_00002_2_class_weights_2022-03-08_10-51-03"
+            ]),
         },
         progress_reporter=reporter,
+        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints"
     )
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
 

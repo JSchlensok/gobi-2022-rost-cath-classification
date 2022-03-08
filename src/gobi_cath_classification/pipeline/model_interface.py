@@ -65,7 +65,7 @@ class ModelInterface:
         """
 
     @abstractmethod
-    def save_checkpoint(self, unique_ID: uuid, epoch: int, save_to_dir: Path, filename: str):
+    def save_checkpoint(self, save_to_dir: Path):
         """
 
         Save a checkpoint to given directory.
@@ -73,7 +73,7 @@ class ModelInterface:
         """
 
     @abstractmethod
-    def load_model_from_checkpoint(self, load_from_dir: Path):
+    def load_model_from_checkpoint(self, checkpoint_file_dir: Path):
         """
 
         Load model from given checkpoint file(s),

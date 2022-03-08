@@ -4,6 +4,7 @@ import torch
 from ray import tune
 
 # Import functions located in directory packages
+from gobi_cath_classification.pipeline.data import REPO_ROOT_DIR
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.train_eval import training_function
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
@@ -61,6 +62,7 @@ def main():
             },
         },
         progress_reporter=reporter,
+        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints"
     )
     # Print the best configuration from analysis
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))

@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 import ray
-import uuid
 import torch
 import platform
 import numpy as np
@@ -27,32 +26,44 @@ from gobi_cath_classification.scripts_charlotte.models import (
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 from gobi_cath_classification.scripts_david.save_checkpoint import (
-    save_model_configuration,
-    save_model_results,
+    save_configuration,
     load_configuration,
     load_results,
-    load_model,
     remove_files,
 )
 
 
 def training_function(config: dict) -> None:
-    if "unique_ID_dir" in config["model"].keys():
+    # Check if checkpoint_dir is available in config --> If yes, resume training
+    if "checkpoint_dir" in config.keys():
+        # Mark training function to resume training
         resume_training = True
-        unique_ID = str(config["model"]["unique_ID_dir"]).split("/")[-1].split(" ")[-1]
-        print(f"Attempting to resume training for ID {unique_ID}...")
+        print(f"Attempting to resume training from checkpoint {str(config['checkpoint_dir']).split('/')[-1]} ...")
         print("Reading in configuration...")
-        path_to_model = REPO_ROOT_DIR / "model checkpoints" / config["model"]["unique_ID_dir"]
-
+        # Get the backup-directory of the given model
+        backup_dir = Path(config['checkpoint_dir'])
+        backup_dir = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, "model checkpoints" / backup_dir)
+        # Read in the models saved configuration
         config = load_configuration(
-            unique_ID=unique_ID,
-            directory=path_to_model,
+            checkpoint_dir=Path(backup_dir)
         )
+        # Print read in config
+        for key in config.keys():
+            print(f"Config: {key} = {config[key]}")
     else:
+        # Do not resume training, create new model
         resume_training = False
-        # Create a unique ID to later identify the model later
-        unique_ID = uuid.uuid4()
-        print(f"CURRENT MODEL'S ASSIGNED UNIQUE ID - {unique_ID}")
+        # Default for new config value "öast_epoch"
+        config["last_epoch"] = None
+        # Save the models configuration
+
+    # Find training function file by ray tune
+    with tune.checkpoint_dir(step=1) as checkpoint_dir_sub:
+        # Mark as new checkpoint dir
+        checkpoint_dir = Path(checkpoint_dir_sub).parent
+        # os.remove(checkpoint_dir_sub)
+    # Save config incl last epoch
+    save_configuration(checkpoint_dir=checkpoint_dir, config=config)
 
     # set random seeds
     random_seed = config["random_seed"]
@@ -77,7 +88,7 @@ def training_function(config: dict) -> None:
 
     print(f"len(class_names = {len(class_names)}")
 
-    # get hyperparameters from config dict
+    # get hyper parameters from config dict
     print(f"config = {config}")
     model_class = config["model"]["model_class"]
     num_epochs = config["model"]["num_epochs"] if "num_epochs" in config["model"].keys() else 1
@@ -136,32 +147,26 @@ def training_function(config: dict) -> None:
     highest_acc_h = 0
     n_bad = 0
     n_thresh = 20
-
-    # create checkpoint directory
-    checkpoint_dir = config["checkpoint_dir"] / f"{model_class} {unique_ID}"
-    if not os.path.isdir(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
+    # If training is resumed, value will be overwritten
+    epoch_start = 0
 
     if resume_training:
         print("Reading in model and previous results...")
-        model, epoch = load_model(unique_ID=unique_ID, directory=checkpoint_dir)
-        eval_dict, highest_h_accuracy = load_results(unique_ID=unique_ID, directory=path_to_model)
+        # Read in model from backup_dir
+        model = model.load_model_from_checkpoint(checkpoint_dir=Path(backup_dir))
+        # Read in previous results
+        eval_dict = load_results(checkpoint_dir=Path(backup_dir))
+        highest_acc_h = eval_dict["accuracy_h"]
+        epoch_start = config["last_epoch"] + 1
         tune.report(**eval_dict)
         print(
-            f"unique ID: {unique_ID}, model: {model}, epoch: {epoch}, h-accuracy {highest_h_accuracy}, eval-dict:\n{eval_dict}"
+            f"model: {model}\n epoch: {config['last_epoch']}\n h-accuracy {highest_acc_h}\n eval-dict:\n{eval_dict}"
         )
         print(f"Resuming training on model {model.__class__.__name__}...")
 
-    else:
-        print(f"Training model {model.__class__.__name__}...")
-        # Save the model configuration before running training
-        save_model_configuration(
-            model_class=model_class,
-            dict_config=config,
-            directory_path=checkpoint_dir,
-        )
-
-    for epoch in range(num_epochs):
+    print(f"Training model {model.__class__.__name__}...")
+    for epoch in range(epoch_start, num_epochs):
+        config["last_epoch"] = epoch
         model_metrics_dict = model.train_one_epoch(
             embeddings=embeddings_train,
             embeddings_tensor=embeddings_train_tensor,
@@ -186,22 +191,16 @@ def training_function(config: dict) -> None:
             highest_acc_h = acc_h
             n_bad = 0
             print(f"New best performance found: accuracy_h = {highest_acc_h}")
-
-            remove_files(filetype="Model Checkpoint", unique_ID=unique_ID, directory=checkpoint_dir)
             print(f"Attempting to save {model_class} as intermediate checkpoint...")
+            # Delete old model_object and save new improved model
+            remove_files(checkpoint_dir=checkpoint_dir, filetype="model_object")
             model.save_checkpoint(
                 save_to_dir=checkpoint_dir,
-                filename=f"{model_class} Model Checkpoint - Epoch {epoch}.pt",
-                unique_ID=unique_ID,
-                epoch=epoch,
             )
-            save_model_results(
-                model_class=model_class,
-                unique_ID=unique_ID,
-                eval_dict=eval_dict,
-                epoch=epoch,
-                directory_path=checkpoint_dir,
-            )
+            # Remove old config file
+            remove_files(checkpoint_dir=checkpoint_dir, filetype="model_configuration")
+            # Save updated config file
+            save_configuration(checkpoint_dir=checkpoint_dir, config=config)
         else:
             n_bad += 1
             if n_bad >= n_thresh:
@@ -237,13 +236,6 @@ def main():
         infer_limit=10,
     )
 
-    # create checkpoint directory
-    time = str(datetime.datetime.now()).replace(" ", "-").replace(":", "-").replace(".", "-")
-    checkpoint_dir = REPO_ROOT_DIR / "model checkpoints" / time
-
-    if not os.path.isdir(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
-
     ray.init()
     analysis = tune.run(
         training_function,
@@ -251,14 +243,14 @@ def main():
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "checkpoint_dir": checkpoint_dir,
+            "checkpoint_dir": "checkpoint_dir",
             "random_seed": RANDOM_SEED,
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
             "model": tune.grid_search(
                 [
                     {
                         # unique_ID_dir = Path from within "model checkpoints" folder to model
-                        "unique_ID_dir": Path(
+                        "checkpoint_dir": Path(
                             "2022-03-06-23-11-26-522867/GaussianNaiveBayesModel 240b9462-e290-4f63-b077-c4ea831dd294"
                         ),
                     },
