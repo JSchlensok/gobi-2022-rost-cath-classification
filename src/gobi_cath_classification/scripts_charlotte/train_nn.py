@@ -43,7 +43,7 @@ def main():
                         "batch_size": 32,
                         "optimizer": "adam",
                         "loss_function": "HierarchicalLogLoss",
-                        "loss_weights": [1/4, 1/4, 1/4, 1/4],
+                        "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
@@ -55,7 +55,7 @@ def main():
                         "batch_size": 32,
                         "optimizer": "adam",
                         "loss_function": "HierarchicalLogLoss",
-                        "loss_weights": [1/10, 2/10, 3/10, 4/10],
+                        "loss_weights": [1 / 10, 2 / 10, 3 / 10, 4 / 10],
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
@@ -67,13 +67,11 @@ def main():
                         "batch_size": 32,
                         "optimizer": "adam",
                         "loss_function": "HierarchicalLogLoss",
-                        "loss_weights": [1/15, 2/15, 4/15, 8/15],
+                        "loss_weights": [1 / 15, 2 / 15, 4 / 15, 8 / 15],
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
                     },
-
-
                 ]
             ),
         },

@@ -194,7 +194,7 @@ def main():
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
                         "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLoss"]),
-                        "loss_weights": [1/4, 1/4, 1/4, 1/4],
+                        "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],
                     },

@@ -134,7 +134,7 @@ class NeuralNetworkModel(ModelInterface):
 
         model.add_module(
             f"Linear_{len(layer_sizes) - 1}",
-            nn.Linear(in_features=layer_sizes[-1], out_features=len(self.class_names))
+            nn.Linear(in_features=layer_sizes[-1], out_features=len(self.class_names)),
         )
         if dropout_sizes[-1] is not None:
             model.add_module(
@@ -154,8 +154,8 @@ class NeuralNetworkModel(ModelInterface):
             )
         elif loss_function == "HierarchicalLogLoss":
             self.loss_function = HierarchicalLogLoss(
-                class_names=self.class_names,
-                hierarchical_weights=loss_weights.to(self.device))
+                class_names=self.class_names, hierarchical_weights=loss_weights.to(self.device)
+            )
         else:
             raise ValueError(f"Loss_function is not valid: {loss_function}")
 
@@ -163,7 +163,9 @@ class NeuralNetworkModel(ModelInterface):
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         elif optimizer == "adam":
             self.optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=lr, weight_decay=weight_decay,
+                self.model.parameters(),
+                lr=lr,
+                weight_decay=weight_decay,
             )
         else:
             raise ValueError(f"Optimizer is not valid: {optimizer}")
@@ -219,7 +221,7 @@ class HierarchicalLogLoss:
     def __init__(self, class_names: List[str], hierarchical_weights: torch.Tensor):
         self.class_names = class_names
         assert len(hierarchical_weights) == 4
-        assert torch.allclose(torch.sum(hierarchical_weights), torch.tensor([1.]))
+        assert torch.allclose(torch.sum(hierarchical_weights), torch.tensor([1.0]))
         self.weights = hierarchical_weights
 
         self.H_to_C_matrix = H_to_level_matrix(class_names=class_names, level="C")
@@ -227,12 +229,23 @@ class HierarchicalLogLoss:
         self.H_to_T_matrix = H_to_level_matrix(class_names=class_names, level="T")
 
     def __call__(self, y_pred: torch.Tensor, y_true: torch.Tensor):
-        loss_C = log_loss(torch.matmul(y_pred, self.H_to_C_matrix), torch.matmul(y_true, self.H_to_C_matrix))
-        loss_A = log_loss(torch.matmul(y_pred, self.H_to_A_matrix), torch.matmul(y_true, self.H_to_A_matrix))
-        loss_T = log_loss(torch.matmul(y_pred, self.H_to_T_matrix), torch.matmul(y_true, self.H_to_T_matrix))
+        loss_C = log_loss(
+            torch.matmul(y_pred, self.H_to_C_matrix), torch.matmul(y_true, self.H_to_C_matrix)
+        )
+        loss_A = log_loss(
+            torch.matmul(y_pred, self.H_to_A_matrix), torch.matmul(y_true, self.H_to_A_matrix)
+        )
+        loss_T = log_loss(
+            torch.matmul(y_pred, self.H_to_T_matrix), torch.matmul(y_true, self.H_to_T_matrix)
+        )
         loss_H = log_loss(y_pred, y_true)
 
-        loss = self.weights[0] * loss_C + self.weights[1] * loss_A + self.weights[2] * loss_T + self.weights[3] * loss_H
+        loss = (
+            self.weights[0] * loss_C
+            + self.weights[1] * loss_A
+            + self.weights[2] * loss_T
+            + self.weights[3] * loss_H
+        )
         return loss
 
 

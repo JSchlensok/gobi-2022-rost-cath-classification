@@ -39,7 +39,7 @@ class TestNeuralNetwork:
                 batch_size=200,
                 optimizer="adam",
                 loss_function="HierarchicalLogLoss",
-                loss_weights=torch.Tensor([1/10, 2/10, 3/10, 4/10]),
+                loss_weights=torch.Tensor([1 / 10, 2 / 10, 3 / 10, 4 / 10]),
                 rng=np.random.RandomState(random_seed),
                 random_seed=random_seed,
             ),
