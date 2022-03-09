@@ -37,6 +37,10 @@ def main():
         max_report_frequency=10,
         infer_limit=10,
     )
+
+    # Where ever i save my ray results
+    local_dir = "WHERE I WANT TO SAVE MY RAY RESULTS AND CHECKPOINTS"
+
     # Initialize ray
     ray.init()
     # Run machine learning model using tune.run and catch statistics in analysis
@@ -62,7 +66,8 @@ def main():
             },
         },
         progress_reporter=reporter,
-        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints",
+        # Local_dir specifies the location of your ray and checkpoint files
+        local_dir=local_dir,
     )
     # Print the best configuration from analysis
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))

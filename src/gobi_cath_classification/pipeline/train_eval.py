@@ -1,6 +1,4 @@
-import datetime
 import os
-from os import listdir
 
 from pathlib import Path
 
@@ -44,13 +42,10 @@ def training_function(config: dict) -> None:
         )
         print("Reading in configuration...")
         # Get the backup-directory of the given model
-        backup_dir = Path(config["model"]["checkpoint_dir"])
-        backup_dir = os.path.join(
-            Path(os.path.dirname(os.path.realpath(__file__))).parent,
-            "model checkpoints" / backup_dir,
-        )
+        backup_folder = Path(config["model"]["checkpoint_dir"])
+        backup_dir = os.path.join(Path(config["model"]["local_dir"]), backup_folder)
         if not os.path.isdir(backup_dir):
-            raise ValueError("BackUp directory not valid!")
+            raise ValueError(f"BackUp directory: {backup_dir} - not valid!")
         # Read in the models saved configuration
         config = load_configuration(checkpoint_dir=Path(backup_dir))
         # Print read in config

@@ -33,6 +33,9 @@ def main():
         infer_limit=10,
     )
 
+    # Where ever i save my ray results
+    local_dir = "C:\\Users\\David Mauder\\ray_results"
+
     # Initialize Ray
     ray.init()
     # Start tune run
@@ -42,15 +45,17 @@ def main():
         num_samples=1,
         config={
             "model": {
+                # path of the folder with all saved files from local_dir onwards...
                 "checkpoint_dir": tune.choice(
                     [
-                        "training_function_2022-03-09_01-07-57\\training_function_f96d8_00001_1_class_weights=inverse,layer_sizes=[1024],lr=0.0001,optimizer=adam,random_seed=1_2022-03-09_01-07-59"
+                        "training_function_2022-03-09_01-45-07\\training_function_2ad2b_00000_0_class_weights=inverse,layer_sizes=[1024],lr=1e-05,optimizer=adam,random_seed=1_2022-03-09_01-45-07"
                     ]
                 ),
+                "local_dir": tune.choice([local_dir]),
             }
         },
         progress_reporter=reporter,
-        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints",
+        local_dir=local_dir,
     )
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
 
