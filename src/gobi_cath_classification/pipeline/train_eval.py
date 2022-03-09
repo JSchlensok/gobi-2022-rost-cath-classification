@@ -26,6 +26,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 from gobi_cath_classification.scripts_david.save_checkpoint import (
+    save_configuration,
     load_configuration,
     load_results,
     remove_files,
@@ -33,6 +34,11 @@ from gobi_cath_classification.scripts_david.save_checkpoint import (
 
 
 def training_function(config: dict) -> None:
+    # Find training function file by ray tune
+    with tune.checkpoint_dir(step=1) as checkpoint_dir_sub:
+        # Mark as new checkpoint dir
+        checkpoint_dir = Path(checkpoint_dir_sub).parent
+        # os.remove(checkpoint_dir_sub)
     # Check if checkpoint_dir is available in config --> If yes, resume training
     if "checkpoint_dir" in config["model"].keys():
         # Mark training function to resume training
@@ -48,6 +54,7 @@ def training_function(config: dict) -> None:
             raise ValueError(f"BackUp directory: {backup_dir} - not valid!")
         # Read in the models saved configuration
         config = load_configuration(checkpoint_dir=Path(backup_dir))
+        save_configuration(checkpoint_dir=checkpoint_dir, config=config)
         # Print read in config
         for key in config.keys():
             print(f"Config: {key} = {config[key]}")
@@ -57,12 +64,6 @@ def training_function(config: dict) -> None:
         # Default for new config value "öast_epoch"
         config["last_epoch"] = None
         # Save the models configuration
-
-    # Find training function file by ray tune
-    with tune.checkpoint_dir(step=1) as checkpoint_dir_sub:
-        # Mark as new checkpoint dir
-        checkpoint_dir = Path(checkpoint_dir_sub).parent
-        # os.remove(checkpoint_dir_sub)
 
     # set random seeds
     random_seed = config["random_seed"]
