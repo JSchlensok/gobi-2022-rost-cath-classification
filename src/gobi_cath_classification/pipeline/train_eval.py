@@ -207,14 +207,9 @@ def trial_dirname_creator(trial: trial.Trial) -> str:
     trial_dirname = f"{trial.trainable_name}_{trial.trial_id}_{str(trial.experiment_tag)}".replace(
         ": ", ", "
     )
-
-    # max length for path under Windows = 260 characters
-    operating_system = platform.system()
-    if operating_system == "Windows":
-        max_len_for_trial_dirname = 260 - len(trial.local_dir)
-        return trial_dirname[:max_len_for_trial_dirname]
-    else:
-        return trial_dirname
+    # max length for path = 260 characters
+    max_len_for_trial_dirname = 260 - len(trial.local_dir)
+    return trial_dirname[:max_len_for_trial_dirname]
 
 
 def main():
@@ -232,24 +227,29 @@ def main():
         infer_limit=10,
     )
 
+    # Default Path for local_dir --> defines location of ray files
+    # Can be changed to any location
+    local_dir = str(Path(__file__).parent.parent.parent.parent / "model checkpoints")
+    print(f"local_dir = {local_dir}")
+
     ray.init()
     analysis = tune.run(
         training_function,
         trial_dirname_creator=trial_dirname_creator,
-        local_dir="checkpoint_dir",
+        local_dir=local_dir,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "checkpoint_dir": "checkpoint_dir",
             "random_seed": RANDOM_SEED,
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
             "model": tune.grid_search(
                 [
                     {
-                        # unique_ID_dir = Path from within "model checkpoints" folder to model
+                        # dir to model checkpoint files from local_dir
                         "checkpoint_dir": Path(
-                            "2022-03-06-23-11-26-522867/GaussianNaiveBayesModel 240b9462-e290-4f63-b077-c4ea831dd294"
+                            "training_function_2022-03-09_01-45-07\\training_function_2ad2b_00000_0_class_weights=inverse,layer_sizes=[1024],lr=1e-05,optimizer=adam,random_seed=1_2022-03-09_01-45-07"
                         ),
+                        "local_dir": local_dir,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
