@@ -37,7 +37,7 @@ eval1 = Evaluation(
     y_true=data_set.y_test,
     predictions=predictions1,
     train_labels=data_set.train_labels,
-    model_name="Random Baseline"
+    model_name="Random Baseline",
 )
 start = time.perf_counter()
 eval1.compute_metrics(accuracy=True, mcc=True)
@@ -56,7 +56,7 @@ eval2 = Evaluation(
     y_true=data_set.y_test,
     predictions=predictions2,
     train_labels=data_set.train_labels,
-    model_name="Random Baseline with weights"
+    model_name="Random Baseline with weights",
 )
 
 eval2.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)

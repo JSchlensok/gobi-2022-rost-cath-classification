@@ -32,10 +32,10 @@ class Evaluation:
 
     def __init__(
         self,
-            y_true: List[CATHLabel],
-            predictions: Prediction,
-            train_labels: List[CATHLabel],
-            model_name: str = None
+        y_true: List[CATHLabel],
+        predictions: Prediction,
+        train_labels: List[CATHLabel],
+        model_name: str = None,
     ):
         """
         Create a Evaluation class with the true labels, the Prediction object from the predict method of the model
@@ -181,7 +181,6 @@ class Evaluation:
             "kappa" in self.eval_dict,
         ]
 
-
         n_pred = len(self.y_true)
         indexes = range(n_pred)
         bootstrap_dicts = list()
@@ -230,8 +229,10 @@ class Evaluation:
             for metric in METRICS:
                 if metric in self.eval_dict:
 
-                    df = pd.DataFrame(data=self.eval_dict[metric],
-                                      index=[self.model_name if self.model_name is not None else "Performance"])
+                    df = pd.DataFrame(
+                        data=self.eval_dict[metric],
+                        index=[self.model_name if self.model_name is not None else "Performance"],
+                    )
 
                     # only multiply by 100 if the metric is accuracy
                     if metric == "accuracy":
@@ -241,21 +242,30 @@ class Evaluation:
                         df = df.round(2).astype(str)
 
                     # assign a name to the dataframe
-                    df.name = f"{self.model_name}: {metric}" if self.model_name is not None else f"Metric: {metric}"
+                    df.name = (
+                        f"{self.model_name}: {metric}"
+                        if self.model_name is not None
+                        else f"Metric: {metric}"
+                    )
 
                     # add the standard error if available
                     if self.error_dict is not None:
                         # only multiply standard error if the metric is accuracy
                         if metric == "accuracy":
-                            errors = (np.array(list(self.error_dict[metric].values()))*100).round(2)
+                            errors = (np.array(list(self.error_dict[metric].values())) * 100).round(
+                                2
+                            )
                         else:
                             errors = np.array(list(self.error_dict[metric].values())).round(2)
 
                         df = df + " +/- " + [str(err) for err in errors]
 
                         # assign a name to the dataframe
-                        df.name = f"{self.model_name}: {metric} with errors" \
-                            if self.model_name is not None else f"Metric: {metric}"
+                        df.name = (
+                            f"{self.model_name}: {metric} with errors"
+                            if self.model_name is not None
+                            else f"Metric: {metric}"
+                        )
 
                     # print the evaluation results to std-out
                     print(df.name)
