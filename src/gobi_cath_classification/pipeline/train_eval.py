@@ -49,6 +49,8 @@ def training_function(config: dict) -> None:
             Path(os.path.dirname(os.path.realpath(__file__))).parent,
             "model checkpoints" / backup_dir,
         )
+        if not os.path.isdir(backup_dir):
+            raise ValueError("BackUp directory not valid!")
         # Read in the models saved configuration
         config = load_configuration(checkpoint_dir=Path(backup_dir))
         # Print read in config
@@ -158,13 +160,15 @@ def training_function(config: dict) -> None:
         model = model.load_model_from_checkpoint(checkpoint_dir=Path(backup_dir))
         # Read in previous results
         eval_dict = load_results(checkpoint_dir=Path(backup_dir))
+        for key in eval_dict.keys():
+            print(f"Result: {key} = {eval_dict[key]}")
         highest_acc_h = eval_dict["accuracy_h"]
-        epoch_start = config["model"]["last_epoch"] + 1
+        epoch_start = eval_dict["config"]["last_epoch"] + 1
         tune.report(**eval_dict)
         print(
-            f"model: {model}\n epoch: {config['last_epoch']}\n h-accuracy {highest_acc_h}\n eval-dict:\n{eval_dict}"
+            f"model: {model}\n epoch: {epoch_start-1}\n h-accuracy {highest_acc_h}\n eval-dict:\n{eval_dict}"
         )
-        print(f"Resuming training on model {model.__class__.__name__}...")
+        print(f"Resuming training on model {model.__class__.__name__} on epoch {epoch_start}...")
 
     print(f"Training model {model.__class__.__name__}...")
     for epoch in range(epoch_start, num_epochs):

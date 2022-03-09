@@ -17,18 +17,20 @@ def load_results(checkpoint_dir: Path):
     ########################################################################################
     # Create file path
     file_path = os.path.join(checkpoint_dir, "result.json")
+    print(f"Reading results from: {file_path}")
     # read file
-    with open(file_path, "r") as config_file:
-        for line in config_file.read().split("\n"):
+    with open(file_path, "r") as result_file:
+        for line in result_file.read().split("\n"):
             if line != "":
-                config_content = line
+                result_content = line
 
     # parse file
-    return json.loads(config_content)
+    if "result_content" not in locals():
+        raise ValueError("No results available!")
+    return json.loads(result_content)
 
 
 def load_configuration(checkpoint_dir: Path):
-
     ########################################################################################
     # FUNCTION NAME     : load_configuration()
     # INPUT PARAMETERS  : checkpoint_dir: Path
@@ -40,15 +42,17 @@ def load_configuration(checkpoint_dir: Path):
     ########################################################################################
     # Create file path
     file_path = os.path.join(checkpoint_dir, "params.json")
+    print(f"Reading configuration from: {file_path}")
     # read file
     with open(file_path, "r") as config_file:
         config_content = config_file.read()
     # parse file
+    if "config_content" not in locals():
+        raise ValueError("No configuration available!")
     return json.loads(config_content)
 
 
 def remove_files(checkpoint_dir: Path, filetype: str):
-
     ########################################################################################
     # FUNCTION NAME     : remove_files()
     # INPUT PARAMETERS  : filetype: str, unique_ID: uuid
