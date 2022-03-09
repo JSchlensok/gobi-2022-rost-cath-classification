@@ -1,4 +1,5 @@
 import platform
+from pathlib import Path
 
 import numpy as np
 import ray
@@ -11,7 +12,7 @@ from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
     compute_class_weights,
 )
-from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
+from gobi_cath_classification.pipeline.data import load_data, DATA_DIR, REPO_ROOT_DIR
 
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
@@ -145,6 +146,7 @@ def training_function(config: dict) -> None:
             n_bad += 1
             if n_bad >= n_thresh:
                 break
+    tune.report({"highest_h_acc": highest_acc_h})
 
 
 def trial_dirname_creator(trial: trial.Trial) -> str:
@@ -153,12 +155,8 @@ def trial_dirname_creator(trial: trial.Trial) -> str:
     )
 
     # max length for path under Windows = 260 characters
-    operating_system = platform.system()
-    if operating_system == "Windows":
-        max_len_for_trial_dirname = 260 - len(trial.local_dir)
-        return trial_dirname[:max_len_for_trial_dirname]
-    else:
-        return trial_dirname
+    max_len_for_trial_dirname = 260 - len(trial.local_dir)
+    return trial_dirname[:max_len_for_trial_dirname]
 
 
 def main():
@@ -176,9 +174,12 @@ def main():
         infer_limit=10,
     )
 
+    local_dir = REPO_ROOT_DIR / "ray_results"
+
     ray.init()
     analysis = tune.run(
         training_function,
+        local_dir=local_dir,
         trial_dirname_creator=trial_dirname_creator,
         resources_per_trial=resources_per_trial,
         num_samples=1,
