@@ -1,5 +1,8 @@
 import math
 import sys
+import os
+import uuid
+
 from pathlib import Path
 from typing import List, Optional, Dict
 from typing_extensions import Literal
@@ -53,10 +56,44 @@ class RandomForestModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
+        ########################################################################################
+        # FUNCTION NAME     : save_checkpoint()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Save the current state of the model to prevent information loss
+        #                     in case of disturbances in program flow
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 07.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        print(f"Attempting to save model 'RandomForestModel' in file model_object.model")
+        print(f"Saving into directory: '{save_to_dir}'")
+        checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
+        try:
+            torch.save(self, checkpoint_file_path)
+            print(f"Checkpoint saved to: {checkpoint_file_path}")
+        except:
+            print(f"Failed to save model 'RandomForestModel'")
 
-    def load_model_from_checkpoint(self, load_from_dir: Path):
-        raise NotImplementedError
+    def load_model_from_checkpoint(self, checkpoint_dir: Path):
+        ########################################################################################
+        # FUNCTION NAME     : load_model_from_checkpoint()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Load a specific, previously saved, state of the model
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 07.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        print(f"Attempting to reload model 'RandomForestModel' from file: {checkpoint_dir}")
+        try:
+            model_file_path = os.path.join(checkpoint_dir, "model_object.model")
+            model = torch.load(model_file_path)
+            print(f"Successfully read in model!")
+            return model
+        except:
+            print(f"Failed to read in model!")
+            return None
 
 
 class GaussianNaiveBayesModel(ModelInterface):
@@ -80,10 +117,44 @@ class GaussianNaiveBayesModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
+        ########################################################################################
+        # FUNCTION NAME     : save_checkpoint()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Save the current state of the model to prevent information loss
+        #                     in case of disturbances in program flow
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 07.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        print(f"Attempting to save model 'GaussianNaiveBayesModel' in file model_object.model")
+        print(f"Saving into directory: '{save_to_dir}'")
+        checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
+        try:
+            torch.save(self, checkpoint_file_path)
+            print(f"Checkpoint saved to: {checkpoint_file_path}")
+        except:
+            print(f"Failed to save model 'GaussianNaiveBayesModel'")
 
-    def load_model_from_checkpoint(self, load_from_dir: Path):
-        raise NotImplementedError
+    def load_model_from_checkpoint(self, checkpoint_dir: Path):
+        ########################################################################################
+        # FUNCTION NAME     : load_model_from_checkpoint()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Load a specific, previously saved, state of the model
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 07.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        print(f"Attempting to reload model 'GaussianNaiveBayesModel' from file: {checkpoint_dir}")
+        try:
+            model_file_path = os.path.join(checkpoint_dir, "model_object.model")
+            model = torch.load(model_file_path)
+            print(f"Successfully read in model!")
+            return model
+        except:
+            print(f"Failed to read in model!")
+            return None
 
 
 class NeuralNetworkModel(ModelInterface):
@@ -177,10 +248,44 @@ class NeuralNetworkModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
+        ########################################################################################
+        # FUNCTION NAME     : save_checkpoint()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Save the current state of the model to prevent information loss
+        #                     in case of disturbances in program flow
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 07.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        print(f"Attempting to save model 'NeuralNetworkModel' in file model_object.model")
+        print(f"Saving into directory: '{save_to_dir}'")
+        checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
+        try:
+            torch.save(self, checkpoint_file_path)
+            print(f"Checkpoint saved to: {checkpoint_file_path}")
+        except:
+            print(f"Failed to save model 'NeuralNetworkModel'")
 
-    def load_model_from_checkpoint(self, load_from_dir: Path):
-        raise NotImplementedError
+    def load_model_from_checkpoint(self, checkpoint_dir: Path):
+        ########################################################################################
+        # FUNCTION NAME     : load_model_from_checkpoint()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Load a specific, previously saved, state of the model
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 07.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        print(f"Attempting to reload model 'NeuralNetworkModel' from file: {checkpoint_dir}")
+        try:
+            model_file_path = os.path.join(checkpoint_dir, "model_object.model")
+            model = torch.load(model_file_path)
+            print(f"Successfully read in model!")
+            return model
+        except:
+            print(f"Failed to read in model!")
+            return None
 
 
 class DistanceModel(ModelInterface):
@@ -223,7 +328,41 @@ class DistanceModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
+        ########################################################################################
+        # FUNCTION NAME     : save_checkpoint()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Save the current state of the model to prevent information loss
+        #                     in case of disturbances in program flow
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 07.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        print(f"Attempting to save model 'DistanceModel' in file model_object.model")
+        print(f"Saving into directory: '{save_to_dir}'")
+        checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
+        try:
+            torch.save(self, checkpoint_file_path)
+            print(f"Checkpoint saved to: {checkpoint_file_path}")
+        except:
+            print(f"Failed to save model 'DistanceModel'")
 
-    def load_model_from_checkpoint(self, load_from_dir: Path):
-        raise NotImplementedError
+    def load_model_from_checkpoint(self, checkpoint_dir: Path):
+        ########################################################################################
+        # FUNCTION NAME     : load_model_from_checkpoint()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Load a specific, previously saved, state of the model
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 07.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        print(f"Attempting to reload model 'DistanceModel' from file: {checkpoint_dir}")
+        try:
+            model_file_path = os.path.join(checkpoint_dir, "model_object.model")
+            model = torch.load(model_file_path)
+            print(f"Successfully read in model!")
+            return model
+        except:
+            print(f"Failed to read in model!")
+            return None

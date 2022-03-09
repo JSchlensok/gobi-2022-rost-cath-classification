@@ -1,3 +1,4 @@
+import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Dict
@@ -72,7 +73,7 @@ class ModelInterface:
         """
 
     @abstractmethod
-    def load_model_from_checkpoint(self, load_from_dir: Path):
+    def load_model_from_checkpoint(self, checkpoint_file_dir: Path):
         """
 
         Load model from given checkpoint file(s),
