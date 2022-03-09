@@ -1,10 +1,14 @@
 from typing import List
 from typing_extensions import Literal
 import numpy as np
+import pandas as pd
+from tabulate import tabulate
 
 from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef, f1_score
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.pipeline.model_interface import Prediction
+
+METRICS = ["accuracy", "mcc", "f1", "kappa"]
 
 
 class Evaluation:
@@ -15,17 +19,23 @@ class Evaluation:
 
     -> in the __init__ pass the given parameters
     -> with compute_metrics() you can specify the metrics you want to compute
-    -> the metrics are then saved in the eval_dict of the Evaluation object in this structure
-        eval_dict = {"accuracy": {"accuracy_C": acc_C, "accuracy_A": acc_A, ... , "accuracy_avg": acc_avg"},
-                    "mcc": {"mcc_C": mcc_C, "mcc_A": mcc_A, ... , "mcc_avg": mcc_avg"},
-                    "f1": {"f1_C": f1_C, "f1_A": acc_A, ... , "f1_avg": f1_avg"},
-                    "kappa": {kappa_C": kappa_C, "kappa_A": kappa_A, ... , "kappa_avg": kappa_avg"}
+        -> the metrics are then saved in the eval_dict of the Evaluation object in this structure
+            eval_dict = {"accuracy": {"accuracy_C": acc_C, "accuracy_A": acc_A, ... , "accuracy_avg": acc_avg"},
+                        "mcc": {"mcc_C": mcc_C, "mcc_A": mcc_A, ... , "mcc_avg": mcc_avg"},
+                        "f1": {"f1_C": f1_C, "f1_A": acc_A, ... , "f1_avg": f1_avg"},
+                        "kappa": {kappa_C": kappa_C, "kappa_A": kappa_A, ... , "kappa_avg": kappa_avg"}
+    -> with compute_std_err() the standard error for all the previously computed metrics is calculated
+    -> with print_evaluation() the computed results can be printed to the stdout
 
     Note: only the metrics that were specified in the compute_metric() function are available in the dict
     """
 
     def __init__(
-        self, y_true: List[CATHLabel], predictions: Prediction, train_labels: List[CATHLabel]
+        self,
+            y_true: List[CATHLabel],
+            predictions: Prediction,
+            train_labels: List[CATHLabel],
+            model_name: str = None
     ):
         """
         Create a Evaluation class with the true labels, the Prediction object from the predict method of the model
@@ -41,6 +51,7 @@ class Evaluation:
         self.yhat_probabilities = predictions.probabilities
         self.yhats = [CATHLabel(label) for label in predictions.argmax_labels()]
         self.train_labels = train_labels
+        self.model_name = model_name
         self.eval_dict = None
         self.error_dict = None
 
@@ -59,10 +70,10 @@ class Evaluation:
 
         Supported Metrics
         Args:
-            accuracy: accuracy for each level in CATH
-            mcc: matthews correlation coefficient for each level in CATH
-            f1: the f1 score for each level in CATH
-            kappa: cohen's kappa for each level in CATH
+            accuracy: accuracy for each level in CATH (default = False)
+            mcc: matthews correlation coefficient for each level in CATH (default = False)
+            f1: the f1 score for each level in CATH (default = False)
+            kappa: cohen's kappa for each level in CATH (default = False)
             _y_true: default=None (ignore: only for internal usage)
             _y_hats: default=None (ignore: only for internal usage)
 
@@ -96,7 +107,7 @@ class Evaluation:
                 for i in CATH_levels
             }
 
-            # average accuracy over all levels
+            # average over all levels
             accuracy_dict["accuracy_avg"] = sum(accuracy_dict.values()) / len(CATH_levels)
 
             eval_dict["accuracy"] = accuracy_dict
@@ -108,7 +119,9 @@ class Evaluation:
                 f"mcc_{i.lower()}": metric_for_level(_y_true, _y_hats, self.train_labels, i, "mcc")
                 for i in CATH_levels
             }
+            # average over all levels
             mcc_dict["mcc_avg"] = sum(mcc_dict.values()) / len(CATH_levels)
+
             eval_dict["mcc"] = mcc_dict
             bootstrap_dict["mcc"] = mcc_dict
 
@@ -118,7 +131,9 @@ class Evaluation:
                 f"f1_{i.lower()}": metric_for_level(_y_true, _y_hats, self.train_labels, i, "f1")
                 for i in CATH_levels
             }
+            # average over all levels
             f1_dict["f1_avg"] = sum(f1_dict.values()) / len(CATH_levels)
+
             eval_dict["f1"] = f1_dict
             bootstrap_dict["f1"] = f1_dict
 
@@ -130,7 +145,9 @@ class Evaluation:
                 )
                 for i in CATH_levels
             }
+            # average over all levels
             kappa_dict["kappa_avg"] = sum(kappa_dict.values()) / len(CATH_levels)
+
             eval_dict["kappa"] = kappa_dict
             bootstrap_dict["kappa"] = kappa_dict
 
@@ -144,6 +161,10 @@ class Evaluation:
         """
         compute the standard error for the metrics currently in the evaluation dict using 1000 bootstrap intervals
         in each bootstrap interval, choose samples with replacement and compute the given metric
+        Bootstrapping takes a lot of time, so I would not recommend to compute the standard error in every epoch and
+        only calling the function at the end of the training
+        - on the validation set with 219 sequences and only the accuracy metric it takes
+        around 3 seconds for 10 bootstrap iterations -> approx. 300 seconds for all 1000 iterations
 
         Args:
             bootstrap_n: number of bootstrap intervals
@@ -159,7 +180,7 @@ class Evaluation:
             "f1" in self.eval_dict,
             "kappa" in self.eval_dict,
         ]
-        metrics = ["accuracy", "mcc", "f1", "kappa"]
+
 
         n_pred = len(self.y_true)
         indexes = range(n_pred)
@@ -181,14 +202,14 @@ class Evaluation:
 
             for i, available in enumerate(available_metrics):
                 if available:
-                    error_dict[metrics[i]] = {}
+                    error_dict[METRICS[i]] = {}
                     for level in ["c", "a", "t", "h", "avg"]:
 
                         # for all available metrics calculate the standard error for all levels
-                        error_dict[f"{metrics[i]}"][f"{metrics[i]}_{level}"] = 1.96 * np.std(
+                        error_dict[f"{METRICS[i]}"][f"{METRICS[i]}_{level}"] = 1.96 * np.std(
                             np.array(
                                 [
-                                    boot[metrics[i]][f"{metrics[i]}_{level}"]
+                                    boot[METRICS[i]][f"{METRICS[i]}_{level}"]
                                     for boot in bootstrap_dicts
                                 ]
                             ),
@@ -198,6 +219,53 @@ class Evaluation:
             self.error_dict = error_dict
         else:
             raise ValueError("The eval_dict does not contain any metrics yet")
+
+    def print_evaluation(self):
+        """
+        If metrics were computed, prints out all the computed metrics with standard error (if available)
+        to the STD-OUT
+        """
+        if self.eval_dict is not None:
+            print("\n##################### EVALUATION RESULTS #####################\n")
+            for metric in METRICS:
+                if metric in self.eval_dict:
+
+                    df = pd.DataFrame(data=self.eval_dict[metric],
+                                      index=[self.model_name if self.model_name is not None else "Performance"])
+
+                    # only multiply by 100 if the metric is accuracy
+                    if metric == "accuracy":
+                        df = df.multiply(100).round(2).astype(str)
+
+                    else:
+                        df = df.round(2).astype(str)
+
+                    # assign a name to the dataframe
+                    df.name = f"{self.model_name}: {metric}" if self.model_name is not None else f"Metric: {metric}"
+
+                    # add the standard error if available
+                    if self.error_dict is not None:
+                        # only multiply standard error if the metric is accuracy
+                        if metric == "accuracy":
+                            errors = (np.array(list(self.error_dict[metric].values()))*100).round(2)
+                        else:
+                            errors = np.array(list(self.error_dict[metric].values())).round(2)
+
+                        df = df + " +/- " + [str(err) for err in errors]
+
+                        # assign a name to the dataframe
+                        df.name = f"{self.model_name}: {metric} with errors" \
+                            if self.model_name is not None else f"Metric: {metric}"
+
+                    # print the evaluation results to std-out
+                    print(df.name)
+                    print(tabulate(df, headers="keys", tablefmt="psql"))
+                    print()
+
+            print("##################### EVALUATION RESULTS #####################\n")
+
+        else:
+            raise TypeError("No results were computed yet")
 
 
 def metric_for_level(
@@ -221,6 +289,7 @@ def metric_for_level(
             Literal["C", "A", "T", "H"]
         metric:
             the chosen metric is calculated for the specified level in the CATH hierarchy
+            ["acc", "mcc", "f1", "kappa"]
 
     Returns:
         chosen metric score for each level in CATH and the mean

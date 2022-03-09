@@ -30,29 +30,35 @@ model2 = RandomBaseline(data=data_set, class_balance=True, rng=rng, random_seed=
 model3 = ZeroRate(data=data_set, rng=rng, random_seed=random_seed)
 
 predictions1 = model1.predict(model1.data.X_test)
-predictions2 = model2.predict(model2.data.X_val)
+predictions2 = model2.predict(model2.data.X_test)
 predictions3 = model3.predict(model3.data.X_val)
 
 eval1 = Evaluation(
-    y_true=data_set.y_test, predictions=predictions1, train_labels=data_set.train_labels
+    y_true=data_set.y_test,
+    predictions=predictions1,
+    train_labels=data_set.train_labels,
+    model_name="Random Baseline"
 )
 start = time.perf_counter()
 eval1.compute_metrics(accuracy=True, mcc=True)
 end = time.perf_counter()
 print(f"time to compute the metrics: {end-start}")
-print(f"the accuracy for the random baseline without class balance are: {eval1.eval_dict}")
 
 start = time.perf_counter()
 eval1.compute_std_err(bootstrap_n=10)
 end = time.perf_counter()
 print(f"time to compute the standard error: {end-start}")
 
-"""
-evaluation1 = evaluate(data_set.y_test, predictions1, data_set.train_labels)
-evaluation2 = evaluate(data_set.y_val, predictions2, data_set.train_labels)
-evaluation3 = evaluate(data_set.y_val, predictions3, data_set.train_labels)
+eval1.print_evaluation()
 
-print(f"the accuracy for the random baseline without class balance are: {evaluation1}")
-print(f"the accuracy for the random baseline with class balance are: {evaluation2}")
-print(f"the accuracy for the Zero Rate model is: {evaluation3}")
-"""
+
+eval2 = Evaluation(
+    y_true=data_set.y_test,
+    predictions=predictions2,
+    train_labels=data_set.train_labels,
+    model_name="Random Baseline with weights"
+)
+
+eval2.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+
+eval2.print_evaluation()
