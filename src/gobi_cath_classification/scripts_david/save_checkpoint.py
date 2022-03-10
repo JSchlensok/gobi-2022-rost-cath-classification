@@ -52,6 +52,30 @@ def load_configuration(checkpoint_dir: Path):
     return json.loads(config_content)
 
 
+def save_configuration(checkpoint_dir: Path, config: dict):
+    ########################################################################################
+    # FUNCTION NAME     : load_configuration()
+    # INPUT PARAMETERS  : checkpoint_dir: Path
+    # OUTPUT PARAMETERS : none
+    # DESCRIPTION       : Reads in the configuration file from a directory
+    # AUTHOR            : D. Mauder
+    # CREATE DATE       : 07.03.2022
+    # UPDATE            : Switch on json format
+    ########################################################################################
+    # Remove the existing config file
+    remove_files(checkpoint_dir=checkpoint_dir, filetype="params")
+    # Create file path
+    file_path = os.path.join(checkpoint_dir, "params.json")
+    print(f"Saving configuration in: {file_path}")
+    # read file
+    try:
+        with open(file_path, "w") as config_file:
+            json.dump(config, config_file)
+            print("Config successfully updated!")
+    except:
+        print("Failed to update config!")
+
+
 def remove_files(checkpoint_dir: Path, filetype: str):
     ########################################################################################
     # FUNCTION NAME     : remove_files()
