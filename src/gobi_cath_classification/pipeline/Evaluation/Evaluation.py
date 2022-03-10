@@ -252,13 +252,11 @@ class Evaluation:
                     if self.error_dict is not None:
                         # only multiply standard error if the metric is accuracy
                         if metric == "accuracy":
-                            errors = (np.array(
-                                list(self.error_dict[metric].values())
-                            ) * 100).round(2)
+                            errors = (np.array(list(self.error_dict[metric].values())) * 100).round(
+                                2
+                            )
                         else:
-                            errors = np.array(
-                                list(self.error_dict[metric].values())
-                            ).round(2)
+                            errors = np.array(list(self.error_dict[metric].values())).round(2)
 
                         df = df + " +/- " + [str(err) for err in errors]
 
