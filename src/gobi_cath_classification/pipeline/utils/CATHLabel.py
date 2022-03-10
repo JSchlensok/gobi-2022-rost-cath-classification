@@ -48,3 +48,8 @@ class CATHLabel:
         index = "CATH".index(cath_level)
         label = ".".join(self._levels[: index + 1])
         return CATHLabel(label)
+
+    def __getspecificitem__(self, cath_level: Literal["C", "A", "T", "H"]) -> CATHLabel:
+        index = "CATH".index(cath_level)
+        label = self._levels[index]
+        return CATHLabel(label)

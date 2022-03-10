@@ -1,6 +1,7 @@
 from pathlib import Path
 from collections import Counter
 from typing import Dict
+from typing_extensions import Literal
 
 import h5py
 import numpy as np
@@ -61,6 +62,7 @@ def load_data(
     load_only_small_sample: bool = False,
     reloading_allowed: bool = False,
     load_strings: bool = False,
+    specific_level: Literal["C", "A", "T", "H"] = None,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -169,6 +171,13 @@ def load_data(
     if shuffle_data:
         print("Shuffling data ...")
         dataset.shuffle(rng)
+
+    if specific_level is not None:
+        dataset.y_train = [label.__getspecificitem__(specific_level) for label in dataset.y_train]
+        dataset.train_labels = [label.__getspecificitem__(specific_level) for label in dataset.train_labels]
+        dataset.y_val = [label.__getspecificitem__(specific_level) for label in dataset.y_val]
+        dataset.y_test = [label.__getspecificitem__(specific_level) for label in dataset.y_test]
+
 
     print("Serializing data for faster reloading ...")
     with open(data_dir / serialized_dataset_location, "wb+") as f:
