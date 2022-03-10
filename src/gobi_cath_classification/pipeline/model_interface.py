@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -8,8 +8,9 @@ import torch
 
 
 class Prediction:
-    def __init__(self, probabilities: pd.DataFrame):
+    def __init__(self, probabilities: pd.DataFrame, ids: List[str] = None):
         self.probabilities = probabilities
+        self.ids = ids
         assert list(probabilities.columns) == sorted(probabilities.columns)
         for col in probabilities.columns:
             assert (
@@ -21,6 +22,20 @@ class Prediction:
         y_pred_argmax_val = np.argmax(self.probabilities.values, axis=1)
         y_pred_strings_val = [self.probabilities.columns[y] for y in y_pred_argmax_val]
         return y_pred_strings_val
+
+
+def save_predictions(pred: Prediction, directory: Path, filename: str) -> None:
+    with open(directory / filename, "w") as f:
+        column_names = "\t".join(pred.probabilities.columns)
+        f.write(f"{column_names}\n")
+        for probas in pred.probabilities.values:
+            p = "\t".join([str(proba) for proba in probas])
+            f.write(f"{p}\n")
+
+
+def read_in_predictions(filepath: Path) -> Prediction:
+    df = pd.read_csv(filepath_or_buffer=filepath, sep="\t")
+    return Prediction(probabilities=df)
 
 
 class ModelInterface:

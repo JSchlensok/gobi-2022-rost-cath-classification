@@ -1,3 +1,4 @@
+import os
 import platform
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from ray import tune
 from ray.tune import trial
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.model_interface import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
     compute_class_weights,
@@ -26,6 +28,9 @@ from gobi_cath_classification.scripts_david.models import SupportVectorMachine
 
 
 def training_function(config: dict) -> None:
+    current_dir = Path(os.getcwd())
+    print(f"current_dir = {current_dir}")
+
     # set random seeds
     random_seed = config["random_seed"]
     set_random_seeds(seed=random_seed)
@@ -127,6 +132,7 @@ def training_function(config: dict) -> None:
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(embeddings=dataset.X_val)
+        save_predictions(pred=y_pred_val, directory=current_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
@@ -134,7 +140,11 @@ def training_function(config: dict) -> None:
             y_pred=y_pred_val,
             class_names_training=dataset.train_labels,
         )
-        tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
+        tune.report(
+            **eval_dict,
+            **{f"model_{k}": v for k, v in model_metrics_dict.items()},
+            **{"highect_acc_h": highest_acc_h},
+        )
 
         # check for early stopping
         acc_h = eval_dict["accuracy_h"]
@@ -146,7 +156,6 @@ def training_function(config: dict) -> None:
             n_bad += 1
             if n_bad >= n_thresh:
                 break
-    tune.report({"highest_h_acc": highest_acc_h})
 
 
 def trial_dirname_creator(trial: trial.Trial) -> str:
@@ -194,21 +203,22 @@ def main():
                         "lr": tune.choice([1e-2, 1e-3, 1e-4, 1e-5, 1e-6]),
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
-                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLoss"]),
+                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLogLoss"]),
                         "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],
+                        "scale": True,
                     },
                     {
                         "model_class": GaussianNaiveBayesModel.__name__,
                         "num_epochs": 1,
+                        "scale": True,
                     },
                 ]
             ),
         },
         progress_reporter=reporter,
     )
-
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
 
 
