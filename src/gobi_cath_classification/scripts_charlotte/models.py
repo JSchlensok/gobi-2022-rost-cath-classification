@@ -360,10 +360,6 @@ class HierarchicalLogLoss:
         return loss
 
 
-def mean_squared_error(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-    return (y_pred - y_true).pow(2).sum()
-
-
 def log_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
     x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
     log_loss = (-1) * torch.sum(x_log_y)
@@ -371,7 +367,20 @@ def log_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
     return log_loss
 
 
+def mean_squared_error(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    return (y_pred - y_true).pow(2).sum()
+
+
 def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
+    """
+
+    Args:
+        class_names:
+        level:
+
+    Returns:
+
+    """
     assert level in ["C", "A", "T", "H"]
     class_names_level = sorted(
         list(set([label_for_level(cn, cath_level=level) for cn in class_names]))
@@ -384,3 +393,34 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
         matrix.append(row)
 
     return torch.Tensor(matrix)
+
+
+def compute_predictions_for_ensemble_model(
+    predictions_from_models: List[Prediction], weights: np.ndarray
+) -> Prediction:
+    np.testing.assert_allclose(
+        actual=np.sum(weights), desired=1.0
+    ), f"The given weights don't sum up to one, but instead to: {np.sum(weights)}"
+    assert len(predictions_from_models) == len(weights), (
+        f"The amount of given predictions does not equal the amount of given weights: "
+        f"{len(predictions_from_models)} != {len(weights)}"
+    )
+
+    num_samples, num_labels = predictions_from_models[0].probabilities.shape
+    col_names = predictions_from_models[0].probabilities.columns.tolist()
+    ensemble_pred = []
+
+    for i in range(num_samples):
+        ensemble_pred_sample = np.zeros(shape=num_labels)
+        for j, p in enumerate(predictions_from_models):
+            weighted_pred = weights[j] * p.probabilities.iloc[[i]].to_numpy()
+            ensemble_pred_sample = np.sum((ensemble_pred_sample, weighted_pred), axis=0).flatten()
+        ensemble_pred.append(ensemble_pred_sample)
+
+    ensemble_prediction = Prediction(
+        probabilities=pd.DataFrame(
+            data=np.array(ensemble_pred),
+            columns=col_names 
+        )
+    )
+    return ensemble_prediction

@@ -1,8 +1,9 @@
 import numpy as np
+import pandas as pd
 import torch
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
-from gobi_cath_classification.pipeline.model_interface import ModelInterface
+from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
@@ -10,6 +11,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     mean_squared_error,
     H_to_level_matrix,
     log_loss,
+    compute_predictions_for_ensemble_model,
 )
 from gobi_cath_classification.pipeline.utils.torch_utils import get_device
 
@@ -139,3 +141,16 @@ def test_log_loss():
     loss = log_loss(y_pred=y_pred, y_true=y_true)
 
     assert torch.allclose(loss, torch.tensor([0.21072109043598175]))
+
+
+def test_compute_predictions_for_ensemble_model():
+    col_names = ["1.200.45.10", "3.20.25.40", "3.200.10.75"]
+    pred1 = Prediction(pd.DataFrame(data=np.array([[1, 2, 3], [2, 3, 4]]), columns=col_names))
+    pred2 = Prediction(pd.DataFrame(data=np.array([[4, 5, 6], [5, 6, 7]]), columns=col_names))
+
+    ensemble_pred = compute_predictions_for_ensemble_model(
+        predictions_from_models=[pred1, pred2], weights=np.array([0.8, 0.2])
+    )
+    np.testing.assert_allclose(
+        actual=ensemble_pred.probabilities, desired=np.array([[1.6, 2.6, 3.6], [2.6, 3.6, 4.6]])
+    )
