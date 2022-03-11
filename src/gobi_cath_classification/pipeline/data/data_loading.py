@@ -9,7 +9,7 @@ import pickle
 
 from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.data import Dataset
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
+from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
 
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"

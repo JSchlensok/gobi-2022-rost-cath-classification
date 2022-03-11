@@ -1,7 +1,5 @@
 import math
-import sys
 import os
-import uuid
 
 from pathlib import Path
 from typing import List, Optional, Dict
@@ -17,8 +15,8 @@ from torch.nn.functional import one_hot
 
 from gobi_cath_classification.pipeline.data_loading import label_for_level
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
-from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
+from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 
 
 class RandomForestModel(ModelInterface):

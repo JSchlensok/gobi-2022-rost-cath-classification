@@ -11,7 +11,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     H_to_level_matrix,
     log_loss,
 )
-from gobi_cath_classification.pipeline.torch_utils import get_device
+from gobi_cath_classification.pipeline.utils.torch_utils import get_device
 
 
 class TestNeuralNetwork:

@@ -2,7 +2,7 @@ import ray
 import torch
 from ray import tune
 
-from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.data import REPO_ROOT_DIR
 from gobi_cath_classification.scripts_charlotte.models import (
     DistanceModel,

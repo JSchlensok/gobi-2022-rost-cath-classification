@@ -15,8 +15,8 @@ from gobi_cath_classification.pipeline.sample_weights import (
 )
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR, REPO_ROOT_DIR
 
-from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
+from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_charlotte.models import (
     RandomForestModel,
     NeuralNetworkModel,
