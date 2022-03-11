@@ -1,10 +1,9 @@
 import os
-import platform
 from pathlib import Path
 
-import numpy as np
 import ray
 import torch
+import numpy as np
 from ray import tune
 from ray.tune import trial
 
@@ -25,11 +24,47 @@ from gobi_cath_classification.scripts_charlotte.models import (
     DistanceModel,
 )
 from gobi_cath_classification.scripts_david.models import SupportVectorMachine
+from gobi_cath_classification.scripts_david.save_checkpoint import (
+    save_configuration,
+    load_configuration,
+    load_results,
+    remove_files,
+)
 
 
 def training_function(config: dict) -> None:
-    current_dir = Path(os.getcwd())
-    print(f"current_dir = {current_dir}")
+    # current_dir = Path(os.getcwd())
+    # print(f"current_dir = {current_dir}")
+    # Find training function file by ray tune
+    with tune.checkpoint_dir(step=1) as checkpoint_dir_sub:
+        # Mark as new checkpoint dir
+        checkpoint_dir = Path(checkpoint_dir_sub).parent
+        # os.remove(checkpoint_dir_sub)
+    # Check if checkpoint_dir is available in config --> If yes, resume training
+    if "checkpoint_dir" in config["model"].keys():
+        # Mark training function to resume training
+        resume_training = True
+        print(
+            f"Attempting to resume training from checkpoint {str(config['model']['checkpoint_dir']).split('/')[-1]} ..."
+        )
+        print("Reading in configuration...")
+        # Get the backup-directory of the given model
+        backup_folder = Path(config["model"]["checkpoint_dir"])
+        backup_dir = os.path.join(Path(config["model"]["local_dir"]), backup_folder)
+        if not os.path.isdir(backup_dir):
+            raise ValueError(f"BackUp directory: {backup_dir} - not valid!")
+        # Read in the models saved configuration
+        config = load_configuration(checkpoint_dir=Path(backup_dir))
+        save_configuration(checkpoint_dir=checkpoint_dir, config=config)
+        # Print read in config
+        for key in config.keys():
+            print(f"Config: {key} = {config[key]}")
+    else:
+        # Do not resume training, create new model
+        resume_training = False
+        # Default for new config value "öast_epoch"
+        config["last_epoch"] = None
+        # Save the models configuration
 
     # set random seeds
     random_seed = config["random_seed"]
@@ -55,7 +90,7 @@ def training_function(config: dict) -> None:
 
     print(f"len(class_names = {len(class_names)}")
 
-    # get hyperparameters from config dict
+    # get hyper parameters from config dict
     print(f"config = {config}")
     model_class = config["model"]["model_class"]
     num_epochs = config["model"]["num_epochs"] if "num_epochs" in config["model"].keys() else 1
@@ -120,9 +155,28 @@ def training_function(config: dict) -> None:
     highest_acc_h = 0
     n_bad = 0
     n_thresh = 20
+    # If training is resumed, value will be overwritten
+    epoch_start = 0
+
+    if resume_training:
+        print("Reading in model and previous results...")
+        # Read in model from backup_dir
+        model = model.load_model_from_checkpoint(checkpoint_dir=Path(backup_dir))
+        # Read in previous results
+        eval_dict = load_results(checkpoint_dir=Path(backup_dir))
+        for key in eval_dict.keys():
+            print(f"Result: {key} = {eval_dict[key]}")
+        highest_acc_h = eval_dict["accuracy_h"]
+        epoch_start = eval_dict["config"]["last_epoch"] + 1
+        tune.report(**eval_dict)
+        print(
+            f"model: {model}\n epoch: {epoch_start-1}\n h-accuracy {highest_acc_h}\n eval-dict:\n{eval_dict}"
+        )
+        print(f"Resuming training on model {model.__class__.__name__} on epoch {epoch_start}...")
 
     print(f"Training model {model.__class__.__name__}...")
-    for epoch in range(num_epochs):
+    for epoch in range(epoch_start, num_epochs):
+        config["last_epoch"] = epoch
         model_metrics_dict = model.train_one_epoch(
             embeddings=embeddings_train,
             embeddings_tensor=embeddings_train_tensor,
@@ -132,7 +186,7 @@ def training_function(config: dict) -> None:
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(embeddings=dataset.X_val)
-        save_predictions(pred=y_pred_val, directory=current_dir, filename="predictions.csv")
+        save_predictions(pred=y_pred_val, directory=checkpoint_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
@@ -143,15 +197,20 @@ def training_function(config: dict) -> None:
         tune.report(
             **eval_dict,
             **{f"model_{k}": v for k, v in model_metrics_dict.items()},
-            **{"highect_acc_h": highest_acc_h},
+            **{"highest_acc_h": highest_acc_h},
         )
 
-        # check for early stopping
-        acc_h = eval_dict["accuracy_h"]
-        if acc_h > highest_acc_h:
-            highest_acc_h = acc_h
+        # Save the model if the average accuracy has risen during the last epoch and check for early stopping
+        if eval_dict["accuracy_h"] > highest_acc_h:
+            highest_acc_h = eval_dict["accuracy_h"]
             n_bad = 0
             print(f"New best performance found: accuracy_h = {highest_acc_h}")
+            print(f"Attempting to save {model_class} as intermediate checkpoint...")
+            # Delete old model_object and save new improved model
+            remove_files(checkpoint_dir=checkpoint_dir, filetype="model_object")
+            model.save_checkpoint(
+                save_to_dir=checkpoint_dir,
+            )
         else:
             n_bad += 1
             if n_bad >= n_thresh:
@@ -162,8 +221,7 @@ def trial_dirname_creator(trial: trial.Trial) -> str:
     trial_dirname = f"{trial.trainable_name}_{trial.trial_id}_{str(trial.experiment_tag)}".replace(
         ": ", ", "
     )
-
-    # max length for path under Windows = 260 characters
+    # max length for path = 260 characters
     max_len_for_trial_dirname = 260 - len(trial.local_dir)
     return trial_dirname[:max_len_for_trial_dirname]
 
@@ -197,6 +255,13 @@ def main():
             "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
             "model": tune.grid_search(
                 [
+                    {
+                        # dir to model checkpoint files from local_dir
+                        "checkpoint_dir": Path(
+                            "training_function_2022-03-09_01-45-07\\training_function_2ad2b_00000_0_class_weights=inverse,layer_sizes=[1024],lr=1e-05,optimizer=adam,random_seed=1_2022-03-09_01-45-07"
+                        ),
+                        "local_dir": local_dir,
+                    },
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 100,
