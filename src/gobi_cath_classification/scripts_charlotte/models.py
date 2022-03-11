@@ -87,6 +87,52 @@ class GaussianNaiveBayesModel(ModelInterface):
         raise NotImplementedError
 
 
+class DistanceModel(ModelInterface):
+    def __init__(
+        self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int
+    ):
+        self.device = torch_utils.get_device()
+        self.X_train_tensor = torch.tensor(embeddings).to(self.device)
+        self.y_train = labels
+        self.class_names = sorted(list(set([str(cn) for cn in class_names])))
+        if distance_ord < 0:
+            raise ValueError(f"Distance order must be >= 0, but it is: {distance_ord}")
+        self.distance_ord = distance_ord
+
+    def train_one_epoch(
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
+    ) -> Dict[str, float]:
+        return {}
+
+    def predict(self, embeddings: np.ndarray) -> Prediction:
+        emb_tensor = torch.tensor(embeddings).to(self.device)
+        pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08).to(self.device)
+
+        distances = [
+            [pdist(emb, emb_lookup) for emb_lookup in self.X_train_tensor] for emb in emb_tensor
+        ]
+        distances = np.array(torch.tensor(distances).cpu())
+
+        pred_labels = np.array([self.y_train[i] for i in np.argmin(distances, axis=1)])
+        pred_indices = [self.class_names.index(label) for label in pred_labels]
+        pred = np.zeros(shape=(len(embeddings), len(self.class_names)))
+        for row, index in enumerate(pred_indices):
+            pred[row, index] = 1
+
+        df = pd.DataFrame(data=pred, columns=self.class_names)
+        return Prediction(probabilities=df)
+
+    def save_checkpoint(self, save_to_dir: Path):
+        raise NotImplementedError
+
+    def load_model_from_checkpoint(self, load_from_dir: Path):
+        raise NotImplementedError
+
+
 class NeuralNetworkModel(ModelInterface):
     def __init__(
         self,
@@ -253,6 +299,16 @@ class HierarchicalLogLoss:
         return loss
 
 
+def log_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
+    log_loss = (-1) * torch.sum(x_log_y)
+    return log_loss
+
+
+def mean_squared_error(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    return (y_pred - y_true).pow(2).sum()
+
+
 def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
     assert level in ["C", "A", "T", "H"]
     class_names_level = sorted(
@@ -266,59 +322,3 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
         matrix.append(row)
 
     return torch.Tensor(matrix)
-
-
-def log_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-    x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
-    log_loss = (-1) * torch.sum(x_log_y)
-    return log_loss
-
-
-def mean_squared_error(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-    return (y_pred - y_true).pow(2).sum()
-
-
-class DistanceModel(ModelInterface):
-    def __init__(
-        self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int
-    ):
-        self.device = torch_utils.get_device()
-        self.X_train_tensor = torch.tensor(embeddings).to(self.device)
-        self.y_train = labels
-        self.class_names = sorted(list(set([str(cn) for cn in class_names])))
-        if distance_ord < 0:
-            raise ValueError(f"Distance order must be >= 0, but it is: {distance_ord}")
-        self.distance_ord = distance_ord
-
-    def train_one_epoch(
-        self,
-        embeddings: np.ndarray,
-        embeddings_tensor: torch.Tensor,
-        labels: List[str],
-        sample_weights: Optional[np.ndarray],
-    ) -> Dict[str, float]:
-        return {}
-
-    def predict(self, embeddings: np.ndarray) -> Prediction:
-        emb_tensor = torch.tensor(embeddings).to(self.device)
-        pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08).to(self.device)
-
-        distances = [
-            [pdist(emb, emb_lookup) for emb_lookup in self.X_train_tensor] for emb in emb_tensor
-        ]
-        distances = np.array(torch.tensor(distances).cpu())
-
-        pred_labels = np.array([self.y_train[i] for i in np.argmin(distances, axis=1)])
-        pred_indices = [self.class_names.index(label) for label in pred_labels]
-        pred = np.zeros(shape=(len(embeddings), len(self.class_names)))
-        for row, index in enumerate(pred_indices):
-            pred[row, index] = 1
-
-        df = pd.DataFrame(data=pred, columns=self.class_names)
-        return Prediction(probabilities=df)
-
-    def save_checkpoint(self, save_to_dir: Path):
-        raise NotImplementedError
-
-    def load_model_from_checkpoint(self, load_from_dir: Path):
-        raise NotImplementedError
