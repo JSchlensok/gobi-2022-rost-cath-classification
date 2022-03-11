@@ -92,7 +92,7 @@ def load_data(
                 serialized_dataset = pickle.load(f)
 
             if shuffle_data:
-                serialized_dataset.shuffle(np.random.RandomState(RANDOM_SEED))
+                serialized_dataset.shuffle_training_set(np.random.RandomState(RANDOM_SEED))
 
             return serialized_dataset
 
@@ -167,8 +167,8 @@ def load_data(
         )
 
     if shuffle_data:
-        print("Shuffling data ...")
-        dataset.shuffle(rng)
+        print("Shuffling training set ...")
+        dataset.shuffle_training_set(rng)
 
     print("Serializing data for faster reloading ...")
     with open(data_dir / serialized_dataset_location, "wb+") as f:
