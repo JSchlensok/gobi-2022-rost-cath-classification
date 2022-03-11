@@ -33,8 +33,6 @@ from gobi_cath_classification.scripts_david.save_checkpoint import (
 
 
 def training_function(config: dict) -> None:
-    # current_dir = Path(os.getcwd())
-    # print(f"current_dir = {current_dir}")
     # Find training function file by ray tune
     with tune.checkpoint_dir(step=1) as checkpoint_dir_sub:
         # Mark as new checkpoint dir
@@ -62,7 +60,7 @@ def training_function(config: dict) -> None:
     else:
         # Do not resume training, create new model
         resume_training = False
-        # Default for new config value "öast_epoch"
+        # Default for new config value "last_epoch"
         config["last_epoch"] = None
         # Save the models configuration
 
@@ -81,7 +79,8 @@ def training_function(config: dict) -> None:
         shuffle_data=True,
         reloading_allowed=True,
     )
-    if config["model"]["scale"]:
+    # scale if parameter is set in config dict, if not set: default scale = True
+    if "scale" not in config["model"].keys() or config["model"]["scale"]:
         dataset.scale()
 
     embeddings_train, y_train_labels = dataset.get_split(split="train", zipped=False)
@@ -194,11 +193,6 @@ def training_function(config: dict) -> None:
             y_pred=y_pred_val,
             class_names_training=dataset.train_labels,
         )
-        tune.report(
-            **eval_dict,
-            **{f"model_{k}": v for k, v in model_metrics_dict.items()},
-            **{"highest_acc_h": highest_acc_h},
-        )
 
         # Save the model if the average accuracy has risen during the last epoch and check for early stopping
         if eval_dict["accuracy_h"] > highest_acc_h:
@@ -215,6 +209,12 @@ def training_function(config: dict) -> None:
             n_bad += 1
             if n_bad >= n_thresh:
                 break
+
+        tune.report(
+            **eval_dict,
+            **{f"model_{k}": v for k, v in model_metrics_dict.items()},
+            **{"highest_acc_h": highest_acc_h},
+        )
 
 
 def trial_dirname_creator(trial: trial.Trial) -> str:
@@ -240,8 +240,10 @@ def main():
         max_report_frequency=10,
         infer_limit=10,
     )
-
-    local_dir = REPO_ROOT_DIR / "ray_results"
+    # Default Path for local_dir --> defines location of ray files
+    # Can be changed to any location
+    local_dir = REPO_ROOT_DIR / "model checkpoints"
+    print(f"local_dir = {local_dir}")
 
     ray.init()
     analysis = tune.run(
@@ -272,12 +274,10 @@ def main():
                         "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],
-                        "scale": True,
                     },
                     {
                         "model_class": GaussianNaiveBayesModel.__name__,
                         "num_epochs": 1,
-                        "scale": True,
                     },
                 ]
             ),

@@ -326,7 +326,6 @@ class NeuralNetworkModel(ModelInterface):
             return None
 
 
-
 class HierarchicalLogLoss:
     def __init__(self, class_names: List[str], hierarchical_weights: torch.Tensor, device):
         self.class_names = class_names

@@ -26,7 +26,7 @@ class Prediction:
 
 
 def save_predictions(pred: Prediction, directory: Path, filename: str) -> None:
-    with open(directory / filename, "w") as f:
+    with open(Path(directory / filename), "w") as f:
         column_names = "\t".join(pred.probabilities.columns)
         f.write(f"{column_names}\n")
         for probas in pred.probabilities.values:
