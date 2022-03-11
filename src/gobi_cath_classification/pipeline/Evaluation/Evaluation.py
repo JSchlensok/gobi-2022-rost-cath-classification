@@ -7,6 +7,7 @@ from tabulate import tabulate
 from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef, f1_score
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.pipeline.model_interface import Prediction
+from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
 
 METRICS = ["accuracy", "mcc", "f1", "kappa"]
 
@@ -157,7 +158,7 @@ class Evaluation:
         else:
             self.eval_dict = eval_dict
 
-    def compute_std_err(self, bootstrap_n: int = 1000):
+    def compute_std_err(self, bootstrap_n: int = 1000, random_seed: int = 42):
         """
         compute the standard error for the metrics currently in the evaluation dict using 1000 bootstrap intervals
         in each bootstrap interval, choose samples with replacement and compute the given metric
@@ -168,10 +169,14 @@ class Evaluation:
 
         Args:
             bootstrap_n: number of bootstrap intervals
+            random_seed: set the random seed for reproducible results
 
         Returns:
             creates a new dict with the 95% confidence intervals for the available metrics
         """
+
+        # setting random seed for reproducible results
+        set_random_seeds(random_seed)
 
         # what metrics are available and what metrics are there in general
         available_metrics = [
