@@ -304,7 +304,7 @@ class NeuralNetworkModel(ModelInterface):
         ).astype("float")
         return Prediction(probabilities=df)
 
-    def save_checkpoint(self, save_to_dir: Path):
+    def save_checkpoint(self, save_to_dir: Path) -> None:
         print(f"Attempting to save model 'NeuralNetworkModel' in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
@@ -327,6 +327,23 @@ class NeuralNetworkModel(ModelInterface):
 
 
 class HierarchicalLogLoss:
+    """
+
+    Computes the weighted averaged accuracy over all levels.
+    The goal is to 'punish' a model less for a prediction that's incorrect on the H-level, but
+    correct on all other levels in comparison to a prediction which is incorrect on more levels
+    than just the H-level.
+
+    Example:
+        y_true = "1.2.3.4"
+        pred_1 = "1.2.3.999"
+        pred_2 = "5.6.7.8"
+
+        In this case we want to acknowledge that pred_1 is a better prediction than pred_2.
+        Therefore the punishment for pred_2 should be bigger than for pred_1.
+
+    """
+
     def __init__(self, class_names: List[str], hierarchical_weights: torch.Tensor, device):
         self.class_names = class_names
         assert len(hierarchical_weights) == 4
@@ -339,7 +356,7 @@ class HierarchicalLogLoss:
         self.H_to_A_matrix = H_to_level_matrix(class_names=class_names, level="A").to(device)
         self.H_to_T_matrix = H_to_level_matrix(class_names=class_names, level="T").to(device)
 
-    def __call__(self, y_pred: torch.Tensor, y_true: torch.Tensor):
+    def __call__(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
         loss_C = log_loss(
             torch.matmul(y_pred, self.H_to_C_matrix), torch.matmul(y_true, self.H_to_C_matrix)
         )
@@ -374,11 +391,23 @@ def mean_squared_error(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tens
 def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
     """
 
-    Args:
-        class_names:
-        level:
+    Returns a matrix, wherein each row corresponds to a label on H-level, and each column
+    corresponds to a label on C-, A- or T-level. The numbers in the matrix are either 0 or 1:
+        - matrix(row, col) = 0 if label_in_col == label_for_level(label_in_row)
+        - matrix(row, col) = 1 if label_in_col != label_for_level(label_in_row)
+    The sum of each row be equal to 1, since each label on H-level can only belong to one label on
+    C-, A- or T-level (see example below: if "1.2.2.4" belongs to "1" it can't belong to any of the
+    other labels on C-level.)
 
-    Returns:
+    Example:
+
+        rows := labels on H-level = ["1.2.2.4", "2.3.4.5", "2.3.9.9"]
+        columns := labels on C-level = ["1", "3"]
+
+                    "1"    "3"
+        "1.2.2.4"    1      0       -> 1 + 0 = 1
+        "3.4.4.5"    0      1       -> 0 + 1 = 1
+        "3.4.9.9"    0      1       -> 0 + 1 = 1
 
     """
     assert level in ["C", "A", "T", "H"]
@@ -398,6 +427,12 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
 def compute_predictions_for_ensemble_model(
     predictions_from_models: List[Prediction], weights: np.ndarray
 ) -> Prediction:
+    """
+
+    Computes elementwise weighted average of the given probabilities and returns a new prediction
+    with those probabilities.
+
+    """
     np.testing.assert_allclose(
         actual=np.sum(weights), desired=1.0
     ), f"The given weights don't sum up to one, but instead to: {np.sum(weights)}"
@@ -418,9 +453,6 @@ def compute_predictions_for_ensemble_model(
         ensemble_pred.append(ensemble_pred_sample)
 
     ensemble_prediction = Prediction(
-        probabilities=pd.DataFrame(
-            data=np.array(ensemble_pred),
-            columns=col_names 
-        )
+        probabilities=pd.DataFrame(data=np.array(ensemble_pred), columns=col_names)
     )
     return ensemble_prediction
