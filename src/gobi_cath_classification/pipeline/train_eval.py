@@ -11,7 +11,7 @@ from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.model_interface import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
-    compute_class_weights,
+    compute_inverse_class_weights,
 )
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR, REPO_ROOT_DIR
 
@@ -99,10 +99,10 @@ def training_function(config: dict) -> None:
         class_weights = None
     elif config["class_weights"] == "inverse":
         sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
-        class_weights = compute_class_weights(labels=dataset.y_train)
+        class_weights = compute_inverse_class_weights(labels=dataset.y_train)
     elif config["class_weights"] == "sqrt_inverse":
         sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
-        class_weights = np.sqrt(compute_class_weights(labels=dataset.y_train))
+        class_weights = np.sqrt(compute_inverse_class_weights(labels=dataset.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
@@ -270,7 +270,7 @@ def main():
                         "lr": tune.choice([1e-2, 1e-3, 1e-4, 1e-5, 1e-6]),
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
-                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLogLoss"]),
+                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLoss"]),
                         "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],

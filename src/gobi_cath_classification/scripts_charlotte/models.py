@@ -2,7 +2,7 @@ import math
 import os
 
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Callable
 from typing_extensions import Literal
 
 import numpy as np
@@ -13,8 +13,10 @@ from sklearn.naive_bayes import GaussianNB
 from torch import nn
 from torch.nn.functional import one_hot
 
+from gobi_cath_classification.pipeline import sample_weights
 from gobi_cath_classification.pipeline.data_loading import label_for_level
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
+from gobi_cath_classification.pipeline.sample_weights import compute_inverse_sample_weights
 from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 
@@ -188,7 +190,7 @@ class NeuralNetworkModel(ModelInterface):
         dropout_sizes: List[Optional[float]],
         batch_size: int,
         optimizer: str,
-        loss_function: Literal["CrossEntropyLoss", "HierarchicalLogLoss"],
+        loss_function: Literal["CrossEntropyLoss", "HierarchicalLogLoss", "HierarchicalMSELoss"],
         class_weights: torch.Tensor,
         rng: np.random.RandomState,
         random_seed: int = 42,
@@ -235,7 +237,7 @@ class NeuralNetworkModel(ModelInterface):
                     p=dropout_sizes[-1],
                 ),
             )
-        if loss_function == "HierarchicalLogLoss":
+        if loss_function is not "CrossEntropyLoss":
             model.add_module("Softmax", nn.Softmax())
 
         self.model = model.to(self.device)
@@ -244,9 +246,13 @@ class NeuralNetworkModel(ModelInterface):
             self.loss_function = torch.nn.CrossEntropyLoss(
                 weight=class_weights.to(self.device) if class_weights is not None else None,
             )
-        elif loss_function == "HierarchicalLogLoss":
-            self.loss_function = HierarchicalLogLoss(
+        elif loss_function == "HierarchicalLogLoss" or loss_function == "HierarchicalMSELoss":
+            self.loss_function = HierarchicalLoss(
+                loss_function=log_loss
+                if loss_function == "HierarchicalLogLoss"
+                else mean_squared_error,
                 class_names=self.class_names,
+                class_weights=class_weights.to(self.device) if class_weights is not None else None,
                 hierarchical_weights=loss_weights.to(self.device),
                 device=self.device,
             )
@@ -326,7 +332,29 @@ class NeuralNetworkModel(ModelInterface):
             return None
 
 
-class HierarchicalLogLoss:
+def log_loss(
+    y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights: torch.Tensor = None
+) -> torch.Tensor:
+
+    x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
+
+    if sample_weights is not None:
+        sw_broadcasted = torch.broadcast_to(
+            torch.reshape(sample_weights, (len(sample_weights), 1)), x_log_y.size()
+        )
+        x_log_y = torch.mul(sw_broadcasted, x_log_y)
+    log_loss = (-1) * torch.mean(x_log_y)
+
+    return log_loss
+
+
+def mean_squared_error(
+    y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights=None
+) -> torch.Tensor:
+    return (y_pred - y_true).pow(2).sum()
+
+
+class HierarchicalLoss:
     """
 
     Computes the weighted averaged accuracy over all levels.
@@ -344,48 +372,51 @@ class HierarchicalLogLoss:
 
     """
 
-    def __init__(self, class_names: List[str], hierarchical_weights: torch.Tensor, device):
-        self.class_names = class_names
+    def __init__(
+        self,
+        loss_function: Callable[[torch.Tensor, torch.Tensor, Optional[torch.Tensor]], torch.Tensor],
+        class_weights: torch.Tensor,
+        hierarchical_weights: torch.Tensor,
+        class_names: List[str],
+        device,
+    ):
         assert len(hierarchical_weights) == 4
         assert torch.allclose(
             torch.sum(hierarchical_weights).to(device), torch.tensor([1.0]).to(device)
         )
-        self.weights = hierarchical_weights
+        self.loss_function = loss_function
+        self.class_weights = class_weights
+        self.hierarchical_weights = hierarchical_weights
+        self.class_names = class_names
 
         self.H_to_C_matrix = H_to_level_matrix(class_names=class_names, level="C").to(device)
         self.H_to_A_matrix = H_to_level_matrix(class_names=class_names, level="A").to(device)
         self.H_to_T_matrix = H_to_level_matrix(class_names=class_names, level="T").to(device)
 
     def __call__(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-        loss_C = log_loss(
-            torch.matmul(y_pred, self.H_to_C_matrix), torch.matmul(y_true, self.H_to_C_matrix)
-        )
-        loss_A = log_loss(
-            torch.matmul(y_pred, self.H_to_A_matrix), torch.matmul(y_true, self.H_to_A_matrix)
-        )
-        loss_T = log_loss(
-            torch.matmul(y_pred, self.H_to_T_matrix), torch.matmul(y_true, self.H_to_T_matrix)
-        )
-        loss_H = log_loss(y_pred, y_true)
+        matrices = [
+            self.H_to_C_matrix,
+            self.H_to_A_matrix,
+            self.H_to_T_matrix,
+            torch.eye(n=len(self.class_names)),
+        ]
+        if self.class_weights is not None:
+            sample_weights = []
+            for y in y_true:
+                index = (y == 1.).nonzero().item()
+                sample_weights.append(self.class_weights[index])
+            sample_weights = torch.tensor(sample_weights)
+        else:
+            sample_weights = None
 
-        loss = (
-            self.weights[0] * loss_C
-            + self.weights[1] * loss_A
-            + self.weights[2] * loss_T
-            + self.weights[3] * loss_H
-        )
+        loss = torch.tensor([0]).float()
+        for i, H_to_level_matrix in enumerate(matrices):
+            loss += self.hierarchical_weights[i] * self.loss_function(
+                torch.matmul(y_pred, H_to_level_matrix),
+                torch.matmul(y_true, H_to_level_matrix),
+                sample_weights,
+            )
         return loss
-
-
-def log_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-    x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
-    log_loss = (-1) * torch.sum(x_log_y)
-
-    return log_loss
-
-
-def mean_squared_error(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-    return (y_pred - y_true).pow(2).sum()
 
 
 def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:

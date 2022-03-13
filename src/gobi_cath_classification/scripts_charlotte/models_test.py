@@ -12,6 +12,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     H_to_level_matrix,
     log_loss,
     compute_predictions_for_ensemble_model,
+    HierarchicalLoss,
 )
 from gobi_cath_classification.pipeline.utils.torch_utils import get_device
 
@@ -22,7 +23,7 @@ class TestNeuralNetwork:
         class_names = ["1.200.45.10", "3.20.25.40", "3.200.10.75"]
         random_seed = 42
 
-        num_data = 2
+        num_data = 200
         embeddings = np.random.randn(num_data, num_features)
         labels = [
             "1.200.45.10"
@@ -30,6 +31,17 @@ class TestNeuralNetwork:
             else ("3.20.25.40" if embedding_vector[1] > 0 else "3.200.10.75")
             for embedding_vector in embeddings
         ]
+        label_1, label_2, label_3 = 0, 0, 0
+        for l in labels:
+            if l == "1.200.45.10":
+                label_1 += 1
+            elif l == "3.20.25.40":
+                label_2 += 1
+            else:
+                label_3 += 1
+
+        class_weights = torch.tensor([label_1 / num_data, label_2 / num_data, label_3 / num_data])
+        print(f"class_weights = {class_weights}")
 
         models = [
             NeuralNetworkModel(
@@ -37,11 +49,12 @@ class TestNeuralNetwork:
                 layer_sizes=[num_features],
                 dropout_sizes=[None],
                 class_names=class_names,
-                class_weights=torch.Tensor(np.array([0.5, 1, 0.3])),
-                batch_size=200,
+                class_weights=class_weights,
+                batch_size=32,
                 optimizer="adam",
                 loss_function="HierarchicalLogLoss",
-                loss_weights=torch.Tensor([1 / 10, 2 / 10, 3 / 10, 4 / 10]),
+                loss_weights=torch.Tensor([0.0, 0.0, 0.0, 1.0]),
+                # loss_weights=torch.Tensor([1 / 10, 2 / 10, 3 / 10, 4 / 10]),
                 rng=np.random.RandomState(random_seed),
                 random_seed=random_seed,
             ),
@@ -81,6 +94,37 @@ class TestNeuralNetwork:
                 class_names_training=[CATHLabel(cn) for cn in class_names],
             )
             print(f"eval_dict = {eval_dict}")
+
+
+class TestHierarchicalLoss:
+    def test_hierarchical_log_loss(self):
+        class_names = ["1.1.1.1", "1.1.1.2", "1.1.2.3"]
+        sample_weights = torch.tensor([1 / 3, 1 / 3, 1 / 3])
+
+        loss_function = HierarchicalLoss(
+            class_names=class_names,
+            sample_weights=sample_weights,
+            hierarchical_weights=torch.tensor([0.0, 0.0, 0.0, 1.0]),
+            # hierarchical_weights=torch.tensor([0.1, 0.2, 0.3, 0.4]),
+            device="cpu",
+            loss_function=log_loss,
+        )
+        y_true = torch.tensor(
+            [
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+            ]
+        )
+        y_pred = torch.tensor(
+            [
+                [0.0, 0.1, 0.9],
+                [1.0, 0.0, 0.0],
+                [0.2, 0.8, 0.0],
+            ]
+        )
+        loss = loss_function(y_pred=y_pred, y_true=y_true)
+        assert torch.allclose(loss, torch.tensor([0.328504066972036]))
 
 
 def test_H_to_level_matrix():
