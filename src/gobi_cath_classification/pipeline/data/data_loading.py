@@ -62,7 +62,10 @@ def load_data(
     load_only_small_sample: bool = False,
     reloading_allowed: bool = False,
     load_strings: bool = False,
+    # Load data with Y-values only being one level
     specific_level: Literal["C", "A", "T", "H"] = None,
+    # Load data with Y-values only up to the given cutoff level
+    level_cuttoff: Literal["C", "A", "T", "H"] = None,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -172,11 +175,18 @@ def load_data(
         print("Shuffling data ...")
         dataset.shuffle(rng)
 
-    if specific_level is not None:
+    if specific_level is not None and level_cuttoff is None:
         dataset.y_train = [label.__getspecificitem__(specific_level) for label in dataset.y_train]
         dataset.train_labels = [label.__getspecificitem__(specific_level) for label in dataset.train_labels]
         dataset.y_val = [label.__getspecificitem__(specific_level) for label in dataset.y_val]
         dataset.y_test = [label.__getspecificitem__(specific_level) for label in dataset.y_test]
+    elif level_cuttoff is not None and specific_level is None:
+        dataset.y_train = [label.__getitem__(level_cuttoff) for label in dataset.y_train]
+        dataset.train_labels = [label.__getitem__(level_cuttoff) for label in dataset.train_labels]
+        dataset.y_val = [label.__getitem__(level_cuttoff) for label in dataset.y_val]
+        dataset.y_test = [label.__getitem__(level_cuttoff) for label in dataset.y_test]
+    elif level_cuttoff is not None and specific_level is not None:
+        raise ValueError("Either specific_level or level_cutoff can be supplied, not both!")
 
 
     print("Serializing data for faster reloading ...")

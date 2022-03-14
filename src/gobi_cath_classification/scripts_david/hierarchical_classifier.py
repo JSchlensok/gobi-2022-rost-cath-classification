@@ -6,6 +6,7 @@ import decimal
 import numpy as np
 from typing import List, Optional, Dict
 
+from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
 from gobi_cath_classification.pipeline.evaluation import accuracy_for_level
@@ -49,6 +50,10 @@ class HierarchicalClassifier:
             print("Commencing classification with 'Local Classifier Per Level'")
             if len(self.models) != 4:
                 raise ValueError("Wrong number of models supplied! Required 4")
+        elif classifier_type == "LCPN":
+            print("Commencing classification with 'Local Classifier Per Parent Node'")
+            if len(self.models) != 4:
+                raise ValueError("Wrong number of models supplied! Required 4")
 
     def get_data(self, random_seed: int = 42):
         ########################################################################################
@@ -70,7 +75,7 @@ class HierarchicalClassifier:
             rng=rng,
             without_duplicates=True,
             shuffle_data=True,
-            reloading_allowed=False,
+            reloading_allowed=True,
         )
         self.dataset.scale()
         print("Data successfully read in!")
@@ -80,7 +85,7 @@ class HierarchicalClassifier:
         # FUNCTION NAME     : predict_lcl()
         # INPUT PARAMETERS  : none
         # OUTPUT PARAMETERS : none
-        # DESCRIPTION       : Predict each level with a different model and concatenate the results
+        # DESCRIPTION       : Predict each level with a local classifier per level
         # AUTHOR            : D. Mauder
         # CREATE DATE       : 10.03.2022
         # UPDATE            : ---
@@ -122,6 +127,205 @@ class HierarchicalClassifier:
         for i in range(len(labels_C)):
             labels_CATH.append(f"{labels_C[i]}.{labels_A[i]}.{labels_T[i]}.{labels_H[i]}")
         # Evaluate the prediction
+        eval_dict = self.return_evaluation(labels_CATH)
+        # Print out the results:
+        print("\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER LEVEL")
+        print("-----------------------------------------------------------")
+        print("USED MODELS:")
+        print(f"Model for level C : {self.models[0]}")
+        print(f"Model for level A : {self.models[1]}")
+        print(f"Model for level T : {self.models[2]}")
+        print(f"Model for level H : {self.models[3]}")
+        print("-----------------------------------------------------------")
+        print("STATISTICS:")
+        print(f"Accuracy C   : {eval_dict['accuracy_c']}")
+        print(f"Accuracy A   : {eval_dict['accuracy_a']}")
+        print(f"Accuracy T   : {eval_dict['accuracy_t']}")
+        print(f"Accuracy H   : {eval_dict['accuracy_h']}")
+        print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
+
+    def predict_lcpn(self, threshold):
+        ########################################################################################
+        # FUNCTION NAME     : predict_lcpn()
+        # INPUT PARAMETERS  : none
+        # OUTPUT PARAMETERS : none
+        # DESCRIPTION       : Predict each level with a local classifier per parent node
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 12.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        # Load the model for each CATH level
+        model_C = None
+        model_A = None
+        model_T = None
+        model_H = None
+        try:
+            print("Assigning models...")
+            model_C = self.models[0]
+            print("Model for level C ready and standing by...")
+            model_A = self.models[1]
+            print("Model for level A ready and standing by...")
+            model_T = self.models[2]
+            print("Model for level T ready and standing by...")
+            model_H = self.models[3]
+            print("Model for level H ready and standing by...")
+        except:
+            print("FAILED to assign models!")
+            exit(0)
+        # Predict with each model
+        print("Commencing to predict...")
+        prediction_C = model_C.predict(embeddings=self.dataset.X_val)
+        prediction_A = model_A.predict(embeddings=self.dataset.X_val)
+        prediction_T = model_T.predict(embeddings=self.dataset.X_val)
+        prediction_H = model_H.predict(embeddings=self.dataset.X_val)
+        print("Predictions available...")
+        # Check if all models returned the same number of predictions
+        if len(prediction_C.probabilities) \
+                == len(prediction_A.probabilities) \
+                == len(prediction_T.probabilities) \
+                == len(prediction_H.probabilities):
+            print("Same number of predictions for every embedding available...")
+        else:
+            print("Not all models returned the same number of predictions!")
+            exit(-1)
+        labels_CATH = []
+        # Loop over every line in every probabilities dataframe
+        for index in range(len(prediction_C.probabilities)):
+            current_prediction_C = prediction_C.probabilities.iloc[[index]]
+            current_prediction_A = prediction_A.probabilities.iloc[[index]]
+            current_prediction_T = prediction_T.probabilities.iloc[[index]]
+            current_prediction_H = prediction_H.probabilities.iloc[[index]]
+            # Give the probabilities for every embedding to the prediction function
+            label_prediction, label_probability = self.return_prediction(
+                current_prediction_C,
+                current_prediction_A,
+                current_prediction_T,
+                current_prediction_H,
+                threshold)
+            labels_CATH.append(label_prediction.__str__())
+        # Evaluate the predictions
+        eval_dict = self.return_evaluation(labels_CATH)
+        # Print out the results:
+        print("\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER PARENT NODE")
+        print("-----------------------------------------------------------")
+        print("USED MODELS:")
+        print(f"Model for level C : {self.models[0]}")
+        print(f"Model for level A : {self.models[1]}")
+        print(f"Model for level T : {self.models[2]}")
+        print(f"Model for level H : {self.models[3]}")
+        print("-----------------------------------------------------------")
+        print("STATISTICS:")
+        print(f"Accuracy C   : {eval_dict['accuracy_c']}")
+        print(f"Accuracy A   : {eval_dict['accuracy_a']}")
+        print(f"Accuracy T   : {eval_dict['accuracy_t']}")
+        print(f"Accuracy H   : {eval_dict['accuracy_h']}")
+        print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
+
+
+    def return_prediction(self, probs_C, probs_A, probs_T, probs_H, treshhold, ) -> (CATHLabel, float):
+        ########################################################################################
+        # FUNCTION NAME     : return_prediction()
+        # INPUT PARAMETERS  : probs_C, probs_A, probs_T, probs_H, treshhold
+        # OUTPUT PARAMETERS : CATHlabels, probabilities
+        # DESCRIPTION       : Predict each level with knowledge about the prediction of the parent node
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 15.03.2022
+        # UPDATE            : ---
+        ########################################################################################
+        # Assign variables to default
+        current_best_label = "0.0.0.0"
+        proba_of_current_best_label = 0
+        current_label = "0.0.0.0"
+        mean_proba_of_current_label = 0
+        # Get all column headers for Level C
+        columns_C = probs_C.columns.values
+        # C-LEVEL ------------------------------------------------------------------------------------------------------
+        # Loop over all probabilities of every prediction for level C
+        for current_column_C in columns_C:
+            # Update current label
+            current_label = f"{current_column_C}.0.0.0"
+            # Get probability for the current prediction
+            current_proba_C = probs_C[current_column_C].values[0]
+            # Calculate mean probability over every level
+            mean_proba_of_current_label = ((current_proba_C + 0 + 0 + 0) / 4)
+            # Break if mean probability does not exceed the threshold
+            if not mean_proba_of_current_label >= treshhold:
+                break
+            # If best probability is less then the actual --> Update the best values
+            elif mean_proba_of_current_label > proba_of_current_best_label:
+                proba_of_current_best_label = mean_proba_of_current_label
+                current_best_label = current_label
+            # Get every column header that matches with the previous predictions
+            columns_A = [column for column in probs_A.columns.values if
+                         current_column_C == CATHLabel(f"{column}.0.0").__getitem__("C")]
+        # A-LEVEL ------------------------------------------------------------------------------------------------------
+            # Loop over all probabilities of every prediction for level A
+            for current_column_A in columns_A:
+                # Update current label
+                current_label = f"{current_column_A}.0.0"
+                # Get probability for the current prediction
+                current_proba_A = probs_A[current_column_A].values[0]
+                # Calculate mean probability over every level
+                mean_proba_of_current_label = ((current_proba_C + current_proba_A + 0 + 0) / 4)
+                # Break if mean probability does not exceed the threshold
+                if not mean_proba_of_current_label >= treshhold:
+                    break
+                # If best probability is less then the actual --> Update the best values
+                elif mean_proba_of_current_label > proba_of_current_best_label:
+                    proba_of_current_best_label = mean_proba_of_current_label
+                    current_best_label = current_label
+                # Get every column header that matches with the previous predictions
+                columns_T = [column for column in probs_T.columns.values if
+                             current_column_A == CATHLabel(f"{column}.0").__getitem__("A")]
+        # T-LEVEL ------------------------------------------------------------------------------------------------------
+                # Loop over all probabilities of every prediction for level T
+                for current_column_T in columns_T:
+                    # Update current label
+                    current_label = f"{current_column_T}.0"
+                    # Get probability for the current prediction
+                    current_proba_T = probs_T[current_column_T].values[0]
+                    # Calculate mean probability over every level
+                    mean_proba_of_current_label = ((current_proba_C + current_proba_A + current_proba_T + 0) / 4)
+                    # Break if mean probability does not exceed the threshold
+                    if not mean_proba_of_current_label >= treshhold:
+                        break
+                    # If best probability is less then the actual --> Update the best values
+                    elif mean_proba_of_current_label > proba_of_current_best_label:
+                        proba_of_current_best_label = mean_proba_of_current_label
+                        current_best_label = current_label
+                    # Get every column header that matches with the previous predictions
+                    columns_H = [column for column in probs_H.columns.values if
+                                 current_column_T == CATHLabel(column).__getitem__("T")]
+        # H-LEVEL ------------------------------------------------------------------------------------------------------
+                    # Loop over all probabilities of every prediction for level H
+                    for current_column_H in columns_H:
+                        # Update current label
+                        current_label = f"{current_column_H}"
+                        # Get probability for the current prediction
+                        current_proba_H = probs_H[current_column_H].values[0]
+                        # Calculate mean probability over every level
+                        mean_proba_of_current_label = (
+                                    (current_proba_C + current_proba_A + current_proba_T + current_proba_H) / 4)
+                        # Break if mean probability does not exceed the threshold
+                        if not mean_proba_of_current_label >= treshhold:
+                            break
+                        # If best probability is less then the actual --> Update the best values
+                        elif mean_proba_of_current_label > proba_of_current_best_label:
+                            proba_of_current_best_label = mean_proba_of_current_label
+                            current_best_label = current_label
+        # Return the best label
+        return CATHLabel(current_best_label), proba_of_current_best_label
+
+    def return_evaluation(self, labels_CATH: List[str]):
+        ########################################################################################
+        # FUNCTION NAME     : return_evaluation()
+        # INPUT PARAMETERS  : labels_CATH: List[str]
+        # OUTPUT PARAMETERS : eval_dict
+        # DESCRIPTION       : Evaluate the predictions
+        # AUTHOR            : D. Mauder
+        # CREATE DATE       : 15.03.2022
+        # UPDATE            : ---
+        ########################################################################################
         eval_dict = {
             "accuracy_c": accuracy_for_level(
                 y_true=self.dataset.y_val,
@@ -149,26 +353,13 @@ class HierarchicalClassifier:
             ),
         }
         eval_dict["accuracy_avg"] = ((
-                                    eval_dict["accuracy_c"]
-                                    + eval_dict["accuracy_a"]
-                                    + eval_dict["accuracy_t"]
-                                    + eval_dict["accuracy_h"]
-                                    ) / 4)
-        # Print out the results:
-        print("\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER LEVEL")
-        print("-----------------------------------------------------------")
-        print("USED MODELS:")
-        print(f"Model for level C : {self.models[0]}")
-        print(f"Model for level A : {self.models[1]}")
-        print(f"Model for level T : {self.models[2]}")
-        print(f"Model for level H : {self.models[3]}")
-        print("-----------------------------------------------------------")
-        print("STATISTICS:")
-        print(f"Accuracy C   : {eval_dict['accuracy_c']}")
-        print(f"Accuracy A   : {eval_dict['accuracy_a']}")
-        print(f"Accuracy T   : {eval_dict['accuracy_t']}")
-        print(f"Accuracy H   : {eval_dict['accuracy_h']}")
-        print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
+                                             eval_dict["accuracy_c"]
+                                             + eval_dict["accuracy_a"]
+                                             + eval_dict["accuracy_t"]
+                                             + eval_dict["accuracy_h"]
+                                     ) / 4)
+        return eval_dict
+
 
 
 if __name__ == "__main__":
@@ -182,8 +373,6 @@ if __name__ == "__main__":
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
-        specific_level="T"
+        level_cuttoff="H"
     )
     dataset.scale()
-    print(dataset.train_labels[:10])
-

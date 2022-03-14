@@ -3,13 +3,13 @@ from pathlib import Path
 
 def main():
     hc = HierarchicalClassifier(models=[
-        "C:\\Users\\David Mauder\\ray_results\\hc svm C\\svm_acc_c_0.92\\model_object.model",
-        "C:\\Users\\David Mauder\\ray_results\\hc fcnn A\\fcnn_acc_a_0.735\\model_object.model",
-        "C:\\Users\\David Mauder\\ray_results\\hc gnb T\\gnb_acc_t_0.33\\model_object.model",
-        "C:\\Users\\David Mauder\\ray_results\\hc svm C\\svm_acc_c_0.92\\model_object.model"
+        "C:\\Users\\David Mauder\\ray_results\\hc lcpn C\\C\\model_object.model",
+        "C:\\Users\\David Mauder\\ray_results\\hc lcpn A\\A\\model_object.model",
+        "C:\\Users\\David Mauder\\ray_results\\hc lcpn T\\T\\model_object.model",
+        "C:\\Users\\David Mauder\\ray_results\\hc lcpn H\\H\\model_object.model"
     ], classifier_type="LCL", classification_cutoff=0)
     hc.get_data(random_seed=1)
-    hc.predict_lcl()
+    hc.predict_lcpn(threshold=0)
 
 
 if __name__ == "__main__":
