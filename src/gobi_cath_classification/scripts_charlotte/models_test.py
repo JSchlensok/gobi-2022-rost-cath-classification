@@ -123,7 +123,6 @@ class TestHierarchicalLoss:
             ]
         )
         loss = loss_function(y_pred=y_pred, y_true=y_true)
-        print(f"loss = {loss}")
         assert torch.allclose(loss, torch.tensor([0.328504066972036 / 9]))
 
 
@@ -183,7 +182,6 @@ def test_log_loss():
     y_true = torch.Tensor([[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]])
     y_pred = torch.Tensor([[0.0, 0.1, 0.9], [0.0, 0.1, 0.9]])
     loss = log_loss(y_pred=y_pred, y_true=y_true)
-    print(f"loss = {loss}")
 
     assert torch.allclose(loss, torch.tensor([0.21072109043598175 / 2]))
 

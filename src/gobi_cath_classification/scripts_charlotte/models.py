@@ -335,7 +335,6 @@ def log_loss(
 ) -> torch.Tensor:
 
     x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
-    print(f"\nx_log_y = {x_log_y}")
 
     if sample_weights is not None:
         sw_broadcasted = torch.broadcast_to(
@@ -343,8 +342,6 @@ def log_loss(
         )
         x_log_y = torch.mul(sw_broadcasted, x_log_y)
 
-    print(f"\nx_log_y = {x_log_y}")
-    print(f"torch.sum(x_log_y, dim=1) = {torch.sum(x_log_y, dim=1)}")
     log_loss = (-1) * torch.mean(torch.sum(x_log_y, dim=1))
 
     return log_loss
