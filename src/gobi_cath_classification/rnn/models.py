@@ -10,8 +10,8 @@ from torch import nn
 from torch.nn.functional import one_hot
 
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
-from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
+from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 
 categories = ["A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    "
               "T    W    Y    V    B    Z    X".split()]

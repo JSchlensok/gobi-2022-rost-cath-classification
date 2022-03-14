@@ -2,8 +2,8 @@ import ray
 import torch
 from ray import tune
 
-from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
+from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.data import REPO_ROOT_DIR
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,
 )
@@ -23,31 +23,107 @@ def main():
         resources_per_trial = {"cpu": 1}
 
     reporter = tune.CLIReporter(
-        max_report_frequency=10,
+        max_report_frequency=120,
         infer_limit=10,
     )
+    local_dir = REPO_ROOT_DIR / "ray_results"
 
     ray.init()
     analysis = tune.run(
         training_function,
+        local_dir=local_dir,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
             "random_seed": tune.grid_search([1]),
-            "class_weights": tune.grid_search(["inverse", "sqrt_inverse"]),
-            "model": {
-                "model_class": NeuralNetworkModel.__name__,
-                "num_epochs": 200,
-                "lr": tune.grid_search([1e-5, 1e-4, 1e-3]),
-                "batch_size": 32,
-                "optimizer": tune.choice(["adam"]),
-                "layer_sizes": tune.choice(
-                    [
-                        [1024],
-                        [1024, 1024],
-                    ]
-                ),
-            },
+            "class_weights": "inverse",
+            "model": tune.grid_search(
+                [
+                    {
+                        "model_class": NeuralNetworkModel.__name__,
+                        "num_epochs": 500,
+                        "lr": 1e-04,
+                        "batch_size": 32,
+                        "optimizer": "adam",
+                        "loss_function": "HierarchicalLogLoss",
+                        "loss_weights": [0.0, 0.0, 0.0, 1.0],
+                        "layer_sizes": [1024],
+                        "dropout_sizes": [0.05],
+                        "scale": True,
+                    },
+                    {
+                        "model_class": NeuralNetworkModel.__name__,
+                        "num_epochs": 500,
+                        "lr": 1e-03,
+                        "batch_size": 32,
+                        "optimizer": "adam",
+                        "loss_function": "HierarchicalLogLoss",
+                        "loss_weights": [0.0, 0.0, 0.0, 1.0],
+                        "layer_sizes": [1024],
+                        "dropout_sizes": [0.05],
+                        "scale": True,
+                    },
+                    {
+                        "model_class": NeuralNetworkModel.__name__,
+                        "num_epochs": 500,
+                        "lr": 1e-04,
+                        "batch_size": 32,
+                        "optimizer": "adam",
+                        "loss_function": "HierarchicalLogLoss",
+                        "loss_weights": [0.2, 0.2, 0.3, 0.3],
+                        "layer_sizes": [1024],
+                        "dropout_sizes": [0.05],
+                        "scale": True,
+                    },
+                    {
+                        "model_class": NeuralNetworkModel.__name__,
+                        "num_epochs": 500,
+                        "lr": 1e-03,
+                        "batch_size": 32,
+                        "optimizer": "adam",
+                        "loss_function": "HierarchicalLogLoss",
+                        "loss_weights": [0.2, 0.2, 0.3, 0.3],
+                        "layer_sizes": [1024],
+                        "dropout_sizes": [0.05],
+                        "scale": True,
+                    },
+                    {
+                        "model_class": NeuralNetworkModel.__name__,
+                        "num_epochs": 500,
+                        "lr": 1e-04,
+                        "batch_size": 32,
+                        "optimizer": "adam",
+                        "loss_function": "HierarchicalLogLoss",
+                        "loss_weights": [0.1, 0.2, 0.3, 0.4],
+                        "layer_sizes": [1024],
+                        "dropout_sizes": [0.05],
+                        "scale": True,
+                    },
+                    {
+                        "model_class": NeuralNetworkModel.__name__,
+                        "num_epochs": 500,
+                        "lr": 1e-03,
+                        "batch_size": 32,
+                        "optimizer": "adam",
+                        "loss_function": "HierarchicalLogLoss",
+                        "loss_weights": [0.1, 0.2, 0.3, 0.4],
+                        "layer_sizes": [1024],
+                        "dropout_sizes": [0.05],
+                        "scale": True,
+                    },
+                    {
+                        "model_class": NeuralNetworkModel.__name__,
+                        "num_epochs": 500,
+                        "lr": 1e-04,
+                        "batch_size": 32,
+                        "optimizer": "adam",
+                        "loss_function": "CrossEntropyLoss",
+                        "layer_sizes": [1024],
+                        "dropout_sizes": [0.05],
+                        "scale": True,
+                    },
+                ]
+            ),
         },
         progress_reporter=reporter,
     )
