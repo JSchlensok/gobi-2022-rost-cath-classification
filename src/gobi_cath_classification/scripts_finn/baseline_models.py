@@ -6,7 +6,6 @@ import torch
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
 from gobi_cath_classification.pipeline import torch_utils
 from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
-from gobi_cath_classification.pipeline.data_loading import DataSplits
 from gobi_cath_classification.pipeline.data import Dataset
 from gobi_cath_classification.pipeline.sample_weights import compute_class_counts
 
