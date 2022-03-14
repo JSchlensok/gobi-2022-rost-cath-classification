@@ -9,7 +9,7 @@ def main():
         "C:\\Users\\David Mauder\\ray_results\\hc lcpn H\\H\\model_object.model"
     ], classifier_type="LCL", classification_cutoff=0)
     hc.get_data(random_seed=1)
-    hc.predict_lcpn(threshold=0)
+    hc.predict_lcpn(threshold=0, prediction="AVG")
 
 
 if __name__ == "__main__":

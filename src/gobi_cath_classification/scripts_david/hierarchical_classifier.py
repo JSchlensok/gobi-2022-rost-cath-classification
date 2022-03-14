@@ -4,6 +4,7 @@
 import torch
 import decimal
 import numpy as np
+from typing_extensions import Literal
 from typing import List, Optional, Dict
 
 from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
@@ -144,7 +145,7 @@ class HierarchicalClassifier:
         print(f"Accuracy H   : {eval_dict['accuracy_h']}")
         print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
 
-    def predict_lcpn(self, threshold):
+    def predict_lcpn(self, threshold, prediction: Literal["AVG", "H"]):
         ########################################################################################
         # FUNCTION NAME     : predict_lcpn()
         # INPUT PARAMETERS  : none
@@ -154,6 +155,7 @@ class HierarchicalClassifier:
         # CREATE DATE       : 12.03.2022
         # UPDATE            : ---
         ########################################################################################
+        print(f"PREDICTING CATH-LABELS BASED ON LABEL PROBABILITY - {prediction}")
         # Load the model for each CATH level
         model_C = None
         model_A = None
@@ -196,13 +198,17 @@ class HierarchicalClassifier:
             current_prediction_T = prediction_T.probabilities.iloc[[index]]
             current_prediction_H = prediction_H.probabilities.iloc[[index]]
             # Give the probabilities for every embedding to the prediction function
-            label_prediction, label_probability = self.return_prediction(
-                current_prediction_C,
-                current_prediction_A,
-                current_prediction_T,
-                current_prediction_H,
-                threshold)
-            labels_CATH.append(label_prediction.__str__())
+            label_prediction_AVG, label_probability_AVG, label_prediction_H, label_probability_H = \
+                self.return_prediction(
+                    current_prediction_C,
+                    current_prediction_A,
+                    current_prediction_T,
+                    current_prediction_H,
+                    threshold)
+            if prediction == "AVG":
+                labels_CATH.append(label_prediction_AVG.__str__())
+            if prediction == "H":
+                labels_CATH.append(label_prediction_H.__str__())
         # Evaluate the predictions
         eval_dict = self.return_evaluation(labels_CATH)
         # Print out the results:
@@ -221,7 +227,6 @@ class HierarchicalClassifier:
         print(f"Accuracy H   : {eval_dict['accuracy_h']}")
         print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
 
-
     def return_prediction(self, probs_C, probs_A, probs_T, probs_H, treshhold, ) -> (CATHLabel, float):
         ########################################################################################
         # FUNCTION NAME     : return_prediction()
@@ -233,8 +238,10 @@ class HierarchicalClassifier:
         # UPDATE            : ---
         ########################################################################################
         # Assign variables to default
-        current_best_label = "0.0.0.0"
-        proba_of_current_best_label = 0
+        current_best_label_AVG = "0.0.0.0"
+        proba_of_current_best_label_AVG = 0
+        current_best_label_H = "0.0.0.0"
+        proba_of_current_best_label_H = 0
         current_label = "0.0.0.0"
         mean_proba_of_current_label = 0
         # Get all column headers for Level C
@@ -252,9 +259,9 @@ class HierarchicalClassifier:
             if not mean_proba_of_current_label >= treshhold:
                 break
             # If best probability is less then the actual --> Update the best values
-            elif mean_proba_of_current_label > proba_of_current_best_label:
-                proba_of_current_best_label = mean_proba_of_current_label
-                current_best_label = current_label
+            elif mean_proba_of_current_label > proba_of_current_best_label_AVG:
+                proba_of_current_best_label_AVG = mean_proba_of_current_label
+                current_best_label_AVG = current_label
             # Get every column header that matches with the previous predictions
             columns_A = [column for column in probs_A.columns.values if
                          current_column_C == CATHLabel(f"{column}.0.0").__getitem__("C")]
@@ -271,9 +278,9 @@ class HierarchicalClassifier:
                 if not mean_proba_of_current_label >= treshhold:
                     break
                 # If best probability is less then the actual --> Update the best values
-                elif mean_proba_of_current_label > proba_of_current_best_label:
-                    proba_of_current_best_label = mean_proba_of_current_label
-                    current_best_label = current_label
+                elif mean_proba_of_current_label > proba_of_current_best_label_AVG:
+                    proba_of_current_best_label_AVG = mean_proba_of_current_label
+                    current_best_label_AVG = current_label
                 # Get every column header that matches with the previous predictions
                 columns_T = [column for column in probs_T.columns.values if
                              current_column_A == CATHLabel(f"{column}.0").__getitem__("A")]
@@ -290,9 +297,9 @@ class HierarchicalClassifier:
                     if not mean_proba_of_current_label >= treshhold:
                         break
                     # If best probability is less then the actual --> Update the best values
-                    elif mean_proba_of_current_label > proba_of_current_best_label:
-                        proba_of_current_best_label = mean_proba_of_current_label
-                        current_best_label = current_label
+                    elif mean_proba_of_current_label > proba_of_current_best_label_AVG:
+                        proba_of_current_best_label_AVG = mean_proba_of_current_label
+                        current_best_label_AVG = current_label
                     # Get every column header that matches with the previous predictions
                     columns_H = [column for column in probs_H.columns.values if
                                  current_column_T == CATHLabel(column).__getitem__("T")]
@@ -310,11 +317,17 @@ class HierarchicalClassifier:
                         if not mean_proba_of_current_label >= treshhold:
                             break
                         # If best probability is less then the actual --> Update the best values
-                        elif mean_proba_of_current_label > proba_of_current_best_label:
-                            proba_of_current_best_label = mean_proba_of_current_label
-                            current_best_label = current_label
+                        elif mean_proba_of_current_label > proba_of_current_best_label_AVG:
+                            proba_of_current_best_label_AVG = mean_proba_of_current_label
+                            current_best_label_AVG = current_label
+                        if current_proba_H > proba_of_current_best_label_H:
+                            proba_of_current_best_label_H = current_proba_H
+                            current_best_label_H = current_label
         # Return the best label
-        return CATHLabel(current_best_label), proba_of_current_best_label
+        return CATHLabel(current_best_label_AVG), \
+               proba_of_current_best_label_AVG, \
+               CATHLabel(current_best_label_H), \
+               proba_of_current_best_label_H
 
     def return_evaluation(self, labels_CATH: List[str]):
         ########################################################################################
@@ -359,7 +372,6 @@ class HierarchicalClassifier:
                                              + eval_dict["accuracy_h"]
                                      ) / 4)
         return eval_dict
-
 
 
 if __name__ == "__main__":
