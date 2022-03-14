@@ -373,43 +373,45 @@ class HierarchicalLoss:
     """
 
     def __init__(
-        self,
-        loss_function: Callable[[torch.Tensor, torch.Tensor, Optional[torch.Tensor]], torch.Tensor],
-        class_weights: torch.Tensor,
-        hierarchical_weights: torch.Tensor,
-        class_names: List[str],
-        device,
+            self,
+            loss_function: Callable[[torch.Tensor, torch.Tensor, Optional[torch.Tensor]], torch.Tensor],
+            class_weights: torch.Tensor,
+            hierarchical_weights: torch.Tensor,
+            class_names: List[str],
+            device,
     ):
         assert len(hierarchical_weights) == 4
         assert torch.allclose(
             torch.sum(hierarchical_weights).to(device), torch.tensor([1.0]).to(device)
         )
         self.loss_function = loss_function
-        self.class_weights = class_weights
-        self.hierarchical_weights = hierarchical_weights
+        self.class_weights = class_weights.to(device)
+        self.hierarchical_weights = hierarchical_weights.to(device)
         self.class_names = class_names
+        self.device = device
 
         self.H_to_C_matrix = H_to_level_matrix(class_names=class_names, level="C").to(device)
         self.H_to_A_matrix = H_to_level_matrix(class_names=class_names, level="A").to(device)
         self.H_to_T_matrix = H_to_level_matrix(class_names=class_names, level="T").to(device)
+        self.H_to_H_matrix = torch.eye(n=len(self.class_names)).to(self.device)
 
     def __call__(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
         matrices = [
             self.H_to_C_matrix,
             self.H_to_A_matrix,
             self.H_to_T_matrix,
-            torch.eye(n=len(self.class_names)),
+            self.H_to_H_matrix,
         ]
         if self.class_weights is not None:
             sample_weights = []
             for y in y_true:
                 index = (y == 1.).nonzero().item()
                 sample_weights.append(self.class_weights[index])
-            sample_weights = torch.tensor(sample_weights)
+            sample_weights = torch.tensor(sample_weights).to(self.device)
         else:
             sample_weights = None
 
-        loss = torch.tensor([0]).float()
+        loss = torch.tensor([0]).float().to(self.device)
         for i, H_to_level_matrix in enumerate(matrices):
             loss += self.hierarchical_weights[i] * self.loss_function(
                 torch.matmul(y_pred, H_to_level_matrix),
