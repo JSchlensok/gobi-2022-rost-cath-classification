@@ -6,7 +6,7 @@ import sklearn
 import torch
 
 from gobi_cath_classification.pipeline.data import data_loading
-from gobi_cath_classification.pipeline.torch_utils import get_device
+from gobi_cath_classification.pipeline.utils.torch_utils import get_device
 from gobi_cath_classification.contrastive_learning_arcface.FNN import FNN
 
 MODEL_DIR = Path(
@@ -25,7 +25,7 @@ def train(num_epochs: int):
     )
 
     # TODO move to Dataset class
-    train_X, train_y = dataset.get_split("train", as_tensors=True, zipped=False)
+    train_X, train_y = dataset.get_split("train", x_encoding="embedding-tensor", zipped=False)
     label_encoder = sklearn.preprocessing.LabelEncoder()
     train_y_encoded = torch.as_tensor(
         label_encoder.fit_transform([str(label) for label in train_y])
@@ -38,6 +38,7 @@ def train(num_epochs: int):
     )
     device = get_device()
     model = FNN().to(device)
+
     # TODO tune fnn_optimizer parameters
     fnn_optimizer = torch.optim.Adam(model.parameters(), lr=10e-4, weight_decay=10e-4)
     loss_optimizer = torch.optim.Adam(criterion.parameters(), lr=10e-4, weight_decay=10e-4)

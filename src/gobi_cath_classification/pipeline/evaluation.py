@@ -1,16 +1,17 @@
 from typing import List, Dict
+from typing_extensions import Literal
 
 from sklearn.metrics import accuracy_score
 from .utils import CATHLabel
 
-from gobi_cath_classification.pipeline.model_interface import Prediction
+from gobi_cath_classification.pipeline.prediction import Prediction
 
 
 def accuracy_for_level(
     y_true: List[CATHLabel],
     y_pred: List[str],
     class_names_training: List[CATHLabel],
-    cath_level: str,
+    cath_level: Literal["C", "A", "T", "H"],
 ) -> float:
     """
 

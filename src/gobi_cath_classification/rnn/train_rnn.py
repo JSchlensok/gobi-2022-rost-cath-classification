@@ -1,13 +1,14 @@
 import ray
 import torch
 import numpy as np
+from pipeline.sample_weights import compute_inverse_sample_weights, compute_inverse_class_weights
 from ray import tune
 
-from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
-from gobi_cath_classification.pipeline.sample_weights import (
-    compute_inverse_sample_weights,
-    compute_class_weights,
+from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
+from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.rnn.models import (
+    RNNModel,
 )
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import RNNModel, BRNN
@@ -46,10 +47,10 @@ def training_function(config: dict) -> None:
         class_weights = None
     elif config["class_weights"] == "inverse":
         sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
-        class_weights = compute_class_weights(labels=dataset.y_train)
+        class_weights = compute_inverse_class_weights(labels=dataset.y_train)
     elif config["class_weights"] == "sqrt_inverse":
         sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
-        class_weights = np.sqrt(compute_class_weights(labels=dataset.y_train))
+        class_weights = np.sqrt(compute_inverse_class_weights(labels=dataset.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
@@ -98,6 +99,9 @@ def main():
         infer_limit=10,
     )
 
+    # Where ever i save my ray results
+    local_dir = "WHERE I WANT TO SAVE MY RAY RESULTS AND CHECKPOINTS"
+
     ray.init()
     analysis = tune.run(
         training_function,
@@ -117,6 +121,7 @@ def main():
             },
         },
         progress_reporter=reporter,
+        local_dir=local_dir,
     )
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
 

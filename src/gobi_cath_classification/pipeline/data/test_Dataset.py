@@ -78,7 +78,7 @@ class TestFilteringForALevel:
 
 def test_shuffling(allclose):
     shuffled_data = data1.get_copy()
-    shuffled_data.shuffle(np.random.RandomState(42))
+    shuffled_data.shuffle_training_set(np.random.RandomState(42))
     assert allclose(
         shuffled_data.X_train, shuffle(data1.X_train, random_state=np.random.RandomState(42))
     )

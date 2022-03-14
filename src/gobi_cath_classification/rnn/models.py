@@ -11,20 +11,25 @@ from torch.autograd import Variable
 from torch.nn.functional import one_hot
 
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
-from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
+from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 from gobi_cath_classification.rnn.encoder import one_hot_encode, num_categories
+from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
+
+categories = ["A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    "
+              "T    W    Y    V    B    Z    X".split()]
 
 
 class RNNModel(nn.Module):
     def __init__(
-        self,
-        lr: float,
-        batch_size: int,
-        optimizer: str,
-        class_names: List[str],
-        hidden_dim: int,
-        num_layers: int,
+            self,
+            lr: float,
+            batch_size: int,
+            optimizer: str,
+            class_names: List[str],
+            hidden_dim: int,
+            num_layers: int,
     ):
         super(RNNModel, self).__init__()
         self.device = torch_utils.get_device()
@@ -71,10 +76,10 @@ class RNNModel(nn.Module):
         return out
 
     def train_one_epoch(
-        self,
-        sequences: List[str],
-        labels: List[str],
-        sample_weights: Optional[np.ndarray],
+            self,
+            sequences: List[str],
+            labels: List[str],
+            sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
 
         list_perm = np.random.permutation(len(sequences))
@@ -88,8 +93,8 @@ class RNNModel(nn.Module):
         loss_sum = 0
 
         for i in range(0, len(sequences), self.batch_size):
-            list_indices = list_perm[i : i + self.batch_size]
-            tensor_indices = tensor_perm[i : i + self.batch_size]
+            list_indices = list_perm[i: i + self.batch_size]
+            tensor_indices = tensor_perm[i: i + self.batch_size]
             batch_X = [sequences[index] for index in list_indices]
             # One Hot Encoding
             batch_X = one_hot_encode(batch_X).to(self.device)
@@ -119,13 +124,13 @@ class RNNModel(nn.Module):
 
 class BRNN(nn.Module):
     def __init__(
-        self,
-        hidden_size,
-        num_layers,
-        class_names,
-        class_weights=None,
-        lr=0.01,
-        batch_size=200,
+            self,
+            hidden_size,
+            num_layers,
+            class_names,
+            class_weights=None,
+            lr=0.01,
+            batch_size=200,
     ):
         super(BRNN, self).__init__()
         self.hidden_size = hidden_size
@@ -159,7 +164,7 @@ class BRNN(nn.Module):
         return out
 
     def train_one_epoch(
-        self, sequences: List[str], labels: List[str], report_progress=False
+            self, sequences: List[str], labels: List[str], report_progress=False
     ) -> Dict[str, float]:
         list_perm = np.random.permutation(len(sequences))
         tensor_perm = torch.tensor(list_perm, dtype=torch.long)
@@ -173,8 +178,8 @@ class BRNN(nn.Module):
         loss_sum = 0
 
         for i in range(0, len(sequences), self.batch_size):
-            list_indices = list_perm[i : i + self.batch_size]
-            tensor_indices = tensor_perm[i : i + self.batch_size]
+            list_indices = list_perm[i: i + self.batch_size]
+            tensor_indices = tensor_perm[i: i + self.batch_size]
             batch_X = [sequences[index] for index in list_indices]
             # One Hot Encoding
             batch_X = one_hot_encode(batch_X).to(self.device)

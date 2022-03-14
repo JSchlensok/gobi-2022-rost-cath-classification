@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from typing import List, Optional, Dict
 
 from ..pipeline.model_interface import ModelInterface, Prediction
-from ..pipeline.torch_utils import get_device
+from ..pipeline.utils.torch_utils import get_device
 
 device = get_device()
 
