@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from gobi_cath_classification.pipeline.model_interface import (
+from gobi_cath_classification.pipeline.prediction import (
     save_predictions,
     Prediction,
     read_in_predictions,

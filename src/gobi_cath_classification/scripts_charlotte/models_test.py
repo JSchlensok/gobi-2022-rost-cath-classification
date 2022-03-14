@@ -3,7 +3,8 @@ import pandas as pd
 import torch
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
-from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
+from gobi_cath_classification.pipeline.model_interface import ModelInterface
+from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.scripts_charlotte.models import (
     NeuralNetworkModel,

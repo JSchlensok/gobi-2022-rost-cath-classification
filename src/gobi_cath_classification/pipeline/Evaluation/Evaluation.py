@@ -6,7 +6,7 @@ from tabulate import tabulate
 
 from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef, f1_score
 from gobi_cath_classification.pipeline.utils import CATHLabel
-from gobi_cath_classification.pipeline.model_interface import Prediction
+from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
 
 METRICS = ["accuracy", "mcc", "f1", "kappa"]

@@ -8,7 +8,7 @@ from ray import tune
 from ray.tune import trial
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
-from gobi_cath_classification.pipeline.model_interface import save_predictions
+from gobi_cath_classification.pipeline.prediction import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
     compute_inverse_class_weights,
