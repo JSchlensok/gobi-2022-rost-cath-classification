@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
-from gobi_cath_classification.pipeline.model_interface import Prediction
+from gobi_cath_classification.pipeline.prediction import Prediction
 
 from .utils import CATHLabel
 

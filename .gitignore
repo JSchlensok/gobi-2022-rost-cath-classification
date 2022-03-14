@@ -16,7 +16,8 @@ data
 *.txt
 *.dt
 model checkpoints
-
+**/ray_results
+**/predictions
 
 
 # IntelliJ
