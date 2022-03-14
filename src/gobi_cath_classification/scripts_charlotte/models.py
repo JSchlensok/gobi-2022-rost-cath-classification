@@ -13,10 +13,8 @@ from sklearn.naive_bayes import GaussianNB
 from torch import nn
 from torch.nn.functional import one_hot
 
-from gobi_cath_classification.pipeline import sample_weights
 from gobi_cath_classification.pipeline.data_loading import label_for_level
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
-from gobi_cath_classification.pipeline.sample_weights import compute_inverse_sample_weights
 from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 
@@ -373,12 +371,12 @@ class HierarchicalLoss:
     """
 
     def __init__(
-            self,
-            loss_function: Callable[[torch.Tensor, torch.Tensor, Optional[torch.Tensor]], torch.Tensor],
-            class_weights: torch.Tensor,
-            hierarchical_weights: torch.Tensor,
-            class_names: List[str],
-            device,
+        self,
+        loss_function: Callable[[torch.Tensor, torch.Tensor, Optional[torch.Tensor]], torch.Tensor],
+        class_weights: torch.Tensor,
+        hierarchical_weights: torch.Tensor,
+        class_names: List[str],
+        device,
     ):
         assert len(hierarchical_weights) == 4
         assert torch.allclose(
@@ -403,11 +401,9 @@ class HierarchicalLoss:
             self.H_to_H_matrix,
         ]
         if self.class_weights is not None:
-            sample_weights = []
-            for y in y_true:
-                index = (y == 1.).nonzero().item()
-                sample_weights.append(self.class_weights[index])
-            sample_weights = torch.tensor(sample_weights).to(self.device)
+            sample_weights = torch.tensor(
+                [self.class_weights[(y == 1.0).nonzero().item()] for y in y_true]
+            ).to(self.device)
         else:
             sample_weights = None
 
