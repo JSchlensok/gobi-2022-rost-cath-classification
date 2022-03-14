@@ -7,6 +7,7 @@ import numpy as np
 from ray import tune
 from ray.tune import trial
 
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.prediction import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
@@ -188,11 +189,16 @@ def training_function(config: dict) -> None:
         save_predictions(pred=y_pred_val, directory=checkpoint_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
-        eval_dict = evaluate(
+        eval = Evaluation(
             y_true=dataset.y_val,
-            y_pred=y_pred_val,
-            class_names_training=dataset.train_labels,
+            predictions=y_pred_val,
+            train_labels=class_names,
         )
+        eval.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+        eval_dict = {}
+        for k, v in eval.eval_dict.items():
+            eval_dict = {**eval_dict, **eval.eval_dict[k]}
+        print(f"eval_dict = {eval_dict}")
 
         # Save the model if the average accuracy has risen during the last epoch and check for early stopping
         if eval_dict["accuracy_h"] > highest_acc_h:
@@ -270,7 +276,7 @@ def main():
                         "lr": tune.choice([1e-2, 1e-3, 1e-4, 1e-5, 1e-6]),
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
-                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLoss"]),
+                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLogLoss"]),
                         "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],

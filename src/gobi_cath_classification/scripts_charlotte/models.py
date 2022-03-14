@@ -384,7 +384,7 @@ class HierarchicalLoss:
             torch.sum(hierarchical_weights).to(device), torch.tensor([1.0]).to(device)
         )
         self.loss_function = loss_function
-        self.class_weights = class_weights.to(device)
+        self.class_weights = class_weights if class_weights is None else class_weights.to(device)
         self.hierarchical_weights = hierarchical_weights.to(device)
         self.class_names = class_names
         self.device = device
