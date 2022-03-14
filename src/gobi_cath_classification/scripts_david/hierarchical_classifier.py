@@ -182,10 +182,12 @@ class HierarchicalClassifier:
         prediction_H = model_H.predict(embeddings=self.dataset.X_val)
         print("Predictions available...")
         # Check if all models returned the same number of predictions
-        if len(prediction_C.probabilities) \
-                == len(prediction_A.probabilities) \
-                == len(prediction_T.probabilities) \
-                == len(prediction_H.probabilities):
+        if (
+            len(prediction_C.probabilities)
+            == len(prediction_A.probabilities)
+            == len(prediction_T.probabilities)
+            == len(prediction_H.probabilities)
+        ):
             print("Same number of predictions for every embedding available...")
         else:
             print("Not all models returned the same number of predictions!")
@@ -198,13 +200,18 @@ class HierarchicalClassifier:
             current_prediction_T = prediction_T.probabilities.iloc[[index]]
             current_prediction_H = prediction_H.probabilities.iloc[[index]]
             # Give the probabilities for every embedding to the prediction function
-            label_prediction_AVG, label_probability_AVG, label_prediction_H, label_probability_H = \
-                self.return_prediction(
-                    current_prediction_C,
-                    current_prediction_A,
-                    current_prediction_T,
-                    current_prediction_H,
-                    threshold)
+            (
+                label_prediction_AVG,
+                label_probability_AVG,
+                label_prediction_H,
+                label_probability_H,
+            ) = self.return_prediction(
+                current_prediction_C,
+                current_prediction_A,
+                current_prediction_T,
+                current_prediction_H,
+                threshold,
+            )
             if prediction == "AVG":
                 labels_CATH.append(label_prediction_AVG.__str__())
             if prediction == "H":
@@ -227,7 +234,14 @@ class HierarchicalClassifier:
         print(f"Accuracy H   : {eval_dict['accuracy_h']}")
         print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
 
-    def return_prediction(self, probs_C, probs_A, probs_T, probs_H, treshhold, ) -> (CATHLabel, float):
+    def return_prediction(
+        self,
+        probs_C,
+        probs_A,
+        probs_T,
+        probs_H,
+        treshhold,
+    ) -> (CATHLabel, float):
         ########################################################################################
         # FUNCTION NAME     : return_prediction()
         # INPUT PARAMETERS  : probs_C, probs_A, probs_T, probs_H, treshhold
@@ -254,7 +268,7 @@ class HierarchicalClassifier:
             # Get probability for the current prediction
             current_proba_C = probs_C[current_column_C].values[0]
             # Calculate mean probability over every level
-            mean_proba_of_current_label = ((current_proba_C + 0 + 0 + 0) / 4)
+            mean_proba_of_current_label = (current_proba_C + 0 + 0 + 0) / 4
             # Break if mean probability does not exceed the threshold
             if not mean_proba_of_current_label >= treshhold:
                 break
@@ -263,9 +277,12 @@ class HierarchicalClassifier:
                 proba_of_current_best_label_AVG = mean_proba_of_current_label
                 current_best_label_AVG = current_label
             # Get every column header that matches with the previous predictions
-            columns_A = [column for column in probs_A.columns.values if
-                         current_column_C == CATHLabel(f"{column}.0.0").__getitem__("C")]
-        # A-LEVEL ------------------------------------------------------------------------------------------------------
+            columns_A = [
+                column
+                for column in probs_A.columns.values
+                if current_column_C == CATHLabel(f"{column}.0.0").__getitem__("C")
+            ]
+            # A-LEVEL ------------------------------------------------------------------------------------------------------
             # Loop over all probabilities of every prediction for level A
             for current_column_A in columns_A:
                 # Update current label
@@ -273,7 +290,7 @@ class HierarchicalClassifier:
                 # Get probability for the current prediction
                 current_proba_A = probs_A[current_column_A].values[0]
                 # Calculate mean probability over every level
-                mean_proba_of_current_label = ((current_proba_C + current_proba_A + 0 + 0) / 4)
+                mean_proba_of_current_label = (current_proba_C + current_proba_A + 0 + 0) / 4
                 # Break if mean probability does not exceed the threshold
                 if not mean_proba_of_current_label >= treshhold:
                     break
@@ -282,9 +299,12 @@ class HierarchicalClassifier:
                     proba_of_current_best_label_AVG = mean_proba_of_current_label
                     current_best_label_AVG = current_label
                 # Get every column header that matches with the previous predictions
-                columns_T = [column for column in probs_T.columns.values if
-                             current_column_A == CATHLabel(f"{column}.0").__getitem__("A")]
-        # T-LEVEL ------------------------------------------------------------------------------------------------------
+                columns_T = [
+                    column
+                    for column in probs_T.columns.values
+                    if current_column_A == CATHLabel(f"{column}.0").__getitem__("A")
+                ]
+                # T-LEVEL ------------------------------------------------------------------------------------------------------
                 # Loop over all probabilities of every prediction for level T
                 for current_column_T in columns_T:
                     # Update current label
@@ -292,7 +312,9 @@ class HierarchicalClassifier:
                     # Get probability for the current prediction
                     current_proba_T = probs_T[current_column_T].values[0]
                     # Calculate mean probability over every level
-                    mean_proba_of_current_label = ((current_proba_C + current_proba_A + current_proba_T + 0) / 4)
+                    mean_proba_of_current_label = (
+                        current_proba_C + current_proba_A + current_proba_T + 0
+                    ) / 4
                     # Break if mean probability does not exceed the threshold
                     if not mean_proba_of_current_label >= treshhold:
                         break
@@ -301,9 +323,12 @@ class HierarchicalClassifier:
                         proba_of_current_best_label_AVG = mean_proba_of_current_label
                         current_best_label_AVG = current_label
                     # Get every column header that matches with the previous predictions
-                    columns_H = [column for column in probs_H.columns.values if
-                                 current_column_T == CATHLabel(column).__getitem__("T")]
-        # H-LEVEL ------------------------------------------------------------------------------------------------------
+                    columns_H = [
+                        column
+                        for column in probs_H.columns.values
+                        if current_column_T == CATHLabel(column).__getitem__("T")
+                    ]
+                    # H-LEVEL ------------------------------------------------------------------------------------------------------
                     # Loop over all probabilities of every prediction for level H
                     for current_column_H in columns_H:
                         # Update current label
@@ -312,7 +337,8 @@ class HierarchicalClassifier:
                         current_proba_H = probs_H[current_column_H].values[0]
                         # Calculate mean probability over every level
                         mean_proba_of_current_label = (
-                                    (current_proba_C + current_proba_A + current_proba_T + current_proba_H) / 4)
+                            current_proba_C + current_proba_A + current_proba_T + current_proba_H
+                        ) / 4
                         # Break if mean probability does not exceed the threshold
                         if not mean_proba_of_current_label >= treshhold:
                             break
@@ -324,10 +350,12 @@ class HierarchicalClassifier:
                             proba_of_current_best_label_H = current_proba_H
                             current_best_label_H = current_label
         # Return the best label
-        return CATHLabel(current_best_label_AVG), \
-               proba_of_current_best_label_AVG, \
-               CATHLabel(current_best_label_H), \
-               proba_of_current_best_label_H
+        return (
+            CATHLabel(current_best_label_AVG),
+            proba_of_current_best_label_AVG,
+            CATHLabel(current_best_label_H),
+            proba_of_current_best_label_H,
+        )
 
     def return_evaluation(self, labels_CATH: List[str]):
         ########################################################################################
@@ -365,12 +393,12 @@ class HierarchicalClassifier:
                 cath_level="H",
             ),
         }
-        eval_dict["accuracy_avg"] = ((
-                                             eval_dict["accuracy_c"]
-                                             + eval_dict["accuracy_a"]
-                                             + eval_dict["accuracy_t"]
-                                             + eval_dict["accuracy_h"]
-                                     ) / 4)
+        eval_dict["accuracy_avg"] = (
+            eval_dict["accuracy_c"]
+            + eval_dict["accuracy_a"]
+            + eval_dict["accuracy_t"]
+            + eval_dict["accuracy_h"]
+        ) / 4
         return eval_dict
 
 
@@ -385,6 +413,6 @@ if __name__ == "__main__":
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
-        level_cuttoff="H"
+        level_cuttoff="H",
     )
     dataset.scale()

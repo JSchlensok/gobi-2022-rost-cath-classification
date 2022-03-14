@@ -8,10 +8,10 @@ from gobi_cath_classification.pipeline.model_interface import Prediction
 
 
 def accuracy_for_level(
-        y_true: List[CATHLabel],
-        y_pred: List[str],
-        class_names_training: List[CATHLabel],
-        cath_level: Literal["C", "A", "T", "H"],
+    y_true: List[CATHLabel],
+    y_pred: List[str],
+    class_names_training: List[CATHLabel],
+    cath_level: Literal["C", "A", "T", "H"],
 ) -> float:
     """
 
@@ -55,7 +55,10 @@ def accuracy_for_level(
 
 
 def evaluate(
-        y_true: List[CATHLabel], y_pred: Prediction, class_names_training: List[CATHLabel], cath_level_pred: Literal["C", "A", "T", "H"] = None
+    y_true: List[CATHLabel],
+    y_pred: Prediction,
+    class_names_training: List[CATHLabel],
+    cath_level_pred: Literal["C", "A", "T", "H"] = None,
 ) -> Dict[str, float]:
     y_proba = y_pred.probabilities
     y_labels = y_pred.argmax_labels()
@@ -92,11 +95,11 @@ def evaluate(
         #                                    multi_class="ovr"),
     }
     eval_dict["accuracy_avg"] = (
-                                        eval_dict["accuracy_c"]
-                                        + eval_dict["accuracy_a"]
-                                        + eval_dict["accuracy_t"]
-                                        + eval_dict["accuracy_h"]
-                                ) / 4
+        eval_dict["accuracy_c"]
+        + eval_dict["accuracy_a"]
+        + eval_dict["accuracy_t"]
+        + eval_dict["accuracy_h"]
+    ) / 4
     return eval_dict
 
 
