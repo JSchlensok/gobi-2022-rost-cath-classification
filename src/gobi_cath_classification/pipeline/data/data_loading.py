@@ -163,7 +163,7 @@ def load_data(
 
     if load_strings:
         dataset.load_strings(
-            list(id2seqs_train.values()), list(id2seqs_val.values()), list(id2seqs_test.keys())
+            list(id2seqs_train.values()), list(id2seqs_val.values()), list(id2seqs_test.values())
         )
 
     if shuffle_data:
