@@ -8,7 +8,6 @@ import torch
 from gobi_cath_classification.pipeline.prediction import Prediction
 
 
-
 class ModelInterface:
     @abstractmethod
     def train_one_epoch(
