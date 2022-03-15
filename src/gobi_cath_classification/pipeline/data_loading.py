@@ -101,7 +101,7 @@ class DataSplits:
 
         """
         shuffled_data = deepcopy(self._dataset)
-        shuffled_data.shuffle(rng)
+        shuffled_data.shuffle_training_set(rng)
         if not shuffle_train:
             shuffled_data.X_train = self._dataset.X_train
             shuffled_data.y_train = self._dataset.y_train

@@ -2,11 +2,9 @@ import ray
 import torch
 from ray import tune
 
-from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
+from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.data import REPO_ROOT_DIR
 from gobi_cath_classification.scripts_charlotte.models import (
-    NeuralNetworkModel,
     DistanceModel,
 )
 from gobi_cath_classification.pipeline.train_eval import (
@@ -28,10 +26,12 @@ def main():
         max_report_frequency=10,
         infer_limit=10,
     )
+    local_dir = REPO_ROOT_DIR / "ray_results"
 
     ray.init()
     analysis = tune.run(
         training_function,
+        local_dir=local_dir,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
@@ -47,7 +47,6 @@ def main():
             },
         },
         progress_reporter=reporter,
-        local_dir=REPO_ROOT_DIR / "src" / "gobi_cath_classification" / "model checkpoints",
     )
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
 

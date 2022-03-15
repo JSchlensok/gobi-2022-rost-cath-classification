@@ -4,7 +4,7 @@ from typing_extensions import Literal
 from sklearn.metrics import accuracy_score
 from .utils import CATHLabel
 
-from gobi_cath_classification.pipeline.model_interface import Prediction
+from gobi_cath_classification.pipeline.prediction import Prediction
 
 
 def accuracy_for_level(

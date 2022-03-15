@@ -5,9 +5,9 @@ from ray import tune
 from ray.tune import trial
 
 import platform
-from gobi_cath_classification.pipeline import torch_utils
+from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
+from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
 from gobi_cath_classification.pipeline.train_eval import trial_dirname_creator
