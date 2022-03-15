@@ -6,7 +6,7 @@ import sklearn
 import torch
 
 from gobi_cath_classification.pipeline.data import data_loading
-from gobi_cath_classification.pipeline.torch_utils import get_device
+from gobi_cath_classification.pipeline.utils.torch_utils import get_device
 from gobi_cath_classification.contrastive_learning_arcface.FNN import FNN
 
 MODEL_DIR = Path(

@@ -1,8 +1,10 @@
 import numpy as np
+import time
+
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
+from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
-from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
 
 
 random_seed = RANDOM_SEED
@@ -20,22 +22,43 @@ data_set = load_data(
     load_only_small_sample=False,
     reloading_allowed=True,
 )
-data_set.scale()
 x = data_set.train_labels
-print(x)
+
 
 model1 = RandomBaseline(data=data_set, class_balance=False, rng=rng, random_seed=random_seed)
 model2 = RandomBaseline(data=data_set, class_balance=True, rng=rng, random_seed=random_seed)
 model3 = ZeroRate(data=data_set, rng=rng, random_seed=random_seed)
 
-predictions1 = model1.predict(model1.data.X_val)
-predictions2 = model2.predict(model2.data.X_val)
+predictions1 = model1.predict(model1.data.X_test)
+predictions2 = model2.predict(model2.data.X_test)
 predictions3 = model3.predict(model3.data.X_val)
 
-evaluation1 = evaluate(data_set.y_val, predictions1, data_set.train_labels)
-evaluation2 = evaluate(data_set.y_val, predictions2, data_set.train_labels)
-evaluation3 = evaluate(data_set.y_val, predictions3, data_set.train_labels)
+eval1 = Evaluation(
+    y_true=data_set.y_test,
+    predictions=predictions1,
+    train_labels=data_set.train_labels,
+    model_name="Random Baseline",
+)
+start = time.perf_counter()
+eval1.compute_metrics(accuracy=True, mcc=True)
+end = time.perf_counter()
+print(f"time to compute the metrics: {end-start}")
 
-print(f"the accuracys for the random baseline without class balance are: {evaluation1}")
-print(f"the accuracys for the random baseline with class balance are: {evaluation2}")
-print(f"the accuracys for the Zero Rate model is: {evaluation3}")
+start = time.perf_counter()
+eval1.compute_std_err(bootstrap_n=10)
+end = time.perf_counter()
+print(f"time to compute the standard error: {end-start}")
+
+eval1.print_evaluation()
+
+
+eval2 = Evaluation(
+    y_true=data_set.y_test,
+    predictions=predictions2,
+    train_labels=data_set.train_labels,
+    model_name="Random Baseline with weights",
+)
+
+eval2.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+
+eval2.print_evaluation()

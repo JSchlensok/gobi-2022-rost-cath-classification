@@ -115,17 +115,11 @@ class Dataset:
     # BUILDER METHODS #
     ###################
 
-    def shuffle(self, rng: np.random.RandomState) -> None:
+    def shuffle_training_set(self, rng: np.random.RandomState) -> None:
         X_train, y_train = shuffle(self.X_train, self.y_train, random_state=rng)
-        X_val, y_val = shuffle(self.X_val, self.y_val, random_state=rng)
-        X_test, y_test = shuffle(self.X_test, self.y_test, random_state=rng)
 
         self.X_train = X_train
         self.y_train = y_train
-        self.X_val = X_val
-        self.y_val = y_val
-        self.X_test = X_test
-        self.y_test = y_test
 
     def scale(self) -> None:
         scaler = StandardScaler()

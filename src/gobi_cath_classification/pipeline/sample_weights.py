@@ -5,7 +5,7 @@ import numpy as np
 from gobi_cath_classification.pipeline.utils import CATHLabel
 
 
-def compute_class_weights(labels: List[str]) -> np.ndarray:
+def compute_inverse_class_weights(labels: List[str]) -> np.ndarray:
     """
     Computes class weights.
 

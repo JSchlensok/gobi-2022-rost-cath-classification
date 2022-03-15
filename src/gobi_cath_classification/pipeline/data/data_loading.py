@@ -10,7 +10,7 @@ import pickle
 
 from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.data import Dataset
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
+from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
 
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
@@ -97,7 +97,7 @@ def load_data(
                 serialized_dataset = pickle.load(f)
 
             if shuffle_data:
-                serialized_dataset.shuffle(np.random.RandomState(RANDOM_SEED))
+                serialized_dataset.shuffle_training_set(np.random.RandomState(RANDOM_SEED))
 
             return serialized_dataset
 
@@ -172,8 +172,8 @@ def load_data(
         )
 
     if shuffle_data:
-        print("Shuffling data ...")
-        dataset.shuffle(rng)
+        print("Shuffling training set ...")
+        dataset.shuffle_training_set(rng)
 
     if specific_level is not None and level_cuttoff is None:
         dataset.y_train = [label.__getspecificitem__(specific_level) for label in dataset.y_train]

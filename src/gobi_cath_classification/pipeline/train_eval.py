@@ -1,23 +1,22 @@
 import os
-
 from pathlib import Path
 
 import ray
 import torch
-import platform
 import numpy as np
 from ray import tune
 from ray.tune import trial
 
 from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.prediction import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
-    compute_class_weights,
+    compute_inverse_class_weights,
 )
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR, REPO_ROOT_DIR
 
-from gobi_cath_classification.pipeline import torch_utils
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED, set_random_seeds
+from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_charlotte.models import (
     RandomForestModel,
     NeuralNetworkModel,
@@ -61,7 +60,7 @@ def training_function(config: dict) -> None:
     else:
         # Do not resume training, create new model
         resume_training = False
-        # Default for new config value "öast_epoch"
+        # Default for new config value "last_epoch"
         config["last_epoch"] = None
         # Save the models configuration
 
@@ -80,7 +79,9 @@ def training_function(config: dict) -> None:
         shuffle_data=True,
         reloading_allowed=True,
     )
-    dataset.scale()
+    # scale if parameter is set in config dict, if not set: default scale = True
+    if "scale" not in config["model"].keys() or config["model"]["scale"]:
+        dataset.scale()
 
     embeddings_train, y_train_labels = dataset.get_split(split="train", zipped=False)
     embeddings_train_tensor = torch.tensor(embeddings_train)
@@ -98,21 +99,27 @@ def training_function(config: dict) -> None:
         class_weights = None
     elif config["class_weights"] == "inverse":
         sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
-        class_weights = compute_class_weights(labels=dataset.y_train)
+        class_weights = compute_inverse_class_weights(labels=dataset.y_train)
     elif config["class_weights"] == "sqrt_inverse":
         sample_weights = np.sqrt(compute_inverse_sample_weights(labels=dataset.y_train))
-        class_weights = np.sqrt(compute_class_weights(labels=dataset.y_train))
+        class_weights = np.sqrt(compute_inverse_class_weights(labels=dataset.y_train))
     else:
         raise ValueError(f'Class weights do not exist: {config["class_weights"]}')
 
     # set model
     if model_class == NeuralNetworkModel.__name__:
+        loss_weights = None
+        if "loss_weights" in config["model"].keys():
+            loss_weights = torch.tensor(config["model"]["loss_weights"])
         model = NeuralNetworkModel(
             lr=config["model"]["lr"],
-            class_names=class_names,
+            class_names=[str(cn) for cn in class_names],
             layer_sizes=config["model"]["layer_sizes"],
+            dropout_sizes=config["model"]["dropout_sizes"],
             batch_size=config["model"]["batch_size"],
             optimizer=config["model"]["optimizer"],
+            loss_function=config["model"]["loss_function"],
+            loss_weights=loss_weights,
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
             random_seed=RANDOM_SEED,
@@ -178,6 +185,7 @@ def training_function(config: dict) -> None:
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(embeddings=dataset.X_val)
+        save_predictions(pred=y_pred_val, directory=checkpoint_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
@@ -185,7 +193,6 @@ def training_function(config: dict) -> None:
             y_pred=y_pred_val,
             class_names_training=dataset.train_labels,
         )
-        tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
         # Save the model if the average accuracy has risen during the last epoch and check for early stopping
         if eval_dict["accuracy_h"] > highest_acc_h:
@@ -202,6 +209,12 @@ def training_function(config: dict) -> None:
             n_bad += 1
             if n_bad >= n_thresh:
                 break
+
+        tune.report(
+            **eval_dict,
+            **{f"model_{k}": v for k, v in model_metrics_dict.items()},
+            **{"highest_acc_h": highest_acc_h},
+        )
 
 
 def trial_dirname_creator(trial: trial.Trial) -> str:
@@ -227,17 +240,16 @@ def main():
         max_report_frequency=10,
         infer_limit=10,
     )
-
     # Default Path for local_dir --> defines location of ray files
     # Can be changed to any location
-    local_dir = str(Path(__file__).parent.parent.parent.parent / "model checkpoints")
+    local_dir = REPO_ROOT_DIR / "model checkpoints"
     print(f"local_dir = {local_dir}")
 
     ray.init()
     analysis = tune.run(
         training_function,
-        trial_dirname_creator=trial_dirname_creator,
         local_dir=local_dir,
+        trial_dirname_creator=trial_dirname_creator,
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
@@ -258,13 +270,10 @@ def main():
                         "lr": tune.choice([1e-2, 1e-3, 1e-4, 1e-5, 1e-6]),
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
-                        "layer_sizes": tune.choice(
-                            [
-                                [1024],
-                                [1024, 128],
-                                [1024, 256],
-                            ]
-                        ),
+                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLoss"]),
+                        "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
+                        "layer_sizes": [1024, 2048],
+                        "dropout_sizes": [0.2, None],
                     },
                     {
                         "model_class": GaussianNaiveBayesModel.__name__,
@@ -275,7 +284,6 @@ def main():
         },
         progress_reporter=reporter,
     )
-
     print("Best config: ", analysis.get_best_config(metric="accuracy_h", mode="max"))
 
 
