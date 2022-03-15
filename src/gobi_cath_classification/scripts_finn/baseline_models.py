@@ -29,7 +29,7 @@ class RandomBaseline(ModelInterface):
     ):
         """
         Args:
-            data: a DataSplits object created from the data in the data folder
+            data: a Dataset object created from the data in the data folder
             class_balance: differentiate between the two methods mentioned above
             rng: random seed setting
             random_seed: random seed setting
@@ -133,7 +133,7 @@ class ZeroRate(ModelInterface):
     ):
         """
         Args:
-            data: a DataSplits object created from the data in the data folder
+            data: a Dataset object created from the data in the data folder
             rng: random seed setting
             random_seed: random seed setting
         """
