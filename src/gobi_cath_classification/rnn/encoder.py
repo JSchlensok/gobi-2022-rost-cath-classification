@@ -1,5 +1,7 @@
 from typing import List, Optional, Dict
+import numpy as np
 import torch
+
 
 categories = list(
     "A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    "
@@ -7,6 +9,14 @@ categories = list(
 )
 num_categories = len(categories)
 categories = dict(zip(categories, range(num_categories)))
+
+
+def pad_embeddings(emb: List) -> torch.Tensor:
+    max_len = np.max([x.shape[0] for x in emb])
+    # Pad
+    padded = [np.pad(x, ((max_len - len(x), 0), (0, 0)), 'constant') for x in emb]
+    padded = np.array(padded, dtype=np.float32)
+    return torch.tensor(padded)
 
 
 def help_encode(sequence: List[int], max_length: int):

@@ -31,13 +31,16 @@ def read_in_sequences(path_to_file: Path) -> Dict[str, str]:
     return id2seq
 
 
-def read_in_embeddings(path_to_file: Path) -> Dict[str, np.ndarray]:
+def read_in_embeddings(path_to_file: Path, save_ram: bool = False) -> Dict[str, np.ndarray]:
     id2embedding = {}
     h5_file = h5py.File(path_to_file)
 
     for key, value in h5_file.items():
         protein_id = key.split("|")[-1].split("_")[0]
-        values = value[()]
+        if not save_ram:
+            values = value[()]  # Create np.ndarry from Dataset
+        else:
+            values = value  # Keep embedding as h5py._hl.dataset.Dataset in
         id2embedding[protein_id] = values
 
     return id2embedding
