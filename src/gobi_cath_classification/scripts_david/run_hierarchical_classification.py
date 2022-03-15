@@ -10,7 +10,7 @@ def main():
             "C:\\Users\\David Mauder\\ray_results\\hc lcpn T\\T\\model_object.model",
             "C:\\Users\\David Mauder\\ray_results\\hc lcpn H\\H\\model_object.model",
         ],
-        classifier_type="LCL",
+        classifier_type="LCPN",
         classification_cutoff=0,
     )
     hc.get_data(random_seed=1)
