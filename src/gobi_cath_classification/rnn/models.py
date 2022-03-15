@@ -241,14 +241,11 @@ class BRNN_embedded(nn.Module):
     def forward(self, x):
         h0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
         c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
-        out, _ = self.lstm(x, (h0, c0))
-        out_forward = out[:, -1, :self.hidden_size]
-        out_backward = out[:, 0, self.hidden_size:]
-        out = torch.cat((out_forward, out_backward), dim=1)
-        out = self.fc(out)
-        out = self.softmax(out)
-
-        return out
+        x, _ = self.lstm(x, (h0, c0))
+        x = torch.cat((x[:, -1, :self.hidden_size], x[:, 0, self.hidden_size:]), dim=1)
+        x = self.fc(x)
+        x = self.softmax(x)
+        return x
 
     def train_one_epoch(
             self, embeddings: List, labels: List[str], report_progress=False
