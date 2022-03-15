@@ -13,9 +13,8 @@ from sklearn.naive_bayes import GaussianNB
 from torch import nn
 from torch.nn.functional import one_hot
 
-from gobi_cath_classification.pipeline.data_loading import label_for_level
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
-from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils import torch_utils, CATHLabel
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 
 
@@ -446,9 +445,7 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
 
     """
     assert level in ["C", "A", "T", "H"]
-    class_names_level = sorted(
-        list(set([label_for_level(cn, cath_level=level) for cn in class_names]))
-    )
+    class_names_level = sorted(list(set([str(CATHLabel(cn)[level]) for cn in class_names])))
     matrix = []
     for cn in class_names:
         row = []

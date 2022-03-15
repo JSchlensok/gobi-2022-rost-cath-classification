@@ -1,10 +1,13 @@
 import ray
 import torch
 import numpy as np
-from pipeline.sample_weights import compute_inverse_sample_weights, compute_inverse_class_weights
 from ray import tune
 
 from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.sample_weights import (
+    compute_inverse_sample_weights,
+    compute_inverse_class_weights,
+)
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import (
@@ -12,8 +15,7 @@ from gobi_cath_classification.rnn.models import (
 )
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import RNNModel, BRNN
-from gobi_cath_classification.pipeline.data_loading import DATA_DIR
-from gobi_cath_classification.pipeline.data.data_loading import load_data
+from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR, load_data
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
 
 
