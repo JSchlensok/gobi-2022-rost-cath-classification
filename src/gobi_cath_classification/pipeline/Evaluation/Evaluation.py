@@ -49,7 +49,12 @@ class Evaluation:
         """
 
         self.y_true = y_true
+
+        # indexing the rows with corresponding CATH labels
         self.yhat_probabilities = predictions.probabilities
+        idx = pd.Index([str(label) for label in y_true])
+        self.yhat_probabilities = self.yhat_probabilities.set_index(idx)
+
         self.yhats = [CATHLabel(label) for label in predictions.argmax_labels()]
         self.train_labels = train_labels
         self.model_name = model_name
@@ -281,6 +286,33 @@ class Evaluation:
 
         else:
             raise TypeError("No results were computed yet")
+
+    def foldseek_metric(self):
+        """
+        Adapt the metric which was used in the Foldseek paper:
+        Source:  https://doi.org/10.1101/2022.02.07.479398
+
+        Sort either descending after probability or ascending after distance depending on the used model
+        Calculate the ROC-AUC up until the fifth false positive (FP) and the fraction of True positives out
+        of all possible correct matches for that query
+        Returns:
+
+        """
+        df = self.yhat_probabilities
+        y_true = self.y_true
+        fp_count = dict()
+        found_h = dict()
+        for query, data in df.iterrows():
+
+            idx = np.argsort(np.array(data))
+            labels_sorted = np.array(list(df.columns))[idx[::-1]]
+            fp_count[query] = 0
+            found_h[query] = 0
+            for label in labels_sorted:
+                if fp_count[query] < 5 and query != str(label):
+                    fp_count[query] += 1
+
+            break
 
 
 def metric_for_level(
