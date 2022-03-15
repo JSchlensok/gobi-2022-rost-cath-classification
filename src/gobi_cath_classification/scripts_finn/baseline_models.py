@@ -6,7 +6,7 @@ import torch
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
 from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
-from gobi_cath_classification.pipeline.data import Dataset
+from gobi_cath_classification.pipeline.data import 
 from gobi_cath_classification.pipeline.sample_weights import compute_class_counts
 
 
@@ -29,7 +29,7 @@ class RandomBaseline(ModelInterface):
     ):
         """
         Args:
-            data: a Dataet object created from the data in the data folder
+            data: a Dataset object created from the data in the data folder
             class_balance: differentiate between the two methods mentioned above
             rng: random seed setting
             random_seed: random seed setting
