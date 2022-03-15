@@ -9,7 +9,7 @@ from typing import List, Optional, Dict
 
 from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
-from gobi_cath_classification.pipeline.torch_utils import set_random_seeds
+from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 from gobi_cath_classification.pipeline.evaluation import accuracy_for_level
 
 
