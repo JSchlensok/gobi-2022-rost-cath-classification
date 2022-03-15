@@ -112,6 +112,10 @@ def training_function(config: dict) -> None:
         loss_weights = None
         if "loss_weights" in config["model"].keys():
             loss_weights = torch.tensor(config["model"]["loss_weights"])
+        add_small_random = 0.0
+        if "add_small_random" in config["model"].keys():
+            add_small_random = config["model"]["add_small_random"]
+
         model = NeuralNetworkModel(
             lr=config["model"]["lr"],
             class_names=[str(cn) for cn in class_names],
@@ -124,6 +128,7 @@ def training_function(config: dict) -> None:
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
             random_seed=RANDOM_SEED,
+            add_small_random=add_small_random,
         )
 
     elif model_class == RandomForestModel.__name__:

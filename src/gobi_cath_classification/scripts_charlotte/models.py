@@ -191,10 +191,12 @@ class NeuralNetworkModel(ModelInterface):
         loss_function: Literal["CrossEntropyLoss", "HierarchicalLogLoss", "HierarchicalMSELoss"],
         class_weights: torch.Tensor,
         rng: np.random.RandomState,
+        add_small_random: float = 0.0,
         random_seed: int = 42,
         weight_decay: float = 0.0,
         loss_weights: torch.Tensor = None,
     ):
+        self.add_small_random = add_small_random
         assert len(layer_sizes) == len(dropout_sizes)
         self.device = torch_utils.get_device()
 
@@ -287,7 +289,11 @@ class NeuralNetworkModel(ModelInterface):
         for i in range(0, len(embeddings), self.batch_size):
             self.optimizer.zero_grad()
             indices = permutation[i : i + self.batch_size]
+
             batch_X = X[indices].float()
+            t = (torch.rand(size=batch_X.size()).to(self.device) - 0.5) * self.add_small_random
+            batch_X = torch.add(batch_X, t)
+
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
 
@@ -333,7 +339,6 @@ class NeuralNetworkModel(ModelInterface):
 def log_loss(
     y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights: torch.Tensor = None
 ) -> torch.Tensor:
-
     x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
 
     if sample_weights is not None:
