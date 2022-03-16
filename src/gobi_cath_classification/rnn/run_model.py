@@ -46,7 +46,7 @@ model = BRNN_embedded(
     class_names=class_names,
     class_weights=class_weights,
     lr=1e-3,
-    batch_size=256,
+    batch_size=192,
 ).to(torch_utils.get_device())
 
 for e in range(100):
