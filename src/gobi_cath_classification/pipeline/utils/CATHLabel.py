@@ -35,13 +35,6 @@ class CATHLabel:
         return self._levels < other._levels
 
     def __hash__(self):
-        """
-        c_level = self._levels[0]
-        a_level = '0' * (3- len(self._levels[1]))
-        t_level = '0' * (5 - len(self._levels[2]))
-        h_level = '0' * (5 - len(self._levels[3]))
-        return int(c_level + a_level + t_level + h_level)
-        """
         return self._string.__hash__()
 
     def __getitem__(self, cath_level: Literal["C", "A", "T", "H"]) -> CATHLabel:
