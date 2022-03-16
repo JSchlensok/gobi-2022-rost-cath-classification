@@ -47,7 +47,7 @@ model = BRNN_embedded(
     class_weights=class_weights,
     lr=1e-3,
     batch_size=192,
-).to(torch_utils.get_device())
+)
 
 for e in range(100):
     metrics = model.train_one_epoch(X_train, y_train, report_progress=True)

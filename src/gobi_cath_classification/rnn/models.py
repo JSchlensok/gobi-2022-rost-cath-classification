@@ -239,9 +239,9 @@ class BRNN_embedded(nn.Module):
         )
 
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
-        c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
-        x, _ = self.lstm(x, (h0, c0))
+        # h0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
+        # c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
+        x, _ = self.lstm(x)
         x = torch.cat((x[:, -1, :self.hidden_size], x[:, 0, self.hidden_size:]), dim=1)
         x = self.fc(x)
         x = self.softmax(x)
@@ -253,11 +253,9 @@ class BRNN_embedded(nn.Module):
         list_perm = np.random.permutation(len(embeddings))
         tensor_perm = torch.tensor(list_perm, dtype=torch.long)
 
-        y_indices = torch.tensor([self.class_names.index(label) for label in labels]).to(
-            self.device
-        )
+        y_indices = torch.tensor([self.class_names.index(label) for label in labels])
 
-        y_one_hot = 1.0 * one_hot(y_indices, num_classes=len(self.class_names))
+        y_one_hot = 1.0 * one_hot(y_indices, num_classes=len(self.class_names)).to(self.device)
         counter = 0
         loss_sum = 0
 
@@ -276,9 +274,13 @@ class BRNN_embedded(nn.Module):
             loss_sum += loss
             loss.backward()
             self.optimizer.step()
+
             if report_progress & (counter % 18 == 0):
                 print(f"\t\t{i + self.batch_size}/{len(embeddings)} done")
             counter += 1
+
+            batch_X = batch_y = None
+            torch.cuda.empty_cache()
 
         loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
