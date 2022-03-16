@@ -6,6 +6,20 @@ from typing_extensions import Literal
 
 @total_ordering
 class CATHLabel:
+    """Utility class to take advantage of the hierarchical CATH indices
+
+    Uses:
+        label[:level] (level ∈ "CATH") returns the ID up to that level (inclusive)
+
+        label[:level] (level ∈ "CATH") returns the ID of the specific level as a string
+            (since it encodes no more hierarchical information)
+
+        Labels can be sorted lexicographically
+
+        Labels can be compared to other labels or directly to strings
+
+
+    """
     def __init__(self, label: str):
         self._string = label
         self._levels = label.split(".")
