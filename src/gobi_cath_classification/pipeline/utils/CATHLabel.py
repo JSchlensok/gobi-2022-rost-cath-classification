@@ -1,10 +1,25 @@
 from __future__ import annotations
 from functools import total_ordering
+from typing import Union
 from typing_extensions import Literal
 
 
 @total_ordering
 class CATHLabel:
+    """Utility class to take advantage of the hierarchical CATH indices
+
+    Uses:
+        label[:level] (level ∈ "CATH") returns the ID up to that level (inclusive)
+
+        label[:level] (level ∈ "CATH") returns the ID of the specific level as a string
+            (since it encodes no more hierarchical information)
+
+        Labels can be sorted lexicographically
+
+        Labels can be compared to other labels or directly to strings
+
+
+    """
     def __init__(self, label: str):
         self._string = label
         self._levels = label.split(".")
@@ -35,16 +50,17 @@ class CATHLabel:
         return self._levels < other._levels
 
     def __hash__(self):
-        """
-        c_level = self._levels[0]
-        a_level = '0' * (3- len(self._levels[1]))
-        t_level = '0' * (5 - len(self._levels[2]))
-        h_level = '0' * (5 - len(self._levels[3]))
-        return int(c_level + a_level + t_level + h_level)
-        """
         return self._string.__hash__()
 
-    def __getitem__(self, cath_level: Literal["C", "A", "T", "H"]) -> CATHLabel:
-        index = "CATH".index(cath_level)
-        label = ".".join(self._levels[: index + 1])
-        return CATHLabel(label)
+    def __getitem__(self, key: Union[Literal["C", "A", "T", "H"], slice]) -> Union[CATHLabel, str]:
+        if isinstance(key, slice):
+            if isinstance(key.start, int) or isinstance(key.stop, int):
+                raise KeyError("Int indices not supported for CATH labels")
+            elif key.start is None:
+                return CATHLabel(".".join(self._levels[: "CATH".index(key.stop) + 1]))
+            elif isinstance(key.start, str) and key.start in "CATH":
+                return CATHLabel(".".join(self._levels["CATH".index(key.step) : "CATH".index(key.stop) + 1]))
+            elif key.step is not None:
+                raise KeyError("Step size not supported for CATH labels")
+
+        return self._levels["CATH".index(key)]
