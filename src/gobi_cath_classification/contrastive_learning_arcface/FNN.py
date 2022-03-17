@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from pathlib import Path
 import torch
@@ -17,6 +18,12 @@ class FNN(nn.Module):
         # TODO tune number of layers
         # TODO tune embedding size
         self.fnn = nn.Sequential(nn.Linear(1024, 256), nn.Tanh(), nn.Linear(256, 128))
+
+    @classmethod
+    def from_file(cls, file: Path) -> FNN:
+        model = FNN()
+        model.fnn.load_state_dict(torch.load(file))
+        return model
 
     @torch.autocast("cpu")
     def forward(self, x):
