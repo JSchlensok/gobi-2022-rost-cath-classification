@@ -1,8 +1,9 @@
 from pathlib import Path
 from collections import Counter
-from typing import Dict
+from typing import Dict, Any
 
 import h5py
+from nptyping import NDArray, Float
 import numpy as np
 import pandas as pd
 import pickle
@@ -31,7 +32,7 @@ def read_in_sequences(path_to_file: Path) -> Dict[str, str]:
     return id2seq
 
 
-def read_in_embeddings(path_to_file: Path) -> Dict[str, np.ndarray]:
+def read_in_embeddings(path_to_file: Path) -> Dict[str, NDArray[(Any, 1024), Float]]:
     id2embedding = {}
     h5_file = h5py.File(path_to_file)
 

@@ -1,27 +1,28 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional, Union
+from typing import List, Dict, Tuple, Union, Any
 from typing_extensions import Literal
 
+from nptyping import NDArray, Float
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import shuffle
 import torch
+from torchtyping import TensorType
 
 from gobi_cath_classification.pipeline.utils import CATHLabel
 
 splits = ["train", "val", "test"]
 
-
 @dataclass
 class Dataset:
-    X_train: np.ndarray
+    X_train: NDArray[(Any, 1024), Float]
     y_train: List[CATHLabel]
     train_labels: List[CATHLabel]
-    X_val: np.ndarray
+    X_val: NDArray[(Any, 1024), Float]
     y_val: List[CATHLabel]
-    X_test: np.ndarray
+    X_test: NDArray[(Any, 1024), Float]
     y_test: List[CATHLabel]
     stores_strings: bool = False
     X_train_str: List[str] = None
@@ -47,10 +48,10 @@ class Dataset:
         x_encoding: Literal["embedding-array", "embedding-tensor", "string"] = "embedding-array",
         zipped: bool = False,
     ) -> Union[
-        List[Tuple[np.ndarray, CATHLabel]],
-        Tuple[np.ndarray, List[CATHLabel]],
-        List[Tuple[torch.tensor, CATHLabel]],
-        Tuple[torch.tensor, List[CATHLabel]],
+        List[Tuple[NDArray[(Any, 1024), Float], CATHLabel]],
+        Tuple[NDArray[(Any, 1024), Float], List[CATHLabel]],
+        List[Tuple[TensorType[Any, 1024], CATHLabel]],
+        Tuple[TensorType[Any, 1024], List[CATHLabel]],
         List[Tuple[str, CATHLabel]],
         Tuple[List[str], List[CATHLabel]],
     ]:

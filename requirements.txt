@@ -38,6 +38,7 @@ MarkupSafe==2.0.1
 msgpack==1.0.3
 multidict==6.0.1
 mypy-extensions==0.4.3
+nptyping==1.4.4
 numpy==1.21.1
 nvidia-ml-py3==7.352.0
 oauthlib==3.2.0
@@ -81,6 +82,7 @@ threadpoolctl==3.0.0
 toml==0.10.2
 tomli==2.0.0
 torch==1.10.2
+torchtyping==0.1.4
 tornado==6.1
 typed-ast==1.5.2
 typing_extensions==4.0.1
