@@ -25,6 +25,5 @@ class FNN(nn.Module):
         model.fnn.load_state_dict(torch.load(file))
         return model
 
-    @torch.autocast("cpu")
     def forward(self, x):
         return self.fnn(x)
