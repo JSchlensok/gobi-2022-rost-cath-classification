@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
 
-from gobi_cath_classification.pipeline.data_loading import label_for_level
 from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.prediction import Prediction
 
@@ -22,9 +21,9 @@ labels_train_H = sorted(
     ]
 )
 
-labels_train_T = sorted([label["T"] for label in labels_train_H])
-labels_train_A = sorted([label["A"] for label in labels_train_H])
-labels_train_C = sorted([label["C"] for label in labels_train_H])
+labels_train_T = sorted([label[:"T"] for label in labels_train_H])
+labels_train_A = sorted([label[:"A"] for label in labels_train_H])
+labels_train_C = sorted([label[:"C"] for label in labels_train_H])
 
 
 def test_accuracy_for_level_H():

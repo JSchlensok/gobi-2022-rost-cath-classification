@@ -311,9 +311,9 @@ def metric_for_level(
 
     """
 
-    class_names_for_level = list(set([label[cath_level] for label in train_labels]))
-    y_true_for_level = [str(label[cath_level]) for label in y_true]
-    y_pred_for_level = [str(label[cath_level]) for label in y_hat]
+    class_names_for_level = list(set([label[:cath_level] for label in train_labels]))
+    y_true_for_level = [str(label[:cath_level]) for label in y_true]
+    y_pred_for_level = [str(label[:cath_level]) for label in y_hat]
 
     # delete all entries where the ground truth label does not occur in training class names.
     n = len(y_true_for_level) - 1
