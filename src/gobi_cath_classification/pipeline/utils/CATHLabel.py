@@ -11,7 +11,7 @@ class CATHLabel:
     Uses:
         label[:level] (level ∈ "CATH") returns the ID up to that level (inclusive)
 
-        label[:level] (level ∈ "CATH") returns the ID of the specific level as a string
+        label[level] (level ∈ "CATH") returns the ID of the specific level as a string
             (since it encodes no more hierarchical information)
 
         Labels can be sorted lexicographically
