@@ -9,6 +9,8 @@ from tqdm import tqdm
 from gobi_cath_classification.pipeline.data import data_loading
 from gobi_cath_classification.pipeline.utils.torch_utils import get_device
 from gobi_cath_classification.contrastive_learning_arcface.FNN import FNN
+from gobi_cath_classification.contrastive_learning_arcface.utils import get_base_dir
+
 
 MODEL_DIR = Path(
     "G:\\My Drive\\Files\\Projects\\University\\2021W\\GoBi\\Project\\gobi-2022-rost-cath-classification\\models"

@@ -11,10 +11,9 @@ from gobi_cath_classification.pipeline.data.data_loading import load_data
 from gobi_cath_classification.pipeline.evaluation import evaluate, accuracy_for_level
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.contrastive_learning_arcface import FNN
+from gobi_cath_classification.contrastive_learning_arcface.utils import get_base_dir
 
-ROOT_DIR = Path(
-    "G:\\My Drive\\Files\\Projects\\University\\2021W\\GoBi\\Project\\gobi-2022-rost-cath-classification"
-)  # TODO use relative path
+ROOT_DIR = get_base_dir()
 MODEL_DIR = ROOT_DIR / "models"
 DATA_DIR = ROOT_DIR / "data"
 
