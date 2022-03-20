@@ -92,10 +92,7 @@ def train(num_epochs: int):
             if epoch % 25 == 0:
                 model_name = f"arcface_2022-03-20_epoch_{epoch}.pth"
                 print("Checkpointing model to {model_name} ...")
-                torch.save(
-                    model.fnn.state_dict(),
-                    get_base_dir() / f"models/{model_name}"
-                )
+                torch.save(model.fnn.state_dict(), get_base_dir() / f"models/{model_name}")
 
 
 if __name__ == "__main__":
