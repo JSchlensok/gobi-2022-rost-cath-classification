@@ -35,9 +35,9 @@ def accuracy_for_level(
 
     """
 
-    class_names_for_level = list(set([label[cath_level] for label in class_names_training]))
-    y_true_for_level = [label[cath_level] for label in y_true]
-    y_pred_for_level = [CATHLabel(label)[cath_level] for label in y_pred]
+    class_names_for_level = list(set([label[:cath_level] for label in class_names_training]))
+    y_true_for_level = [label[:cath_level] for label in y_true]
+    y_pred_for_level = [CATHLabel(label)[:cath_level] for label in y_pred]
 
     # delete all entries where the ground truth label does not occur in training class names.
     n = len(y_true_for_level) - 1

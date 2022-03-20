@@ -440,7 +440,7 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
 
     """
     assert level in ["C", "A", "T", "H"]
-    class_names_level = sorted(list(set([str(CATHLabel(cn)[level]) for cn in class_names])))
+    class_names_level = sorted(list(set([str(CATHLabel(cn)[:level]) for cn in class_names])))
     matrix = []
     for cn in class_names:
         row = []

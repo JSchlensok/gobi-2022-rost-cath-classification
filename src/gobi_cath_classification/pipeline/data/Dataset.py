@@ -81,7 +81,7 @@ class Dataset:
         Filter out all sequences from the validation & test set where there is no sequence sharing its CATH label
         up to the specified level
         """
-        valid_labels = [label[cath_level] for label in self.train_labels]
+        valid_labels = [label[:cath_level] for label in self.train_labels]
 
         def _filter_x_based_on_y(X, y):
             x_filtered, y_filtered = [
@@ -90,7 +90,7 @@ class Dataset:
                     *[
                         [embedding, label]
                         for embedding, label in zip(X, y)
-                        if label[cath_level] in valid_labels
+                        if label[:cath_level] in valid_labels
                     ]
                 )
             ]
