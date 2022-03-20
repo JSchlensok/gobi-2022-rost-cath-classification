@@ -52,7 +52,9 @@ class CATHLabel:
             elif key.start is None:
                 return CATHLabel(".".join(self._levels[: "CATH".index(key.stop) + 1]))
             elif isinstance(key.start, str) and key.start in "CATH":
-                return CATHLabel(".".join(self._levels["CATH".index(key.step) : "CATH".index(key.stop) + 1]))
+                return CATHLabel(
+                    ".".join(self._levels["CATH".index(key.step) : "CATH".index(key.stop) + 1])
+                )
             elif key.step is not None:
                 raise KeyError("Step size not supported for CATH labels")
 
