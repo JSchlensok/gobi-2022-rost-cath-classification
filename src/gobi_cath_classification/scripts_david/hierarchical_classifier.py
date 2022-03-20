@@ -413,6 +413,6 @@ if __name__ == "__main__":
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
-        level_cuttoff="H",
+        level_cutoff="H",
     )
     dataset.scale()

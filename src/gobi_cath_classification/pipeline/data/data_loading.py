@@ -65,7 +65,7 @@ def load_data(
     # Load data with Y-values only being one level
     specific_level: Literal["C", "A", "T", "H"] = None,
     # Load data with Y-values only up to the given cutoff level
-    level_cuttoff: Literal["C", "A", "T", "H"] = None,
+    level_cutoff: Literal["C", "A", "T", "H"] = None,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -175,19 +175,19 @@ def load_data(
         print("Shuffling training set ...")
         dataset.shuffle_training_set(rng)
 
-    if specific_level is not None and level_cuttoff is None:
+    if specific_level is not None and level_cutoff is None:
         dataset.y_train = [label[specific_level] for label in dataset.y_train]
         dataset.train_labels = [
             label[specific_level] for label in dataset.train_labels
         ]
         dataset.y_val = [label[specific_level] for label in dataset.y_val]
         dataset.y_test = [label[specific_level] for label in dataset.y_test]
-    elif level_cuttoff is not None and specific_level is None:
-        dataset.y_train = [label[:level_cuttoff] for label in dataset.y_train]
-        dataset.train_labels = [label[:level_cuttoff] for label in dataset.train_labels]
-        dataset.y_val = [label[:level_cuttoff] for label in dataset.y_val]
-        dataset.y_test = [label[:level_cuttoff] for label in dataset.y_test]
-    elif level_cuttoff is not None and specific_level is not None:
+    elif level_cutoff is not None and specific_level is None:
+        dataset.y_train = [label[:level_cutoff] for label in dataset.y_train]
+        dataset.train_labels = [label[:level_cutoff] for label in dataset.train_labels]
+        dataset.y_val = [label[:level_cutoff] for label in dataset.y_val]
+        dataset.y_test = [label[:level_cutoff] for label in dataset.y_test]
+    elif level_cutoff is not None and specific_level is not None:
         raise ValueError("Either specific_level or level_cutoff can be supplied, not both!")
 
     print("Serializing data for faster reloading ...")
