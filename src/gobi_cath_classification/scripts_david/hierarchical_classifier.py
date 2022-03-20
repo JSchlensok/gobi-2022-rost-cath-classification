@@ -280,7 +280,7 @@ class HierarchicalClassifier:
             columns_A = [
                 column
                 for column in probs_A.columns.values
-                if current_column_C == CATHLabel(f"{column}.0.0").__getitem__("C")
+                if current_column_C == CATHLabel(f"{column}.0.0")["C"]
             ]
             # A-LEVEL ------------------------------------------------------------------------------------------------------
             # Loop over all probabilities of every prediction for level A
@@ -302,7 +302,7 @@ class HierarchicalClassifier:
                 columns_T = [
                     column
                     for column in probs_T.columns.values
-                    if current_column_A == CATHLabel(f"{column}.0").__getitem__("A")
+                    if current_column_A == CATHLabel(f"{column}.0")["A"]
                 ]
                 # T-LEVEL ------------------------------------------------------------------------------------------------------
                 # Loop over all probabilities of every prediction for level T
@@ -326,7 +326,7 @@ class HierarchicalClassifier:
                     columns_H = [
                         column
                         for column in probs_H.columns.values
-                        if current_column_T == CATHLabel(column).__getitem__("T")
+                        if current_column_T == CATHLabel(column)["T"]
                     ]
                     # H-LEVEL ------------------------------------------------------------------------------------------------------
                     # Loop over all probabilities of every prediction for level H

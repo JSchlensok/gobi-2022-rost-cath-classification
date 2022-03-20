@@ -176,17 +176,17 @@ def load_data(
         dataset.shuffle_training_set(rng)
 
     if specific_level is not None and level_cuttoff is None:
-        dataset.y_train = [label.__getspecificitem__(specific_level) for label in dataset.y_train]
+        dataset.y_train = [label[specific_level] for label in dataset.y_train]
         dataset.train_labels = [
-            label.__getspecificitem__(specific_level) for label in dataset.train_labels
+            label[specific_level] for label in dataset.train_labels
         ]
-        dataset.y_val = [label.__getspecificitem__(specific_level) for label in dataset.y_val]
-        dataset.y_test = [label.__getspecificitem__(specific_level) for label in dataset.y_test]
+        dataset.y_val = [label[specific_level] for label in dataset.y_val]
+        dataset.y_test = [label[specific_level] for label in dataset.y_test]
     elif level_cuttoff is not None and specific_level is None:
-        dataset.y_train = [label.__getitem__(level_cuttoff) for label in dataset.y_train]
-        dataset.train_labels = [label.__getitem__(level_cuttoff) for label in dataset.train_labels]
-        dataset.y_val = [label.__getitem__(level_cuttoff) for label in dataset.y_val]
-        dataset.y_test = [label.__getitem__(level_cuttoff) for label in dataset.y_test]
+        dataset.y_train = [label[:level_cuttoff] for label in dataset.y_train]
+        dataset.train_labels = [label[:level_cuttoff] for label in dataset.train_labels]
+        dataset.y_val = [label[:level_cuttoff] for label in dataset.y_val]
+        dataset.y_test = [label[:level_cuttoff] for label in dataset.y_test]
     elif level_cuttoff is not None and specific_level is not None:
         raise ValueError("Either specific_level or level_cutoff can be supplied, not both!")
 
