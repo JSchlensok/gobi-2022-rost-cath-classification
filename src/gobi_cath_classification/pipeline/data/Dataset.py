@@ -81,7 +81,7 @@ class Dataset:
         Filter out all sequences from the validation & test set where there is no sequence sharing its CATH label
         up to the specified level
         """
-        valid_labels = [label[cath_level] for label in self.train_labels]
+        valid_labels = [label[:cath_level] for label in self.train_labels]
 
         def _filter_x_based_on_y(X, y):
             x_filtered, y_filtered = [
@@ -90,7 +90,7 @@ class Dataset:
                     *[
                         [embedding, label]
                         for embedding, label in zip(X, y)
-                        if label[cath_level] in valid_labels
+                        if label[:cath_level] in valid_labels
                     ]
                 )
             ]
@@ -115,17 +115,11 @@ class Dataset:
     # BUILDER METHODS #
     ###################
 
-    def shuffle(self, rng: np.random.RandomState) -> None:
+    def shuffle_training_set(self, rng: np.random.RandomState) -> None:
         X_train, y_train = shuffle(self.X_train, self.y_train, random_state=rng)
-        X_val, y_val = shuffle(self.X_val, self.y_val, random_state=rng)
-        X_test, y_test = shuffle(self.X_test, self.y_test, random_state=rng)
 
         self.X_train = X_train
         self.y_train = y_train
-        self.X_val = X_val
-        self.y_val = y_val
-        self.X_test = X_test
-        self.y_test = y_test
 
     def scale(self) -> None:
         scaler = StandardScaler()

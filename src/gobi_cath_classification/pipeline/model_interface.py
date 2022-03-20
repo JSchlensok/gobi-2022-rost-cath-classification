@@ -1,26 +1,11 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 from typing import List, Optional, Dict
 
 import numpy as np
-import pandas as pd
 import torch
 
-
-class Prediction:
-    def __init__(self, probabilities: pd.DataFrame):
-        self.probabilities = probabilities
-        assert list(probabilities.columns) == sorted(probabilities.columns)
-        for col in probabilities.columns:
-            assert (
-                type(col) == str
-            ), f"Your column ({col}) should be a string, but it is of type: {type(col)}"
-            assert len(col.split(".")) == 4
-
-    def argmax_labels(self) -> List[str]:
-        y_pred_argmax_val = np.argmax(self.probabilities.values, axis=1)
-        y_pred_strings_val = [self.probabilities.columns[y] for y in y_pred_argmax_val]
-        return y_pred_strings_val
+from gobi_cath_classification.pipeline.prediction import Prediction
 
 
 class ModelInterface:
@@ -72,7 +57,7 @@ class ModelInterface:
         """
 
     @abstractmethod
-    def load_model_from_checkpoint(self, load_from_dir: Path):
+    def load_model_from_checkpoint(self, checkpoint_file_dir: Path):
         """
 
         Load model from given checkpoint file(s),

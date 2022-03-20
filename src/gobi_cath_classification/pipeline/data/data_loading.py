@@ -1,6 +1,7 @@
 from pathlib import Path
 from collections import Counter
 from typing import Dict
+from typing_extensions import Literal
 
 import h5py
 import numpy as np
@@ -9,7 +10,7 @@ import pickle
 
 from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.data import Dataset
-from gobi_cath_classification.pipeline.torch_utils import RANDOM_SEED
+from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
 
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
@@ -61,6 +62,10 @@ def load_data(
     load_only_small_sample: bool = False,
     reloading_allowed: bool = False,
     load_strings: bool = False,
+    # Load data with Y-values only being one level
+    specific_level: Literal["C", "A", "T", "H"] = None,
+    # Load data with Y-values only up to the given cutoff level
+    level_cutoff: Literal["C", "A", "T", "H"] = None,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -92,7 +97,7 @@ def load_data(
                 serialized_dataset = pickle.load(f)
 
             if shuffle_data:
-                serialized_dataset.shuffle(np.random.RandomState(RANDOM_SEED))
+                serialized_dataset.shuffle_training_set(np.random.RandomState(RANDOM_SEED))
 
             return serialized_dataset
 
@@ -163,12 +168,25 @@ def load_data(
 
     if load_strings:
         dataset.load_strings(
-            list(id2seqs_train.values()), list(id2seqs_val.values()), list(id2seqs_test.keys())
+            list(id2seqs_train.values()), list(id2seqs_val.values()), list(id2seqs_test.values())
         )
 
     if shuffle_data:
-        print("Shuffling data ...")
-        dataset.shuffle(rng)
+        print("Shuffling training set ...")
+        dataset.shuffle_training_set(rng)
+
+    if specific_level is not None and level_cutoff is None:
+        dataset.y_train = [label[specific_level] for label in dataset.y_train]
+        dataset.train_labels = [label[specific_level] for label in dataset.train_labels]
+        dataset.y_val = [label[specific_level] for label in dataset.y_val]
+        dataset.y_test = [label[specific_level] for label in dataset.y_test]
+    elif level_cutoff is not None and specific_level is None:
+        dataset.y_train = [label[:level_cutoff] for label in dataset.y_train]
+        dataset.train_labels = [label[:level_cutoff] for label in dataset.train_labels]
+        dataset.y_val = [label[:level_cutoff] for label in dataset.y_val]
+        dataset.y_test = [label[:level_cutoff] for label in dataset.y_test]
+    elif level_cutoff is not None and specific_level is not None:
+        raise ValueError("Either specific_level or level_cutoff can be supplied, not both!")
 
     print("Serializing data for faster reloading ...")
     with open(data_dir / serialized_dataset_location, "wb+") as f:

@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-python ProDec-BLSTM.py  -family_index a.138.1.3 -train True -pos_train_dir data/pos-train.a.138.1.3.fasta -neg_train_dir data/neg-train.a.138.1.3.fasta -pos_test_dir data/pos-test.a.138.1.3.fasta -neg_test_dir data/neg-test.a.138.1.3.fasta

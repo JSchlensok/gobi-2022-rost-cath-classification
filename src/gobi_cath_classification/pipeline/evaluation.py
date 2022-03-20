@@ -1,16 +1,17 @@
 from typing import List, Dict
+from typing_extensions import Literal
 
 from sklearn.metrics import accuracy_score
 from .utils import CATHLabel
 
-from gobi_cath_classification.pipeline.model_interface import Prediction
+from gobi_cath_classification.pipeline.prediction import Prediction
 
 
 def accuracy_for_level(
     y_true: List[CATHLabel],
     y_pred: List[str],
     class_names_training: List[CATHLabel],
-    cath_level: str,
+    cath_level: Literal["C", "A", "T", "H"],
 ) -> float:
     """
 
@@ -34,9 +35,9 @@ def accuracy_for_level(
 
     """
 
-    class_names_for_level = list(set([label[cath_level] for label in class_names_training]))
-    y_true_for_level = [label[cath_level] for label in y_true]
-    y_pred_for_level = [CATHLabel(label)[cath_level] for label in y_pred]
+    class_names_for_level = list(set([label[:cath_level] for label in class_names_training]))
+    y_true_for_level = [label[:cath_level] for label in y_true]
+    y_pred_for_level = [CATHLabel(label)[:cath_level] for label in y_pred]
 
     # delete all entries where the ground truth label does not occur in training class names.
     n = len(y_true_for_level) - 1
@@ -54,10 +55,15 @@ def accuracy_for_level(
 
 
 def evaluate(
-    y_true: List[CATHLabel], y_pred: Prediction, class_names_training: List[CATHLabel]
+    y_true: List[CATHLabel],
+    y_pred: Prediction,
+    class_names_training: List[CATHLabel],
+    cath_level_pred: Literal["C", "A", "T", "H"] = None,
 ) -> Dict[str, float]:
     y_proba = y_pred.probabilities
     y_labels = y_pred.argmax_labels()
+    if cath_level_pred is not None:
+        y_labels = reformat_labels(labels=y_labels, cath_level=cath_level_pred)
     eval_dict = {
         "accuracy_c": accuracy_for_level(
             y_true=y_true,
@@ -95,3 +101,17 @@ def evaluate(
         + eval_dict["accuracy_h"]
     ) / 4
     return eval_dict
+
+
+def reformat_labels(labels: List, cath_level: Literal["C", "A", "T", "H"]):
+    if cath_level == "C":
+        labels = [f"{label}.0.0.0" for label in labels]
+    elif cath_level == "A":
+        labels = [f"0.{label}.0.0" for label in labels]
+    elif cath_level == "T":
+        labels = [f"0.0.{label}.0" for label in labels]
+    elif cath_level == "H":
+        labels = [f"0.0.0.{label}" for label in labels]
+    else:
+        raise ValueError("CATH-level not valid - reformating of labels failed!")
+    return labels

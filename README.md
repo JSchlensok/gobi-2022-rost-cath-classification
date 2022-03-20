@@ -23,6 +23,13 @@ https://www.cathdb.info/
 https://github.com/sacdallago/bio_embeddings/blob/develop/notebooks/deeploc_machine_learning.ipynb
 https://githubplus.com/Rostlab/EAT
 
+## Grading
+- 20% report
+- 20% intro talk
+- 30% final talk
+- 15% discussion & exercise contribution
+- 15% effort
+
 ## Data
 Download the following data:
 
