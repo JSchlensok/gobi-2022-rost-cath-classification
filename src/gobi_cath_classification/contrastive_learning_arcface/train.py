@@ -90,10 +90,11 @@ def train(num_epochs: int):
                 tepoch.set_postfix(train_loss=f"{train_loss:.3f}")
 
             if epoch % 25 == 0:
-                print("Checkpointing model ...")
+                model_name = f"arcface_2022-03-20_epoch_{epoch}.pth"
+                print("Checkpointing model to {model_name} ...")
                 torch.save(
                     model.fnn.state_dict(),
-                    get_base_dir() / f"models/arcface_2022-03-20_epoch_{epoch}.pth",
+                    get_base_dir() / f"models/{model_name}"
                 )
 
 
