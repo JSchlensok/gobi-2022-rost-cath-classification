@@ -177,9 +177,7 @@ def load_data(
 
     if specific_level is not None and level_cutoff is None:
         dataset.y_train = [label[specific_level] for label in dataset.y_train]
-        dataset.train_labels = [
-            label[specific_level] for label in dataset.train_labels
-        ]
+        dataset.train_labels = [label[specific_level] for label in dataset.train_labels]
         dataset.y_val = [label[specific_level] for label in dataset.y_val]
         dataset.y_test = [label[specific_level] for label in dataset.y_test]
     elif level_cutoff is not None and specific_level is None:
