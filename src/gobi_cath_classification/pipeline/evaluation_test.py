@@ -21,9 +21,9 @@ labels_train_H = sorted(
     ]
 )
 
-labels_train_T = sorted([label["T"] for label in labels_train_H])
-labels_train_A = sorted([label["A"] for label in labels_train_H])
-labels_train_C = sorted([label["C"] for label in labels_train_H])
+labels_train_T = sorted([label[:"T"] for label in labels_train_H])
+labels_train_A = sorted([label[:"A"] for label in labels_train_H])
+labels_train_C = sorted([label[:"C"] for label in labels_train_H])
 
 
 def test_accuracy_for_level_H():
