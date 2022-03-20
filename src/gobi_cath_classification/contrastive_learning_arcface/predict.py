@@ -10,8 +10,9 @@ from torch.nn.functional import cosine_similarity
 from gobi_cath_classification.pipeline.data.data_loading import load_data
 from gobi_cath_classification.pipeline.evaluation import evaluate, accuracy_for_level
 from gobi_cath_classification.pipeline.utils import CATHLabel
-from gobi_cath_classification.contrastive_learning_arcface import FNN
+from gobi_cath_classification.contrastive_learning_arcface.FNN import FNN
 from gobi_cath_classification.contrastive_learning_arcface.utils import get_base_dir
+from gobi_cath_classification.pipeline.utils.torch_utils import get_device
 
 ROOT_DIR = get_base_dir()
 MODEL_DIR = ROOT_DIR / "models"
@@ -63,9 +64,13 @@ def main() -> None:
     )
 
     logging.debug("Loading model")
-    model = FNN.from_file(MODEL_DIR / "arcface_2022-02-24_epoch_5.pth")
+    model_name = f"arcface_2022-03-20_epoch_50.pth"
+    device = get_device()
+    model = FNN.from_file(MODEL_DIR / model_name).to(device)
+    model = FNN().to(device)
 
-    lookup_embedding_path = Path(DATA_DIR / "train_set_lookup_embeddings_5epochs")
+    """
+    lookup_embedding_path = Path(DATA_DIR / "train_set_lookup_embeddings_50epochs")
     if not lookup_embedding_path.exists():
         logging.debug("Generating lookup embeddings")
         lookup_embeddings = model(lookup_embeddings)
@@ -75,8 +80,15 @@ def main() -> None:
         logging.debug("Loading serialized lookup embeddings")
         with open(lookup_embedding_path, "wb+") as f:
             lookup_embeddings = pickle.load(f)
+    """
 
-    query_embeddings = model(query_embeddings)
+    lookup_embeddings = lookup_embeddings.cuda()
+    query_embeddings = query_embeddings.cuda()
+
+    with torch.cuda.amp.autocast():
+        lookup_embeddings = model(lookup_embeddings)
+        query_embeddings = model(query_embeddings)
+
     logging.debug("Transferring annotations")
     predictions = [
         transfer_annotations(lookup_embeddings, query_embedding, lookup_labels)
