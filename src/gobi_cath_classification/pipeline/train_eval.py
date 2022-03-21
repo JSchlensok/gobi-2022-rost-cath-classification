@@ -8,7 +8,6 @@ from ray import tune
 from ray.tune import trial
 
 from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
-from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.pipeline.prediction import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
@@ -175,7 +174,7 @@ def training_function(config: dict) -> None:
         epoch_start = eval_dict["config"]["last_epoch"] + 1
         tune.report(**eval_dict)
         print(
-            f"model: {model}\n epoch: {epoch_start-1}\n h-accuracy {highest_acc_h}\n eval-dict:\n{eval_dict}"
+            f"model: {model}\n epoch: {epoch_start-1}\n h-accuracy {highest_acc_h}\n evaluation-dict:\n{eval_dict}"
         )
         print(f"Resuming training on model {model.__class__.__name__} on epoch {epoch_start}...")
 
@@ -194,18 +193,18 @@ def training_function(config: dict) -> None:
         save_predictions(pred=y_pred_val, directory=checkpoint_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
-        eval = Evaluation(
+        evaluation = Evaluation(
             y_true=dataset.y_val,
             predictions=y_pred_val,
             train_labels=class_names,
         )
-        eval.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
         eval_dict = {}
-        for k, v in eval.eval_dict.items():
-            eval_dict = {**eval_dict, **eval.eval_dict[k]}
+        for k, v in evaluation.eval_dict.items():
+            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
         print(f"eval_dict = {eval_dict}")
 
-        # Save the model if the average accuracy has risen during the last epoch and check for early stopping
+        # Save the model if the accuracy_h has risen during the last epoch and check for early stopping
         if eval_dict["accuracy_h"] > highest_acc_h:
             highest_acc_h = eval_dict["accuracy_h"]
             n_bad = 0
