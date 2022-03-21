@@ -14,7 +14,10 @@ class Prediction:
             assert (
                 type(col) == str
             ), f"Your column ({col}) should be a string, but it is of type: {type(col)}"
-            assert len(col.split(".")) == 4
+            if len(col.split(".")) == 4:
+                print(
+                    "!!WARNING!! - Predictions do not cover all levels. Check if this is intended!"
+                )
 
     def argmax_labels(self) -> List[str]:
         y_pred_argmax_val = np.argmax(self.probabilities.values, axis=1)
