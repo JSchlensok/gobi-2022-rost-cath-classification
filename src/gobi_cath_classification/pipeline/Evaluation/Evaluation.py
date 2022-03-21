@@ -1,15 +1,27 @@
-from typing import List
+from typing import List, Dict
 from typing_extensions import Literal
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
+from plotnine import (ggplot,
+                      aes,
+                      geom_col,
+                      position_dodge2,
+                      position_dodge,
+                      labs,
+                      geom_errorbar,
+                      scale_y_continuous,
+                      theme)
 
 from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef, f1_score
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 
+
 METRICS = ["accuracy", "mcc", "f1", "kappa"]
+LEVELS = ["c-level", "a-level", "t-level", "h-level", "mean"]
+ERRORS = ["c-error", "a-error", "t-error", "h-error", "mean-error"]
 
 
 class Evaluation:
@@ -36,7 +48,7 @@ class Evaluation:
         y_true: List[CATHLabel],
         predictions: Prediction,
         train_labels: List[CATHLabel],
-        model_name: str = None,
+        model_name: str,
     ):
         """
         Create a Evaluation class with the true labels, the Prediction object from the predict method of the model
@@ -163,7 +175,11 @@ class Evaluation:
         else:
             self.eval_dict = eval_dict
 
-    def compute_std_err(self, bootstrap_n: int = 1000, random_seed: int = 42):
+    def compute_std_err(
+            self,
+            bootstrap_n: int = 1000,
+            random_seed: int = 42
+    ) -> None:
         """
         compute the standard error for the metrics currently in the evaluation dict using 1000 bootstrap intervals
         in each bootstrap interval, choose samples with replacement and compute the given metric
@@ -190,6 +206,10 @@ class Evaluation:
             "f1" in self.eval_dict,
             "kappa" in self.eval_dict,
         ]
+
+        # if no metrics are available, do not compute the standard error
+        if not any(available_metrics):
+            return
 
         n_pred = len(self.y_true)
         indexes = range(n_pred)
@@ -373,3 +393,77 @@ def metric_for_level(
         )
     if metric == "kappa":
         return cohen_kappa_score(y1=y_true_for_level, y2=y_pred_for_level)
+
+
+def plot_metric(
+        different_evals: List[Evaluation],
+        metric: Literal["accuracy", "mcc", "f1", "kappa"]
+) -> None:
+
+    frames = list()
+    for evaluation in different_evals:
+        # for each evaluation object, compute the data frame add it to the list of all data frames
+        frames.append(Evaluation_to_frame(evaluation, metric))
+
+    # concatenate all the accumulated data frames containing all the necessary data
+    df = pd.concat(frames)
+
+    # scales differ for different metrics -> no cleaner solution found
+    if metric == "accuracy":
+        plot = (ggplot(df, aes('model', 'metric', fill='level'))
+                + geom_col(width=0.6, position=position_dodge2(padding=0.3))
+                + geom_errorbar(
+                    aes(ymin='metric-metric_error', ymax='metric+metric_error'), width=0.15, position=position_dodge(0.6))
+                + labs(title=f"Performance measured in {metric.upper()}",
+                       x="",
+                       y=f"{metric}")
+                + scale_y_continuous(limits=[0, 1]))
+    else:
+        plot = (ggplot(df, aes('model', 'metric', fill='level'))
+                + geom_col(width=0.6, position=position_dodge2(padding=0.3))
+                + geom_errorbar(
+                    aes(ymin='metric-metric_error', ymax='metric+metric_error'), width=0.15, position=position_dodge(0.6))
+                + labs(title=f"Performance measured in {metric.upper()}",
+                       x="",
+                       y=f"{metric}")
+                + scale_y_continuous(limits=[-1, 1]))
+
+    print(plot)
+
+
+def Evaluation_to_frame(
+        evaluation: Evaluation,
+        metric: Literal["accuracy", "mcc", "f1", "kappa"]
+) -> pd.DataFrame:
+    """
+    Converts the data from the Evaluation dict into a Dataframe which can then be used for plotting
+    Args:
+        evaluation: an Evaluation object
+        metric: the metric for which the DataFrame should be generated
+
+    Returns:
+        A pandas Dataframe with the columns: [metric, level, model_name, metric_error, error]
+        if errors are available
+
+    """
+    # check if the evaluation contains the specified metric
+    if evaluation.eval_dict is not None and metric in evaluation.eval_dict:
+        # convert the metric dict in the eval_dict to a DataFrame used for plotting
+        tmp = pd.DataFrame(
+            data={"metric": evaluation.eval_dict[metric].values(),
+                  "level": LEVELS,
+                  "model": evaluation.model_name})
+        df = tmp.assign(level=pd.Categorical(tmp["level"], categories=LEVELS))
+
+        # if the errors are available, add the errors to the DataFrame otherwise add the error 0
+        if evaluation.error_dict is not None and metric in evaluation.error_dict:
+            tmp = df.assign(metric_error=evaluation.error_dict[metric].values(),
+                            error=ERRORS)
+        else:
+            tmp = df.assign(metric_error=np.repeat(0, 5),
+                            error=ERRORS)
+
+        df = tmp.assign(error=pd.Categorical(tmp["error"], categories=ERRORS))
+        return df
+    else:
+        return pd.DataFrame()

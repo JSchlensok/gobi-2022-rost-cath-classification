@@ -3,8 +3,9 @@ import time
 
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
-from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
+from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import (Evaluation,
+                                                                     plot_metric)
 
 
 def main():
@@ -32,8 +33,10 @@ def main():
     print(count)
 
     model1 = RandomBaseline(data=data_set, class_balance=False, rng=rng, random_seed=random_seed)
+    model2 = ZeroRate(data=data_set, rng=rng, random_seed=random_seed)
 
     predictions1 = model1.predict(model1.data.X_test)
+    predictions2 = model2.predict(model2.data.X_test)
 
     eval1 = Evaluation(
         y_true=data_set.y_test,
@@ -41,6 +44,19 @@ def main():
         train_labels=data_set.train_labels,
         model_name="Random Baseline",
     )
+    eval1.compute_metrics(accuracy=True)
+    eval1.compute_std_err(bootstrap_n=5)
+
+    eval2 = Evaluation(
+        y_true=data_set.y_test,
+        predictions=predictions2,
+        train_labels=data_set.train_labels,
+        model_name="Zero Rate"
+    )
+    eval2.compute_metrics(accuracy=True)
+    eval2.compute_std_err(bootstrap_n=5)
+
+    plot_metric([eval1, eval2], metric="accuracy")
 
     # eval1.foldseek_metric()
 
