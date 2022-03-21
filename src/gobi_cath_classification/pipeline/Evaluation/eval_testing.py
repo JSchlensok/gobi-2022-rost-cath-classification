@@ -4,8 +4,7 @@ import time
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import (Evaluation,
-                                                                     plot_metric)
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation, plot_metric
 
 
 def main():
@@ -51,7 +50,7 @@ def main():
         y_true=data_set.y_test,
         predictions=predictions2,
         train_labels=data_set.train_labels,
-        model_name="Zero Rate"
+        model_name="Zero Rate",
     )
     eval2.compute_metrics(accuracy=True)
     eval2.compute_std_err(bootstrap_n=5)

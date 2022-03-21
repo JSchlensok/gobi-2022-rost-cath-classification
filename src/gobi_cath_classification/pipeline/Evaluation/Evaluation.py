@@ -1,17 +1,19 @@
-from typing import List, Dict
+from typing import List
 from typing_extensions import Literal
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
-from plotnine import (ggplot,
-                      aes,
-                      geom_col,
-                      position_dodge2,
-                      position_dodge,
-                      labs,
-                      geom_errorbar,
-                      scale_y_continuous,
-                      theme)
+from plotnine import (
+    ggplot,
+    aes,
+    geom_col,
+    position_dodge2,
+    position_dodge,
+    labs,
+    geom_errorbar,
+    scale_y_continuous,
+    theme,
+)
 
 from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef, f1_score
 from gobi_cath_classification.pipeline.utils import CATHLabel
@@ -175,11 +177,7 @@ class Evaluation:
         else:
             self.eval_dict = eval_dict
 
-    def compute_std_err(
-            self,
-            bootstrap_n: int = 1000,
-            random_seed: int = 42
-    ) -> None:
+    def compute_std_err(self, bootstrap_n: int = 1000, random_seed: int = 42) -> None:
         """
         compute the standard error for the metrics currently in the evaluation dict using 1000 bootstrap intervals
         in each bootstrap interval, choose samples with replacement and compute the given metric
@@ -388,16 +386,14 @@ def metric_for_level(
         return f1_score(
             y_true=y_true_for_level,
             y_pred=y_pred_for_level,
-            # TODO: changing averaging technique
-            average="macro",
+            average="weighted",
         )
     if metric == "kappa":
         return cohen_kappa_score(y1=y_true_for_level, y2=y_pred_for_level)
 
 
 def plot_metric(
-        different_evals: List[Evaluation],
-        metric: Literal["accuracy", "mcc", "f1", "kappa"]
+    different_evals: List[Evaluation], metric: Literal["accuracy", "mcc", "f1", "kappa"]
 ) -> None:
 
     frames = list()
@@ -410,30 +406,35 @@ def plot_metric(
 
     # scales differ for different metrics -> no cleaner solution found
     if metric == "accuracy":
-        plot = (ggplot(df, aes('model', 'metric', fill='level'))
-                + geom_col(width=0.6, position=position_dodge2(padding=0.3))
-                + geom_errorbar(
-                    aes(ymin='metric-metric_error', ymax='metric+metric_error'), width=0.15, position=position_dodge(0.6))
-                + labs(title=f"Performance measured in {metric.upper()}",
-                       x="",
-                       y=f"{metric}")
-                + scale_y_continuous(limits=[0, 1]))
+        plot = (
+            ggplot(df, aes("model", "metric", fill="level"))
+            + geom_col(width=0.6, position=position_dodge2(padding=0.3))
+            + geom_errorbar(
+                aes(ymin="metric-metric_error", ymax="metric+metric_error"),
+                width=0.15,
+                position=position_dodge(0.6),
+            )
+            + labs(title=f"Performance measured in {metric.upper()}", x="", y=f"{metric}")
+            + scale_y_continuous(limits=[0, 1])
+        )
     else:
-        plot = (ggplot(df, aes('model', 'metric', fill='level'))
-                + geom_col(width=0.6, position=position_dodge2(padding=0.3))
-                + geom_errorbar(
-                    aes(ymin='metric-metric_error', ymax='metric+metric_error'), width=0.15, position=position_dodge(0.6))
-                + labs(title=f"Performance measured in {metric.upper()}",
-                       x="",
-                       y=f"{metric}")
-                + scale_y_continuous(limits=[-1, 1]))
+        plot = (
+            ggplot(df, aes("model", "metric", fill="level"))
+            + geom_col(width=0.6, position=position_dodge2(padding=0.3))
+            + geom_errorbar(
+                aes(ymin="metric-metric_error", ymax="metric+metric_error"),
+                width=0.15,
+                position=position_dodge(0.6),
+            )
+            + labs(title=f"Performance measured in {metric.upper()}", x="", y=f"{metric}")
+            + scale_y_continuous(limits=[-1, 1])
+        )
 
     print(plot)
 
 
 def Evaluation_to_frame(
-        evaluation: Evaluation,
-        metric: Literal["accuracy", "mcc", "f1", "kappa"]
+    evaluation: Evaluation, metric: Literal["accuracy", "mcc", "f1", "kappa"]
 ) -> pd.DataFrame:
     """
     Converts the data from the Evaluation dict into a Dataframe which can then be used for plotting
@@ -450,18 +451,19 @@ def Evaluation_to_frame(
     if evaluation.eval_dict is not None and metric in evaluation.eval_dict:
         # convert the metric dict in the eval_dict to a DataFrame used for plotting
         tmp = pd.DataFrame(
-            data={"metric": evaluation.eval_dict[metric].values(),
-                  "level": LEVELS,
-                  "model": evaluation.model_name})
+            data={
+                "metric": evaluation.eval_dict[metric].values(),
+                "level": LEVELS,
+                "model": evaluation.model_name,
+            }
+        )
         df = tmp.assign(level=pd.Categorical(tmp["level"], categories=LEVELS))
 
         # if the errors are available, add the errors to the DataFrame otherwise add the error 0
         if evaluation.error_dict is not None and metric in evaluation.error_dict:
-            tmp = df.assign(metric_error=evaluation.error_dict[metric].values(),
-                            error=ERRORS)
+            tmp = df.assign(metric_error=evaluation.error_dict[metric].values(), error=ERRORS)
         else:
-            tmp = df.assign(metric_error=np.repeat(0, 5),
-                            error=ERRORS)
+            tmp = df.assign(metric_error=np.repeat(0, 5), error=ERRORS)
 
         df = tmp.assign(error=pd.Categorical(tmp["error"], categories=ERRORS))
         return df
