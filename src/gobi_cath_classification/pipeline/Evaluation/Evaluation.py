@@ -1,4 +1,5 @@
 from typing import List
+import warnings
 from typing_extensions import Literal
 import numpy as np
 import pandas as pd
@@ -463,9 +464,11 @@ def Evaluation_to_frame(
         if evaluation.error_dict is not None and metric in evaluation.error_dict:
             tmp = df.assign(metric_error=evaluation.error_dict[metric].values(), error=ERRORS)
         else:
+            warnings.warn(f"There are no std_err for: {evaluation.model_name}")
             tmp = df.assign(metric_error=np.repeat(0, 5), error=ERRORS)
 
         df = tmp.assign(error=pd.Categorical(tmp["error"], categories=ERRORS))
         return df
     else:
+        warnings.warn(f"The requested metric was not computed for {evaluation.model_name}")
         return pd.DataFrame()
