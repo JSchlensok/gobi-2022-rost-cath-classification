@@ -130,7 +130,7 @@ class HierarchicalClassifier:
         # Evaluate the prediction
         eval_dict = self.return_evaluation(labels_CATH)
         # Print out the results:
-        print("\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER LEVEL")
+        print("\n\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER LEVEL")
         print("-----------------------------------------------------------")
         print("USED MODELS:")
         print(f"Model for level C : {self.models[0]}")
@@ -144,6 +144,7 @@ class HierarchicalClassifier:
         print(f"Accuracy T   : {eval_dict['accuracy_t']}")
         print(f"Accuracy H   : {eval_dict['accuracy_h']}")
         print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
+        print("-----------------------------------------------------------\n\n")
 
     def predict_lcpn(self, threshold, prediction: Literal["AVG", "H"]):
         ########################################################################################
@@ -219,7 +220,7 @@ class HierarchicalClassifier:
         # Evaluate the predictions
         eval_dict = self.return_evaluation(labels_CATH)
         # Print out the results:
-        print("\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER PARENT NODE")
+        print("\n\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER PARENT NODE")
         print("-----------------------------------------------------------")
         print("USED MODELS:")
         print(f"Model for level C : {self.models[0]}")
@@ -233,6 +234,7 @@ class HierarchicalClassifier:
         print(f"Accuracy T   : {eval_dict['accuracy_t']}")
         print(f"Accuracy H   : {eval_dict['accuracy_h']}")
         print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
+        print("-----------------------------------------------------------\n\n")
 
     def return_prediction(
         self,
@@ -302,7 +304,7 @@ class HierarchicalClassifier:
                 columns_T = [
                     column
                     for column in probs_T.columns.values
-                    if current_column_A == CATHLabel(f"{column}.0")["A"]
+                    if current_column_A == CATHLabel(f"{column}.0")[:"A"].__str__()
                 ]
                 # T-LEVEL ------------------------------------------------------------------------------------------------------
                 # Loop over all probabilities of every prediction for level T
@@ -326,7 +328,7 @@ class HierarchicalClassifier:
                     columns_H = [
                         column
                         for column in probs_H.columns.values
-                        if current_column_T == CATHLabel(column)["T"]
+                        if current_column_T == CATHLabel(column)[:"T"].__str__()
                     ]
                     # H-LEVEL ------------------------------------------------------------------------------------------------------
                     # Loop over all probabilities of every prediction for level H
@@ -413,6 +415,6 @@ if __name__ == "__main__":
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
-        level_cutoff="H",
+        level_cutoff="C",
     )
     dataset.scale()
