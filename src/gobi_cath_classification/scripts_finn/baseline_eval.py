@@ -5,7 +5,7 @@ from ray import tune
 from ray.tune import trial
 
 import platform
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds

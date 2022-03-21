@@ -7,7 +7,7 @@ import numpy as np
 from ray import tune
 from ray.tune import trial
 
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.prediction import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,

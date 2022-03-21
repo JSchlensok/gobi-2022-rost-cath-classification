@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.model_interface import ModelInterface
 from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.utils import CATHLabel
