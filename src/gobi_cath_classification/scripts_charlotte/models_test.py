@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.model_interface import ModelInterface
 from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.utils import CATHLabel
@@ -89,11 +89,17 @@ class TestNeuralNetwork:
                 CATHLabel("3.200.10.75"),
             ]
 
-            eval_dict = evaluate(
+            evaluation = Evaluation(
                 y_true=y_true,
-                y_pred=y_pred,
-                class_names_training=[CATHLabel(cn) for cn in class_names],
+                predictions=y_pred,
+                train_labels=[CATHLabel(cn) for cn in class_names],
             )
+            evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+            evaluation.compute_std_err()
+
+            eval_dict = {}
+            for k, v in evaluation.eval_dict.items():
+                eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
             print(f"eval_dict = {eval_dict}")
 
 

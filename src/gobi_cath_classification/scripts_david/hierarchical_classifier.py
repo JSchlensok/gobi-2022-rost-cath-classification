@@ -7,10 +7,10 @@ import numpy as np
 from typing_extensions import Literal
 from typing import List, Optional, Dict
 
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
-from gobi_cath_classification.pipeline.evaluation import accuracy_for_level
 
 
 class HierarchicalClassifier:
@@ -367,38 +367,15 @@ class HierarchicalClassifier:
         # CREATE DATE       : 15.03.2022
         # UPDATE            : ---
         ########################################################################################
-        eval_dict = {
-            "accuracy_c": accuracy_for_level(
-                y_true=self.dataset.y_val,
-                y_pred=labels_CATH,
-                class_names_training=self.dataset.train_labels,
-                cath_level="C",
-            ),
-            "accuracy_a": accuracy_for_level(
-                y_true=self.dataset.y_val,
-                y_pred=labels_CATH,
-                class_names_training=self.dataset.train_labels,
-                cath_level="A",
-            ),
-            "accuracy_t": accuracy_for_level(
-                y_true=self.dataset.y_val,
-                y_pred=labels_CATH,
-                class_names_training=self.dataset.train_labels,
-                cath_level="T",
-            ),
-            "accuracy_h": accuracy_for_level(
-                y_true=self.dataset.y_val,
-                y_pred=labels_CATH,
-                class_names_training=self.dataset.train_labels,
-                cath_level="H",
-            ),
-        }
-        eval_dict["accuracy_avg"] = (
-            eval_dict["accuracy_c"]
-            + eval_dict["accuracy_a"]
-            + eval_dict["accuracy_t"]
-            + eval_dict["accuracy_h"]
-        ) / 4
+        evaluation = Evaluation(
+            y_true=self.dataset.y_val,
+            predictions=labels_CATH,
+            train_labels=self.dataset.train_labels,
+        )
+        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+        eval_dict = {}
+        for k, v in evaluation.eval_dict.items():
+            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
         return eval_dict
 
 

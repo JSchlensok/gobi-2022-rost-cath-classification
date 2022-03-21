@@ -3,17 +3,16 @@ import torch
 import numpy as np
 from ray import tune
 
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
     compute_inverse_class_weights,
 )
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
-from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import (
     RNNModel,
 )
-from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.rnn.models import RNNModel, BRNN
 from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR, load_data
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
@@ -78,11 +77,19 @@ def training_function(config: dict) -> None:
         y_pred_val = model.predict(X_val)
 
         # evaluate and save results in ray tune
-        eval_dict = evaluate(
+        evaluation = Evaluation(
             y_true=y_val,
-            y_pred=y_pred_val,
-            class_names_training=class_names,
+            predictions=y_pred_val,
+            train_labels=class_names,
         )
+        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+        evaluation.compute_std_err()
+
+        eval_dict = {}
+        for k, v in evaluation.eval_dict.items():
+            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
+        print(f"eval_dict = {eval_dict}")
+
         tune.report(**eval_dict, **{f"model_{k}": v for k, v in model_metrics_dict.items()})
 
 
