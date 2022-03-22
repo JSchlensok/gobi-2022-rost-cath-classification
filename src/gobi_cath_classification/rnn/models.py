@@ -284,8 +284,8 @@ class BRNN_embedded(nn.Module):
         model_specific_metrics = {"loss_avg": loss_avg}
         return model_specific_metrics
 
-    def predict(self, X: List[str]) -> Prediction:
+    def predict(self, X: List) -> Prediction:
         with torch.no_grad():
-            y = self.forward(one_hot_encode(X).float().to(self.device))
+            y = self.forward(pad_embeddings(X).to(self.device))
         df = pd.DataFrame(y, columns=[str(label) for label in self.class_names]).astype("float")
         return Prediction(probabilities=df)
