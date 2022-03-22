@@ -7,7 +7,6 @@ import pandas as pd
 import torch
 from sklearn.preprocessing import OneHotEncoder
 from torch import nn
-from torch.autograd import Variable
 from torch.nn.functional import one_hot
 
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
@@ -64,8 +63,8 @@ class RNNModel(nn.Module):
 
     def forward(self, x):
         # print(f"Input = {x.size()}")
-        h_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_dim)).to(self.device)
-        c_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_dim)).to(self.device)
+        h_0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(self.device)
+        c_0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(self.device)
         output, (hn, cn) = self.lstm(x, (h_0, c_0))
         # print(f"Output = {output.size()}")
         # print(f"Hidden = {hn.size()}")
@@ -277,11 +276,8 @@ class BRNN_embedded(nn.Module):
 
             if report_progress & (counter % 18 == 0):
                 print(f"\t\t{i + self.batch_size}/{len(embeddings)} done")
+                print(torch.cuda.memory_summary(self.device))
             counter += 1
-
-            batch_X = batch_y = None
-            print(torch.cuda.list_gpu_processes(device=self.device))
-            torch.cuda.empty_cache()
 
         loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
