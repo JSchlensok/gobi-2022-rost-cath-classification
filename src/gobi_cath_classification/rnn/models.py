@@ -240,8 +240,8 @@ class BRNN_embedded(nn.Module):
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
-        _, (x, _) = self.lstm(x, (h0, c0))
-        x = self.ReLU(x)
+        x, _ = self.lstm(x, (h0, c0))
+        x = self.ReLU(x[:, -1, :])
         # x = torch.cat((x[:, -1, :self.hidden_size], x[:, 0, self.hidden_size:]), dim=1)
         x = self.fc(x)
         x = self.softmax(x)
