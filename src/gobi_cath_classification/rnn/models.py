@@ -274,9 +274,8 @@ class BRNN_embedded(nn.Module):
             loss.backward()
             self.optimizer.step()
 
-            if report_progress & (counter % 100 == 0):
+            if report_progress & (counter % 300 == 0):
                 print(f"\t\t{i + self.batch_size}/{len(embeddings)} done")
-                print(torch.cuda.memory_summary(self.device, True))
             counter += 1
 
             del loss, y_pred

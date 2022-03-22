@@ -46,7 +46,7 @@ model = BRNN_embedded(
     class_names=class_names,
     class_weights=class_weights,
     lr=1e-3,
-    batch_size=8,
+    batch_size=32,
 )
 
 for e in range(100):
