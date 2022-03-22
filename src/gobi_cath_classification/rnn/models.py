@@ -226,9 +226,9 @@ class BRNN_embedded(nn.Module):
         self.class_names = class_names
 
         self.lstm = nn.LSTM(
-            1024, hidden_size, num_layers, bidirectional=True, batch_first=True
+            1024, hidden_size, num_layers, bidirectional=False, batch_first=True
         ).to(self.device)
-        self.fc = nn.Linear(hidden_size * 2, len(class_names)).to(self.device)
+        self.fc = nn.Linear(hidden_size, len(class_names)).to(self.device)
         self.ReLU = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
@@ -238,10 +238,11 @@ class BRNN_embedded(nn.Module):
         )
 
     def forward(self, x):
-        # h0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
-        # c0 = torch.zeros(self.num_layers * 2, x.size(0), self.hidden_size).to(self.device)
-        x, _ = self.lstm(x)
-        x = torch.cat((x[:, -1, :self.hidden_size], x[:, 0, self.hidden_size:]), dim=1)
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
+        _, (x, _) = self.lstm(x, (h0, c0))
+        x = self.ReLU(x)
+        # x = torch.cat((x[:, -1, :self.hidden_size], x[:, 0, self.hidden_size:]), dim=1)
         x = self.fc(x)
         x = self.softmax(x)
         return x
@@ -289,3 +290,4 @@ class BRNN_embedded(nn.Module):
             y = self.forward(pad_embeddings(X).to(self.device))
         df = pd.DataFrame(y, columns=[str(label) for label in self.class_names]).astype("float")
         return Prediction(probabilities=df)
+

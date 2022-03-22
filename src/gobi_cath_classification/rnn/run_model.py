@@ -45,7 +45,7 @@ model = BRNN_embedded(
     num_layers=1,
     class_names=class_names,
     class_weights=class_weights,
-    lr=1e-3,
+    lr=1e-4,
     batch_size=32,
 )
 
@@ -56,7 +56,6 @@ for e in range(100):
     print(metrics)
     if (e % 9) == 0:
         torch.save(model, (DATA_DIR / "brnn.pth"))
-    torch.cuda.empty_cache()
     with torch.no_grad():
         y_pred = model.predict(X_val)
         print(evaluate(y_val, y_pred, class_names))
