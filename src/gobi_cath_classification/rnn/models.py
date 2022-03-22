@@ -280,6 +280,7 @@ class BRNN_embedded(nn.Module):
             counter += 1
 
             batch_X = batch_y = None
+            print(torch.cuda.list_gpu_processes(device=self.device))
             torch.cuda.empty_cache()
 
         loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
