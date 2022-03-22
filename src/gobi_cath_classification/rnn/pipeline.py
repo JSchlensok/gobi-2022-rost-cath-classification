@@ -120,3 +120,6 @@ def load_data(
     )
 
     return return_tuple
+
+
+print(load_data(DATA_DIR, np.random.RandomState(42), without_duplicates=True)[2])

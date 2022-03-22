@@ -38,7 +38,7 @@ X_train, y_train, train_labels, X_val, y_val, X_test, y_test = load_data(
 
 sample_weights = compute_inverse_sample_weights(labels=y_train)
 class_weights = torch.tensor(compute_inverse_class_weights(labels=y_train))
-class_names = list(set(train_labels))
+class_names = sorted(set(train_labels))
 
 model = BRNN_embedded(
     hidden_size=512,
