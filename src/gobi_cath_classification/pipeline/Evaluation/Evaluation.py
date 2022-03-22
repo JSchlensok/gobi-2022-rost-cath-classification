@@ -1,4 +1,7 @@
 from typing import List
+import os
+import datetime
+import re
 import warnings
 from typing_extensions import Literal
 import numpy as np
@@ -14,12 +17,15 @@ from plotnine import (
     geom_errorbar,
     scale_y_continuous,
     theme,
+    element_text,
+
 )
 
 from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef, f1_score
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
+from gobi_cath_classification.pipeline.data.data_loading import REPO_ROOT_DIR
 
 
 METRICS = ["accuracy", "mcc", "f1", "kappa"]
@@ -393,9 +399,21 @@ def metric_for_level(
         return cohen_kappa_score(y1=y_true_for_level, y2=y_pred_for_level)
 
 
-def plot_metric(
+def plot_metric_bars(
     different_evals: List[Evaluation], metric: Literal["accuracy", "mcc", "f1", "kappa"]
 ) -> None:
+    """
+    For each of the Evaluation objects, we plot 5 bars. For each level one and one for the mean for the given metric.
+
+    Args:
+        different_evals: List of 1 or more Evaluation objects with the desired metric already computed
+        metric: The metric that is plotted. Should be computed in all Evaluation objects, otherwise it
+        will not show in the final plot
+
+    Returns:
+        prints a plot and saves it to a plot folder outside of the src directory
+
+    """
 
     frames = list()
     for evaluation in different_evals:
@@ -416,6 +434,7 @@ def plot_metric(
                 position=position_dodge(0.6),
             )
             + labs(title=f"Performance measured in {metric.upper()}", x="", y=f"{metric}")
+            + theme(axis_text_x=element_text(angle=45, hjust=1))
             + scale_y_continuous(limits=[0, 1])
         )
     else:
@@ -428,10 +447,30 @@ def plot_metric(
                 position=position_dodge(0.6),
             )
             + labs(title=f"Performance measured in {metric.upper()}", x="", y=f"{metric}")
+            + theme(axis_text_x=element_text(angle=45, hjust=1))
             + scale_y_continuous(limits=[-1, 1])
         )
 
-    print(plot)
+    # show the plot
+    plot.draw(show=True)
+    # finally save the plot in REPO_ROOT_DIR/plots
+    plot_directory = REPO_ROOT_DIR / "plots"
+    if not os.path.exists(plot_directory):
+        try:
+            os.mkdir(plot_directory)
+        except OSError:
+            print(f"Creation of directory {plot_directory} failed")
+
+    # use date as unique filename and replace spaces and ":" with "_"
+    filename = re.sub(r"[: ]", "_", datetime.datetime.now().strftime("%c"))
+
+    # width of plot should be dynamic to the number of evaluations shown
+    plot.save(
+        filename="plot_" + filename,
+        path=plot_directory,
+        height=6,
+        width=7 + len(different_evals)*2
+    )
 
 
 def Evaluation_to_frame(

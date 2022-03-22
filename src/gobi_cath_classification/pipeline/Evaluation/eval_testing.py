@@ -4,7 +4,7 @@ import time
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation, plot_metric
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation, plot_metric_bars
 
 
 def main():
@@ -55,7 +55,7 @@ def main():
     eval2.compute_metrics(accuracy=True)
     eval2.compute_std_err(bootstrap_n=5)
 
-    plot_metric([eval1, eval2], metric="accuracy")
+    plot_metric_bars([eval1, eval2], metric="accuracy")
 
     # eval1.foldseek_metric()
 
