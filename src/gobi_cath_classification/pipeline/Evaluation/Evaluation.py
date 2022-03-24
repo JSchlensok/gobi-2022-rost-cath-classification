@@ -457,7 +457,6 @@ def plot_metric_line(
     plt.ylabel(f"{metric}")
     plt.legend(loc=2)
     plt.title(f"{metric} over the course of {len(different_evals)} epochs")
-    plt.show()
 
     if save:
         plot_directory = REPO_ROOT_DIR / "plots"
@@ -471,6 +470,8 @@ def plot_metric_line(
         filename = re.sub(r"[: ]", "_", datetime.datetime.now().strftime("%c"))
 
         plt.savefig(f"{plot_directory}/{filename}_line.png")
+
+    plt.show()
 
 
 def metric_for_level(
