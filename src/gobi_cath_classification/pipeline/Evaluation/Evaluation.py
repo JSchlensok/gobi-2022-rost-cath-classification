@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 import os
 import datetime
 import re
@@ -6,7 +6,15 @@ import warnings
 from typing_extensions import Literal
 import numpy as np
 import pandas as pd
+from sklearn.metrics import (
+    accuracy_score,
+    cohen_kappa_score,
+    matthews_corrcoef,
+    f1_score,
+    balanced_accuracy_score
+)
 from tabulate import tabulate
+from matplotlib import pyplot as plt
 from plotnine import (
     ggplot,
     aes,
@@ -18,17 +26,15 @@ from plotnine import (
     scale_y_continuous,
     theme,
     element_text,
-
 )
 
-from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef, f1_score
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 from gobi_cath_classification.pipeline.data.data_loading import REPO_ROOT_DIR
 
 
-METRICS = ["accuracy", "mcc", "f1", "kappa"]
+METRICS = ["accuracy", "mcc", "f1", "kappa", "bacc"]
 LEVELS = ["c-level", "a-level", "t-level", "h-level", "mean"]
 ERRORS = ["c-error", "a-error", "t-error", "h-error", "mean-error"]
 
@@ -45,7 +51,8 @@ class Evaluation:
             eval_dict = {"accuracy": {"accuracy_C": acc_C, "accuracy_A": acc_A, ... , "accuracy_avg": acc_avg"},
                         "mcc": {"mcc_C": mcc_C, "mcc_A": mcc_A, ... , "mcc_avg": mcc_avg"},
                         "f1": {"f1_C": f1_C, "f1_A": acc_A, ... , "f1_avg": f1_avg"},
-                        "kappa": {kappa_C": kappa_C, "kappa_A": kappa_A, ... , "kappa_avg": kappa_avg"}
+                        "kappa": {"kappa_C": kappa_C, "kappa_A": kappa_A, ... , "kappa_avg": kappa_avg},
+                        "bacc" : {"bacc_C": bacc_C, "bacc_A": bacc_A, ..., "bacc_avg": bacc_avg}}
     -> with compute_std_err() the standard error for all the previously computed metrics is calculated
     -> with print_evaluation() the computed results can be printed to the stdout
 
@@ -88,6 +95,7 @@ class Evaluation:
         mcc: bool = False,
         f1: bool = False,
         kappa: bool = False,
+        bacc: bool = False,
         _y_true: List = None,
         _y_hats: List = None,
     ):
@@ -101,6 +109,7 @@ class Evaluation:
             mcc: matthews correlation coefficient for each level in CATH (default = False)
             f1: the f1 score for each level in CATH (default = False)
             kappa: cohen's kappa for each level in CATH (default = False)
+            bacc: The balanced Accuracy for each level in CATH (default = False)
             _y_true: default=None (ignore: only for internal usage)
             _y_hats: default=None (ignore: only for internal usage)
 
@@ -110,7 +119,7 @@ class Evaluation:
         """
 
         CATH_levels = ["C", "A", "T", "H"]
-        assert (accuracy or mcc or f1 or kappa) is True, print(
+        assert (accuracy or mcc or f1 or kappa or bacc) is True, print(
             "At least on metric must be selected"
         )
 
@@ -178,6 +187,19 @@ class Evaluation:
             eval_dict["kappa"] = kappa_dict
             bootstrap_dict["kappa"] = kappa_dict
 
+        if bacc:
+            bacc_dict = {
+                f"bacc_{i.lower()}": metric_for_level(
+                    _y_true, _y_hats, self.train_labels, i, "bacc"
+                )
+                for i in CATH_levels
+            }
+            # average over all levels
+            bacc_dict["bacc_avg"] = sum(bacc_dict.values()) / len(CATH_levels)
+
+            eval_dict["bacc"] = bacc_dict
+            bootstrap_dict["bacc"] = bacc_dict
+
         # if the bootstrap dict is required, return it
         if bootstrap:
             return bootstrap_dict
@@ -210,6 +232,7 @@ class Evaluation:
             "mcc" in self.eval_dict,
             "f1" in self.eval_dict,
             "kappa" in self.eval_dict,
+            "bacc" in self.eval_dict
         ]
 
         # if no metrics are available, do not compute the standard error
@@ -312,101 +335,16 @@ class Evaluation:
         else:
             raise TypeError("No results were computed yet")
 
-    def foldseek_metric(self):
-        """
-        Adapt the metric which was used in the Foldseek paper:
-        Source:  https://doi.org/10.1101/2022.02.07.479398
-
-        Sort either descending after probability or ascending after distance depending on the used model
-        Calculate the ROC-AUC up until the fifth false positive (FP) and the fraction of True positives out
-        of all possible correct matches for that query
-        Returns:
-
-        """
-        df = self.yhat_probabilities
-        y_true = self.y_true
-        fp_count = dict()
-        found_h = dict()
-        for query, data in df.iterrows():
-
-            idx = np.argsort(np.array(data))
-            labels_sorted = np.array(list(df.columns))[idx[::-1]]
-            fp_count[query] = 0
-            found_h[query] = 0
-            for label in labels_sorted:
-                if fp_count[query] < 5 and query != str(label):
-                    fp_count[query] += 1
-
-            break
-
-
-def metric_for_level(
-    y_true: List[CATHLabel],
-    y_hat: List[CATHLabel],
-    train_labels: List[CATHLabel],
-    cath_level: Literal["C", "A", "T", "H"],
-    metric: Literal["acc", "mcc", "f1", "kappa"],
-) -> float:
-    """
-    Calculates the specific metric according to a given CATH-level.
-
-    Args:
-        y_true:
-            List of labels (List[CATHLabel]): ground truth
-        y_hat:
-            List of labels (List[str]): prediction
-        train_labels:
-            Alphabetically sorted list of all labels that occurred in training
-        cath_level:
-            Literal["C", "A", "T", "H"]
-        metric:
-            the chosen metric is calculated for the specified level in the CATH hierarchy
-            ["acc", "mcc", "f1", "kappa"]
-
-    Returns:
-        chosen metric score for each level in CATH and the mean
-
-    """
-
-    class_names_for_level = list(set([label[:cath_level] for label in train_labels]))
-    y_true_for_level = [str(label[:cath_level]) for label in y_true]
-    y_pred_for_level = [str(label[:cath_level]) for label in y_hat]
-
-    # delete all entries where the ground truth label does not occur in training class names.
-    n = len(y_true_for_level) - 1
-    for i in range(n, -1, -1):
-        if y_true_for_level[i] not in class_names_for_level:
-            del y_true_for_level[i]
-            del y_pred_for_level[i]
-
-    assert len(y_true_for_level) == len(y_pred_for_level)
-
-    # compute the specified metric
-    if metric == "acc":
-        return accuracy_score(
-            y_true=y_true_for_level,
-            y_pred=y_pred_for_level,
-        )
-    if metric == "mcc":
-        return matthews_corrcoef(y_true=y_true_for_level, y_pred=y_pred_for_level)
-    if metric == "f1":
-        return f1_score(
-            y_true=y_true_for_level,
-            y_pred=y_pred_for_level,
-            average="weighted",
-        )
-    if metric == "kappa":
-        return cohen_kappa_score(y1=y_true_for_level, y2=y_pred_for_level)
-
 
 def plot_metric_bars(
-    different_evals: List[Evaluation], metric: Literal["accuracy", "mcc", "f1", "kappa"]
+    different_evals: List[Evaluation], metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"]
 ) -> None:
     """
     For each of the Evaluation objects, we plot 5 bars. For each level one and one for the mean for the given metric.
 
     Args:
         different_evals: List of 1 or more Evaluation objects with the desired metric already computed
+                        The Evaluation.model_name of the objects should be different
         metric: The metric that is plotted. Should be computed in all Evaluation objects, otherwise it
         will not show in the final plot
 
@@ -424,7 +362,7 @@ def plot_metric_bars(
     df = pd.concat(frames)
 
     # scales differ for different metrics -> no cleaner solution found
-    if metric == "accuracy":
+    if metric == "accuracy" or metric == "bacc":
         plot = (
             ggplot(df, aes("model", "metric", fill="level"))
             + geom_col(width=0.6, position=position_dodge2(padding=0.3))
@@ -473,8 +411,132 @@ def plot_metric_bars(
     )
 
 
+def plot_metric_line(
+        different_evals: List[Dict],
+        metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"],
+        levels: List[Literal["C", "A", "T", "H", "avg"]] = None,
+        save: bool = False
+) -> None:
+    """
+    During the training, you can input a list of eval_dicts for the train or evaluation dataset which were already
+    computed and print out a line plot for a specific metric to see the course of the metric
+
+    Args:
+        different_evals: a list of eval_dicts with the specified metric computed
+        metric: a metric for which the plot should be drawn
+        levels: the level which is to be plotted
+        save: specify if the plot should be saved or not
+
+    Returns:
+        shows the plot and if wanted saves it to the REPO_ROOT_DIR/plots folder
+    """
+    if len(different_evals) < 2:
+        warnings.warn("More than one evaluation object should be passed")
+
+    all_frames = list()
+    for i, eval_dict in enumerate(different_evals):
+        if metric in eval_dict:
+            tmp = pd.DataFrame(data=eval_dict[metric], index=[i])
+            all_frames.append(tmp)
+
+    df = pd.concat(all_frames)
+
+    # if no level is selected, display all levels
+    if levels is None:
+        levels = ["C", "A", "T", "H", "avg"]
+
+    df[[f"{metric}_{lvl}" for lvl in levels]].plot.line()
+    if metric == "accuracy" or metric == "bacc":
+        plt.ylim(0, 1)
+    else:
+        plt.ylim(-1, 1)
+
+    plt.xlabel("epochs")
+    plt.ylabel(f"{metric}")
+    plt.legend(loc=2)
+    plt.title(f"{metric} over the course of {len(different_evals)} epochs")
+    plt.show()
+
+    if save:
+        plot_directory = REPO_ROOT_DIR / "plots"
+        if not os.path.exists(plot_directory):
+            try:
+                os.mkdir(plot_directory)
+            except OSError:
+                print(f"Creation of directory {plot_directory} failed")
+
+        # use date as unique filename and replace spaces and ":" with "_"
+        filename = re.sub(r"[: ]", "_", datetime.datetime.now().strftime("%c"))
+
+        plt.savefig(f"{plot_directory}/{filename}_line.png")
+
+
+def metric_for_level(
+        y_true: List[CATHLabel],
+        y_hat: List[CATHLabel],
+        train_labels: List[CATHLabel],
+        cath_level: Literal["C", "A", "T", "H"],
+        metric: Literal["acc", "mcc", "f1", "kappa", "bacc"],
+) -> float:
+    """
+    Calculates the specific metric according to a given CATH-level.
+    Args:
+        y_true:
+            List of labels (List[CATHLabel]): ground truth
+        y_hat:
+            List of labels (List[str]): prediction
+        train_labels:
+            Alphabetically sorted list of all labels that occurred in training
+        cath_level:
+            Literal["C", "A", "T", "H"]
+        metric:
+            the chosen metric is calculated for the specified level in the CATH hierarchy
+            ["acc", "mcc", "f1", "kappa", "bacc"]
+    Returns:
+        chosen metric score for each level in CATH and the mean
+    """
+    class_names_for_level = list(set([label[:cath_level] for label in train_labels]))
+    y_true_for_level = [str(label[:cath_level]) for label in y_true]
+    y_pred_for_level = [str(label[:cath_level]) for label in y_hat]
+    # delete all entries where the ground truth label does not occur in training class names.
+    n = len(y_true_for_level) - 1
+    for i in range(n, -1, -1):
+        if y_true_for_level[i] not in class_names_for_level:
+            del y_true_for_level[i]
+            del y_pred_for_level[i]
+    assert len(y_true_for_level) == len(y_pred_for_level)
+    # compute the specified metric
+    if metric == "acc":
+        return accuracy_score(
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level,
+        )
+    if metric == "mcc":
+        return matthews_corrcoef(
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level
+        )
+    if metric == "f1":
+        return f1_score(
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level,
+            average="weighted",
+        )
+    if metric == "kappa":
+        return cohen_kappa_score(
+            y1=y_true_for_level,
+            y2=y_pred_for_level
+        )
+
+    if metric == "bacc":
+        return balanced_accuracy_score(
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level
+        )
+
+
 def Evaluation_to_frame(
-    evaluation: Evaluation, metric: Literal["accuracy", "mcc", "f1", "kappa"]
+    evaluation: Evaluation, metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"]
 ) -> pd.DataFrame:
     """
     Converts the data from the Evaluation dict into a Dataframe which can then be used for plotting
