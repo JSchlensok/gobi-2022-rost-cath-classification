@@ -45,7 +45,7 @@ end = time.perf_counter()
 print(f"time to compute the metrics: {end-start}")
 
 start = time.perf_counter()
-eval1.compute_std_err(bootstrap_n=10)
+# eval1.compute_std_err(bootstrap_n=10)
 end = time.perf_counter()
 print(f"time to compute the standard error: {end-start}")
 
@@ -59,6 +59,6 @@ eval2 = Evaluation(
     model_name="Random Baseline with weights",
 )
 
-eval2.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+eval2.compute_metrics(accuracy=True, bacc=True)
 
 eval2.print_evaluation()

@@ -33,6 +33,8 @@ from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 from gobi_cath_classification.pipeline.data.data_loading import REPO_ROOT_DIR
 
+# suppress warnings
+warnings.filterwarnings('ignore', category=UserWarning)
 
 METRICS = ["accuracy", "mcc", "f1", "kappa", "bacc"]
 LEVELS = ["c-level", "a-level", "t-level", "h-level", "mean"]
@@ -293,7 +295,7 @@ class Evaluation:
                     )
 
                     # only multiply by 100 if the metric is accuracy
-                    if metric == "accuracy":
+                    if metric == "accuracy" or metric == "bacc":
                         df = df.multiply(100).round(2).astype(str)
 
                     else:
@@ -309,7 +311,7 @@ class Evaluation:
                     # add the standard error if available
                     if self.error_dict is not None:
                         # only multiply standard error if the metric is accuracy
-                        if metric == "accuracy":
+                        if metric == "accuracy" or metric == "bacc":
                             errors = (np.array(list(self.error_dict[metric].values())) * 100).round(
                                 2
                             )
@@ -498,12 +500,14 @@ def metric_for_level(
     class_names_for_level = list(set([label[:cath_level] for label in train_labels]))
     y_true_for_level = [str(label[:cath_level]) for label in y_true]
     y_pred_for_level = [str(label[:cath_level]) for label in y_hat]
+
     # delete all entries where the ground truth label does not occur in training class names.
     n = len(y_true_for_level) - 1
     for i in range(n, -1, -1):
         if y_true_for_level[i] not in class_names_for_level:
             del y_true_for_level[i]
             del y_pred_for_level[i]
+
     assert len(y_true_for_level) == len(y_pred_for_level)
     # compute the specified metric
     if metric == "acc":
