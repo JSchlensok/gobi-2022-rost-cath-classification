@@ -48,7 +48,7 @@ def main():
         eval2.compute_metrics(accuracy=True)
         eval2.compute_std_err(bootstrap_n=5)
 
-        plot_metric_bars([eval1, eval2], metric="accuracy")
+        plot_metric_bars([eval1, eval2], metric="accuracy", save=True)
 
     def testing_line_chart():
         # test for accuracy
@@ -70,6 +70,7 @@ def main():
         plot_metric_line(different_evals=all_dicts, metric="accuracy", levels=["C", "H"], save=True)
 
     testing_line_chart()
+    testing_bar_chart()
 
 
 if __name__ == "__main__":

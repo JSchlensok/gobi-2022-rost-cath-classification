@@ -1,6 +1,7 @@
 from typing import List, Dict
 import os
 import datetime
+import uuid
 import re
 import warnings
 from typing_extensions import Literal
@@ -339,7 +340,9 @@ class Evaluation:
 
 
 def plot_metric_bars(
-    different_evals: List[Evaluation], metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"]
+        different_evals: List[Evaluation],
+        metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"],
+        save: bool = False
 ) -> None:
     """
     For each of the Evaluation objects, we plot 5 bars. For each level one and one for the mean for the given metric.
@@ -349,9 +352,10 @@ def plot_metric_bars(
                         The Evaluation.model_name of the objects should be different
         metric: The metric that is plotted. Should be computed in all Evaluation objects, otherwise it
         will not show in the final plot
+        save: set to True if you want to save the plot in REPO_ROOT_DIR/plots (default: False)
 
     Returns:
-        prints a plot and saves it to a plot folder outside of the src directory
+        prints a plot and/or saves it to REPO_ROOT_DIR/plots
 
     """
 
@@ -393,24 +397,26 @@ def plot_metric_bars(
 
     # show the plot
     plot.draw(show=True)
-    # finally save the plot in REPO_ROOT_DIR/plots
-    plot_directory = REPO_ROOT_DIR / "plots"
-    if not os.path.exists(plot_directory):
-        try:
-            os.mkdir(plot_directory)
-        except OSError:
-            print(f"Creation of directory {plot_directory} failed")
 
-    # use date as unique filename and replace spaces and ":" with "_"
-    filename = re.sub(r"[: ]", "_", datetime.datetime.now().strftime("%c"))
+    # if wanted finally save the plot in REPO_ROOT_DIR/plots
+    if save:
+        plot_directory = REPO_ROOT_DIR / "plots"
+        if not os.path.exists(plot_directory):
+            try:
+                os.mkdir(plot_directory)
+            except OSError:
+                print(f"Creation of directory {plot_directory} failed")
 
-    # width of plot should be dynamic to the number of evaluations shown
-    plot.save(
-        filename="plot_" + filename,
-        path=plot_directory,
-        height=6,
-        width=7 + len(different_evals)*2
-    )
+        # use unique id as filename
+        filename = str(uuid.uuid4())
+
+        # width of plot should be dynamic to the number of evaluations shown
+        plot.save(
+            filename="barplot_" + filename,
+            path=plot_directory,
+            height=6,
+            width=7 + len(different_evals)*2
+        )
 
 
 def plot_metric_line(
@@ -427,7 +433,7 @@ def plot_metric_line(
         different_evals: a list of eval_dicts with the specified metric computed
         metric: a metric for which the plot should be drawn
         levels: the level which is to be plotted
-        save: specify if the plot should be saved or not
+        save: set to True if you want to save the plot in REPO_ROOT_DIR/plots (default: False)
 
     Returns:
         shows the plot and if wanted saves it to the REPO_ROOT_DIR/plots folder
@@ -467,9 +473,9 @@ def plot_metric_line(
                 print(f"Creation of directory {plot_directory} failed")
 
         # use date as unique filename and replace spaces and ":" with "_"
-        filename = re.sub(r"[: ]", "_", datetime.datetime.now().strftime("%c"))
+        filename = str(uuid.uuid4())
 
-        plt.savefig(f"{plot_directory}/{filename}_line.png")
+        plt.savefig(f"{plot_directory}/lineplot_{filename}.png")
 
     plt.show()
 
