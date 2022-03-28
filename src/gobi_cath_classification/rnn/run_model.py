@@ -69,7 +69,9 @@ for e in range(100):
     with torch.no_grad():
         y_pred = model.predict(X_val)
 
-        evaluation = Evaluation(y_true=y_val, predictions=y_pred, train_labels=class_names)
+        evaluation = Evaluation(
+            y_true=y_val, predictions=y_pred, train_labels=class_names, model_name="BRNN"
+        )  # can be changed
         evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
         evaluation.compute_std_err()
 

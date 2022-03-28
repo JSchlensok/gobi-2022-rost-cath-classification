@@ -371,6 +371,7 @@ class HierarchicalClassifier:
             y_true=self.dataset.y_val,
             predictions=labels_CATH,
             train_labels=self.dataset.train_labels,
+            model_name="Hierarchical Classifier",  # can be changed
         )
         evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
         eval_dict = {}
