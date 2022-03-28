@@ -12,7 +12,7 @@ from sklearn.metrics import (
     cohen_kappa_score,
     matthews_corrcoef,
     f1_score,
-    balanced_accuracy_score
+    balanced_accuracy_score,
 )
 from tabulate import tabulate
 from matplotlib import pyplot as plt
@@ -35,7 +35,7 @@ from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 from gobi_cath_classification.pipeline.data.data_loading import REPO_ROOT_DIR
 
 # suppress warnings
-warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 METRICS = ["accuracy", "mcc", "f1", "kappa", "bacc"]
 LEVELS = ["c-level", "a-level", "t-level", "h-level", "mean"]
@@ -235,7 +235,7 @@ class Evaluation:
             "mcc" in self.eval_dict,
             "f1" in self.eval_dict,
             "kappa" in self.eval_dict,
-            "bacc" in self.eval_dict
+            "bacc" in self.eval_dict,
         ]
 
         # if no metrics are available, do not compute the standard error
@@ -340,9 +340,9 @@ class Evaluation:
 
 
 def plot_metric_bars(
-        different_evals: List[Evaluation],
-        metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"],
-        save: bool = False
+    different_evals: List[Evaluation],
+    metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"],
+    save: bool = False,
 ) -> None:
     """
     For each of the Evaluation objects, we plot 5 bars. For each level one and one for the mean for the given metric.
@@ -415,15 +415,15 @@ def plot_metric_bars(
             filename="barplot_" + filename,
             path=plot_directory,
             height=6,
-            width=7 + len(different_evals)*2
+            width=7 + len(different_evals) * 2,
         )
 
 
 def plot_metric_line(
-        different_evals: List[Dict],
-        metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"],
-        levels: List[Literal["C", "A", "T", "H", "avg"]] = None,
-        save: bool = False
+    different_evals: List[Dict],
+    metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"],
+    levels: List[Literal["C", "A", "T", "H", "avg"]] = None,
+    save: bool = False,
 ) -> None:
     """
     During the training, you can input a list of eval_dicts for the train or evaluation dataset which were already
@@ -481,11 +481,11 @@ def plot_metric_line(
 
 
 def metric_for_level(
-        y_true: List[CATHLabel],
-        y_hat: List[CATHLabel],
-        train_labels: List[CATHLabel],
-        cath_level: Literal["C", "A", "T", "H"],
-        metric: Literal["acc", "mcc", "f1", "kappa", "bacc"],
+    y_true: List[CATHLabel],
+    y_hat: List[CATHLabel],
+    train_labels: List[CATHLabel],
+    cath_level: Literal["C", "A", "T", "H"],
+    metric: Literal["acc", "mcc", "f1", "kappa", "bacc"],
 ) -> float:
     """
     Calculates the specific metric according to a given CATH-level.
@@ -523,10 +523,7 @@ def metric_for_level(
             y_pred=y_pred_for_level,
         )
     if metric == "mcc":
-        return matthews_corrcoef(
-            y_true=y_true_for_level,
-            y_pred=y_pred_for_level
-        )
+        return matthews_corrcoef(y_true=y_true_for_level, y_pred=y_pred_for_level)
     if metric == "f1":
         return f1_score(
             y_true=y_true_for_level,
@@ -534,16 +531,10 @@ def metric_for_level(
             average="weighted",
         )
     if metric == "kappa":
-        return cohen_kappa_score(
-            y1=y_true_for_level,
-            y2=y_pred_for_level
-        )
+        return cohen_kappa_score(y1=y_true_for_level, y2=y_pred_for_level)
 
     if metric == "bacc":
-        return balanced_accuracy_score(
-            y_true=y_true_for_level,
-            y_pred=y_pred_for_level
-        )
+        return balanced_accuracy_score(y_true=y_true_for_level, y_pred=y_pred_for_level)
 
 
 def Evaluation_to_frame(

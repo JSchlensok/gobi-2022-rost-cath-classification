@@ -3,11 +3,14 @@ import numpy as np
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation, plot_metric_bars, plot_metric_line
+from gobi_cath_classification.pipeline.Evaluation.Evaluation import (
+    Evaluation,
+    plot_metric_bars,
+    plot_metric_line,
+)
 
 
 def main():
-
     def testing_bar_chart():
         random_seed = RANDOM_SEED
         set_random_seeds(seed=random_seed)
@@ -24,7 +27,9 @@ def main():
             load_only_small_sample=False,
             reloading_allowed=True,
         )
-        model1 = RandomBaseline(data=data_set, class_balance=False, rng=rng, random_seed=random_seed)
+        model1 = RandomBaseline(
+            data=data_set, class_balance=False, rng=rng, random_seed=random_seed
+        )
         model2 = ZeroRate(data=data_set, rng=rng, random_seed=random_seed)
 
         predictions1 = model1.predict(model1.data.X_test)
@@ -58,11 +63,11 @@ def main():
             # simulate metric dict for n epochs with rising accuracy for each epoch
             tmp = {
                 "accuracy": {
-                    "accuracy_C": np.random.randint(low=i, high=i+10) / (i + 10),
-                    "accuracy_A": np.random.randint(low=i, high=i+20) / (i + 20),
-                    "accuracy_T": np.random.randint(low=i, high=i+30) / (i + 30),
-                    "accuracy_H": np.random.randint(low=i, high=i+40) / (i + 40),
-                    "accuracy_avg": np.random.randint(low=i, high=i+50) / (i + 50)
+                    "accuracy_C": np.random.randint(low=i, high=i + 10) / (i + 10),
+                    "accuracy_A": np.random.randint(low=i, high=i + 20) / (i + 20),
+                    "accuracy_T": np.random.randint(low=i, high=i + 30) / (i + 30),
+                    "accuracy_H": np.random.randint(low=i, high=i + 40) / (i + 40),
+                    "accuracy_avg": np.random.randint(low=i, high=i + 50) / (i + 50),
                 }
             }
             all_dicts.append(tmp)
