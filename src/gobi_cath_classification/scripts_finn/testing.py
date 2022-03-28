@@ -4,7 +4,7 @@ import time
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 
 
 random_seed = RANDOM_SEED

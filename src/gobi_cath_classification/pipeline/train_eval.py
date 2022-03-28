@@ -7,7 +7,7 @@ import numpy as np
 from ray import tune
 from ray.tune import trial
 
-from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.prediction import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
@@ -188,11 +188,17 @@ def training_function(config: dict) -> None:
         save_predictions(pred=y_pred_val, directory=checkpoint_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
-        eval_dict = evaluate(
+        evaluation = Evaluation(
             y_true=dataset.y_val,
-            y_pred=y_pred_val,
-            class_names_training=dataset.train_labels,
+            predictions=y_pred_val,
+            train_labels=class_names,
         )
+        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+        evaluation.compute_std_err()
+
+        eval_dict = {}
+        for k, v in evaluation.eval_dict.items():
+            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
 
         # Save the model if the average accuracy has risen during the last epoch and check for early stopping
         if eval_dict["accuracy_h"] > highest_acc_h:
