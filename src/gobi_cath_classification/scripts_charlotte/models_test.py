@@ -93,6 +93,7 @@ class TestNeuralNetwork:
                 y_true=y_true,
                 predictions=y_pred,
                 train_labels=[CATHLabel(cn) for cn in class_names],
+                model_name="Test_Model",  # can be changed
             )
             evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
             evaluation.compute_std_err()

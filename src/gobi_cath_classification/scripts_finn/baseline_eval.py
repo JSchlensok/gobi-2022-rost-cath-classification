@@ -56,6 +56,7 @@ def training_function(config: dict) -> None:
         y_true=data_set.y_val,
         predictions=y_pred_val,
         train_labels=class_names,
+        model_name=str(model.__class__.__name__),
     )
     evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
     evaluation.compute_std_err()
