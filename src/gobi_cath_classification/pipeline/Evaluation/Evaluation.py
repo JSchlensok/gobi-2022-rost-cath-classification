@@ -1,8 +1,7 @@
 from typing import List, Dict
+from collections import Counter
 import os
-import datetime
 import uuid
-import re
 import warnings
 from typing_extensions import Literal
 import numpy as np
@@ -34,8 +33,6 @@ from gobi_cath_classification.pipeline.prediction import Prediction
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 from gobi_cath_classification.pipeline.data.data_loading import REPO_ROOT_DIR
 
-# suppress warnings
-warnings.filterwarnings("ignore", category=UserWarning)
 
 METRICS = ["accuracy", "mcc", "f1", "kappa", "bacc"]
 LEVELS = ["c-level", "a-level", "t-level", "h-level", "mean"]
@@ -365,7 +362,21 @@ def plot_metric_bars(
         frames.append(Evaluation_to_frame(evaluation, metric))
 
     # concatenate all the accumulated data frames containing all the necessary data
-    df = pd.concat(frames)
+    df = pd.concat(frames, ignore_index=True)
+
+    # check for dataframes with the same model_name and change the name for models with the same name
+    models = list()
+    double_count = 0
+    for i, row in df.iterrows():
+        tmp_name = df.loc[i, "model"]
+        c = Counter(models)
+        if tmp_name in models and c[tmp_name] + 1 > 5:
+            double_count += 1
+            warnings.warn(f"Model {tmp_name} occurs more than once")
+            for j in range(i, i + 5):
+                df.loc[j, ["model"]] = f"{tmp_name}{double_count}"
+
+        models.append(df.loc[i, "model"])
 
     # scales differ for different metrics -> no cleaner solution found
     if metric == "accuracy" or metric == "bacc":

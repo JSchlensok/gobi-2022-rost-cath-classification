@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
@@ -11,6 +12,9 @@ from gobi_cath_classification.pipeline.Evaluation.Evaluation import (
 
 
 def main():
+    # suppress warnings
+    # warnings.filterwarnings("ignore", category=UserWarning)
+
     def testing_bar_chart():
         random_seed = RANDOM_SEED
         set_random_seeds(seed=random_seed)
@@ -42,7 +46,7 @@ def main():
             model_name="Random Baseline",
         )
         eval1.compute_metrics(accuracy=True)
-        eval1.compute_std_err(bootstrap_n=5)
+        eval1.compute_std_err(bootstrap_n=2)
 
         eval2 = Evaluation(
             y_true=data_set.y_test,
@@ -51,9 +55,9 @@ def main():
             model_name="Zero Rate",
         )
         eval2.compute_metrics(accuracy=True)
-        eval2.compute_std_err(bootstrap_n=5)
+        eval2.compute_std_err(bootstrap_n=2)
 
-        plot_metric_bars([eval1, eval2], metric="accuracy", save=True)
+        plot_metric_bars([eval1, eval2, eval1], metric="accuracy")
 
     def testing_line_chart():
         # test for accuracy
@@ -74,7 +78,7 @@ def main():
 
         plot_metric_line(different_evals=all_dicts, metric="accuracy", levels=["C", "H"], save=True)
 
-    testing_line_chart()
+    # testing_line_chart()
     testing_bar_chart()
 
 
