@@ -57,7 +57,7 @@ def main():
         eval2.compute_metrics(accuracy=True)
         eval2.compute_std_err(bootstrap_n=2)
 
-        plot_metric_bars([eval1, eval2, eval1], metric="accuracy")
+        plot_metric_bars([eval1, eval2], metric="accuracy", levels=["h-level", "mean"])
 
     def testing_line_chart():
         # test for accuracy
