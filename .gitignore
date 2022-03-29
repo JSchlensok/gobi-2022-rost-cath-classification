@@ -381,3 +381,4 @@ cython_debug/
 
 # Checkpoint files
 /src/gobi_cath_classification/model checkpoints/
+/src/gobi_cath_classification/contrastive_learning_arcface/lightning_logs/
