@@ -1,6 +1,7 @@
 import math
 import pickle
 import subprocess
+import sys
 from pathlib import Path
 from typing import List, Optional, Dict
 
@@ -40,14 +41,18 @@ sample_weights = compute_inverse_sample_weights(labels=y_train)
 class_weights = torch.tensor(compute_inverse_class_weights(labels=y_train))
 class_names = sorted(set(train_labels))
 
-model = BRNN_embedded(
-    hidden_size=512,
-    num_layers=1,
-    class_names=class_names,
-    class_weights=class_weights,
-    lr=1e-4,
-    batch_size=32,
-)
+args = sys.argv
+if len(args) > 2 and (args[1] == "-m" or args[1] == "--model"):
+    model = torch.load(args[2])
+else:
+    model = BRNN_embedded(
+        hidden_size=512,
+        num_layers=1,
+        class_names=class_names,
+        class_weights=class_weights,
+        lr=1e-4,
+        batch_size=32,
+    )
 
 for e in range(100):
     metrics = model.train_one_epoch(X_train, y_train, report_progress=True)
