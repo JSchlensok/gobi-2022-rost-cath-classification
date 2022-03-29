@@ -362,7 +362,9 @@ def plot_metric_bars(
 
     for lvl in levels:
         if lvl not in LEVELS:
-            warnings.warn(f"{lvl} is not a valid level. Please choose out of the following: {LEVELS}")
+            warnings.warn(
+                f"{lvl} is not a valid level. Please choose out of the following: {LEVELS}"
+            )
 
     frames = list()
     for evaluation in different_evals:
@@ -557,8 +559,7 @@ def metric_for_level(
 
 
 def Evaluation_to_frame(
-    evaluation: Evaluation, metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"],
-        levels=None
+    evaluation: Evaluation, metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"], levels=None
 ) -> pd.DataFrame:
     """
     Converts the data from the Evaluation dict into a Dataframe which can then be used for plotting
