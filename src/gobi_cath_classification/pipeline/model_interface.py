@@ -49,7 +49,7 @@ class ModelInterface:
         """
 
     @abstractmethod
-    def save_checkpoint(self, save_to_dir: Path):
+    def save_checkpoint(self, save_to_dir: Path) -> None:
         """
 
         Save a checkpoint to given directory.
@@ -57,7 +57,7 @@ class ModelInterface:
         """
 
     @abstractmethod
-    def load_model_from_checkpoint(self, checkpoint_file_dir: Path):
+    def load_model_from_checkpoint(self, checkpoint_file_dir: Path) -> None:
         """
 
         Load model from given checkpoint file(s),
