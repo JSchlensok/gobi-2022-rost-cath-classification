@@ -1,13 +1,14 @@
 from __future__ import annotations
+
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional, Union
-from typing_extensions import Literal
+from typing import List, Dict, Tuple, Union
 
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.utils import shuffle
 import torch
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.utils import shuffle
+from typing_extensions import Literal
 
 from gobi_cath_classification.pipeline.utils import CATHLabel
 
@@ -27,10 +28,12 @@ class Dataset:
     X_train_str: List[str] = None
     X_val_str: List[str] = None
     X_test_str: List[str] = None
+    label_encoder: LabelEncoder = None
 
     def __post_init__(self):
         # Order labels
         self.train_labels = sorted(list(set(self.train_labels)))
+        self.all_labels = list({*self.y_train, *self.y_val, *self.y_test})
 
     def shape(self) -> Dict[str, Dict[str, Union[int, Tuple[int, int]]]]:
         return {
@@ -46,6 +49,7 @@ class Dataset:
         split: Literal["train", "val", "test"],
         x_encoding: Literal["embedding-array", "embedding-tensor", "string"] = "embedding-array",
         zipped: bool = False,
+        y_encoding: Literal["list", "tensor"] = "list",
     ) -> Union[
         List[Tuple[np.ndarray, CATHLabel]],
         Tuple[np.ndarray, List[CATHLabel]],
@@ -70,6 +74,9 @@ class Dataset:
                     "String representation requested, but no strings loaded. Use Dataset.load_strings() before calling get_split()"
                 )
             x = {"train": self.X_train_str, "val": self.X_val_str, "test": self.X_test_str}[split]
+
+        if y_encoding == "tensor":
+            y = torch.from_numpy(np.array(y, dtype=np.int64))
 
         if zipped:
             return list(zip(x, y))
@@ -133,3 +140,10 @@ class Dataset:
         self.X_train_str = train
         self.X_val_str = val
         self.X_test_str = test
+
+    def encode_labels(self) -> None:
+        self.label_encoder = LabelEncoder()
+        self.label_encoder.fit([str(label) for label in self.all_labels])
+        self.y_train = self.label_encoder.transform([str(label) for label in self.y_train])
+        self.y_val = self.label_encoder.transform([str(label) for label in self.y_val])
+        self.y_test = self.label_encoder.transform([str(label) for label in self.y_test])
