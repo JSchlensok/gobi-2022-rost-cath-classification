@@ -1,15 +1,15 @@
-from pathlib import Path
+import pickle
 from collections import Counter
+from pathlib import Path
 from typing import Dict
-from typing_extensions import Literal
 
 import h5py
 import numpy as np
 import pandas as pd
-import pickle
+from typing_extensions import Literal
 
-from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.data import Dataset
+from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
 
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.parent.absolute()
@@ -66,6 +66,7 @@ def load_data(
     specific_level: Literal["C", "A", "T", "H"] = None,
     # Load data with Y-values only up to the given cutoff level
     level_cutoff: Literal["C", "A", "T", "H"] = None,
+    encode_labels: bool = False,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -84,9 +85,8 @@ def load_data(
     duplicates_tag = "no-duplicates" if without_duplicates else "duplicates"
     small_sample_tag = "small_sample" if load_only_small_sample else "full"
     including_strings_tag = "_with_strings" if load_strings else ""
-    serialized_dataset_location = (
-        f"serialized_dataset_{duplicates_tag}_{small_sample_tag}{including_strings_tag}.pickle"
-    )
+    label_encoding_tag = "_with_label_encoding" if encode_labels else ""
+    serialized_dataset_location = f"serialized_dataset_{duplicates_tag}_{small_sample_tag}{including_strings_tag}{label_encoding_tag}.pickle"
 
     if reloading_allowed:
         print("Trying to find a serialized dataset ...")
@@ -187,6 +187,9 @@ def load_data(
         dataset.y_test = [label[:level_cutoff] for label in dataset.y_test]
     elif level_cutoff is not None and specific_level is not None:
         raise ValueError("Either specific_level or level_cutoff can be supplied, not both!")
+
+    if encode_labels:
+        dataset.encode_labels()
 
     print("Serializing data for faster reloading ...")
     with open(data_dir / serialized_dataset_location, "wb+") as f:
