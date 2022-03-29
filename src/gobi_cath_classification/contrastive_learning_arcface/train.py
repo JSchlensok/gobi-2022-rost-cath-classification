@@ -1,99 +1,79 @@
-from pathlib import Path
+import logging
+from argparse import ArgumentParser
+from datetime import datetime
 
-import numpy as np
-from pytorch_metric_learning import losses, trainers
-import sklearn
-import torch
-from tqdm import tqdm
-from typing_extensions import Literal
+import pytorch_lightning as pl
+import pytorch_metric_learning as pml
 
-# TODO use tqdm.rich
-
-from gobi_cath_classification.pipeline.data import data_loading, Dataset
-from gobi_cath_classification.pipeline.utils.torch_utils import get_device
-from gobi_cath_classification.contrastive_learning_arcface.FNN import FNN
+from gobi_cath_classification.contrastive_learning_arcface import ArcFaceModel
 from gobi_cath_classification.contrastive_learning_arcface.utils import get_base_dir
+from gobi_cath_classification.pipeline.data.lightning import DataModule
 
+ROOT_DIR = get_base_dir()
+DATA_DIR = ROOT_DIR / "data"
 
-def create_dataloader(
-    dataset: Dataset, split: Literal["train", "val", "test"], batch_size: int
-) -> torch.utils.data.DataLoader:
-    train_X, train_y = dataset.get_split("train", x_encoding="embedding-tensor", zipped=False)
-    label_encoder = sklearn.preprocessing.LabelEncoder()
-    train_y_encoded = torch.as_tensor(
-        label_encoder.fit_transform([str(label) for label in train_y])
+# TODO set logging level as parameter
+def main(args):
+    logging.basicConfig(filename="debug.log", filemode="a", level=logging.DEBUG)
+
+    pl.seed_everything(42, workers=True)
+
+    data = DataModule(DATA_DIR, 64)
+    data.setup()
+
+    accuracy_calculator = pml.utils.accuracy_calculator.AccuracyCalculator()
+
+    model_name = f"arcface_{datetime.today().strftime('%Y-%m-%d %H%M')}"
+
+    logger = pl.loggers.TensorBoardLogger("lightning_logs", name=model_name)
+
+    progress_bar = (
+        pl.callbacks.ProgressBar()
+    )  # TODO remove v_num https://pytorch-lightning.readthedocs.io/en/stable/extensions/logging.html#modifying-the-progress-bar
+
+    checkpointer = pl.callbacks.ModelCheckpoint(
+        monitor="val_loss",
+        dirpath=ROOT_DIR / f"models/{model_name}",
+        filename="{epoch:02d}--{val_loss:.2f}",
+        every_n_epochs=25,
     )
 
-    return torch.utils.data.DataLoader(
-        torch.utils.data.TensorDataset(train_X, train_y_encoded),
-        batch_size=batch_size,
-        shuffle=True,
+    trainer = pl.Trainer(
+        benchmark=True,  # should lead to a speedup
+        min_epochs=500,
+        max_epochs=500,
+        auto_lr_find=True,
+        accelerator=args.accelerator,
+        devices=1,
+        precision=16 if args.accelerator == "gpu" else 32,
+        callbacks=[progress_bar, checkpointer],
+        logger=logger,
+        num_sanity_val_steps=0,  # a training step runs in < 1 min, no need for this - will throw an error since the validation step that employs the lookup embeddings computed in ArcFaceModel.training_epoch_end() won't have them available
     )
 
-
-def train(num_epochs: int):
-    dataset = data_loading.load_data(
-        data_loading.DATA_DIR,
-        rng=np.random.RandomState(42),
-        without_duplicates=True,
-        shuffle_data=False,
-        load_only_small_sample=False,
-        reloading_allowed=True,
+    model = ArcFaceModel(
+        (data.num_classes, data.train_dataloader()),
+        data.label_encoder,
+        accuracy_calculator,
+        model_name,
+        1e-2,
+        args.accelerator,
     )
 
-    BATCH_SIZE = 64
-    train_dataloader = create_dataloader(dataset, "train", BATCH_SIZE)
-    val_dataloader = create_dataloader(dataset, "val", BATCH_SIZE)
+    """
+    lr_finder = trainer.tuner.lr_find(model, data.train_dataloader(), data.val_dataloader())
+    fig = lr_finder.plot(suggest=True)
+    fig.show()
+    print(lr_finder.suggestion)
+    print(type(lr_finder.suggestion()))
+    """
 
-    # TODO tune margin & scale parameters
-    criterion = losses.ArcFaceLoss(
-        num_classes=len(dataset.train_labels), embedding_size=128, margin=28.6, scale=64
-    )
-
-    # TODO allow model reloading from savepoint
-    device = get_device()
-    model = FNN().to(device)
-
-    # TODO tune fnn_optimizer parameters
-    fnn_optimizer = torch.optim.Adam(model.parameters(), lr=10e-4, weight_decay=10e-4)
-    loss_optimizer = torch.optim.Adam(criterion.parameters(), lr=10e-4, weight_decay=10e-4)
-
-    scaler = torch.cuda.amp.GradScaler()
-
-    for epoch in range(1, num_epochs + 1):
-        running_loss = 0
-
-        with tqdm(train_dataloader, unit="batch") as tepoch:
-            for batch_id, (X_batch, y_batch) in enumerate(tepoch):
-                tepoch.set_description(f"Epoch {epoch}")
-
-                X_batch = X_batch.cuda()
-                y_batch = y_batch.cuda()
-                fnn_optimizer.zero_grad()
-
-                with torch.cuda.amp.autocast():
-                    X_embedded = model(X_batch)
-                    fnn_loss = criterion(X_embedded, y_batch)
-
-                # TODO compute accuracy during training
-
-                # TODO compute validation loss
-
-                scaler.scale(fnn_loss).backward()
-                running_loss += fnn_loss.item()
-
-                train_loss = running_loss / (batch_id + 1)
-
-                scaler.step(fnn_optimizer)
-                scaler.update()
-
-                tepoch.set_postfix(train_loss=f"{train_loss:.3f}")
-
-            if epoch % 25 == 0:
-                model_name = f"arcface_2022-03-20_epoch_{epoch}.pth"
-                print("Checkpointing model to {model_name} ...")
-                torch.save(model.fnn.state_dict(), get_base_dir() / f"models/{model_name}")
+    trainer.fit(model, data)
 
 
 if __name__ == "__main__":
-    train(100)
+    parser = ArgumentParser()
+    parser.add_argument("--accelerator", type=str, default="gpu")
+    args = parser.parse_args()
+
+    main(args)
