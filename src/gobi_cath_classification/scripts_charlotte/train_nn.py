@@ -50,7 +50,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 10,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -63,7 +62,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 9,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -76,7 +74,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 8,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -89,7 +86,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 7,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -102,7 +98,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 6,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -115,7 +110,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 5,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -128,7 +122,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 4,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -141,7 +134,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 3,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -154,7 +146,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 2,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -167,7 +158,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 1.7,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -180,7 +170,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 1.5,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -193,7 +182,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 1.2,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -206,7 +194,6 @@ def main():
                         "layer_sizes": [1024],
                         "dropout_sizes": [None],
                         "scale": True,
-                        "add_small_random": 1.0,
                     },
                 ]
             ),
