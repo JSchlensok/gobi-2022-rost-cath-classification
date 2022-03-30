@@ -4,7 +4,7 @@ import time
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
-from gobi_cath_classification.pipeline.Evaluation.Evaluation import Evaluation
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 
 
 random_seed = RANDOM_SEED
@@ -45,7 +45,7 @@ end = time.perf_counter()
 print(f"time to compute the metrics: {end-start}")
 
 start = time.perf_counter()
-eval1.compute_std_err(bootstrap_n=10)
+# eval1.compute_std_err(bootstrap_n=10)
 end = time.perf_counter()
 print(f"time to compute the standard error: {end-start}")
 
@@ -59,6 +59,6 @@ eval2 = Evaluation(
     model_name="Random Baseline with weights",
 )
 
-eval2.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+eval2.compute_metrics(accuracy=True, bacc=True)
 
 eval2.print_evaluation()

@@ -5,10 +5,10 @@ from ray import tune
 from ray.tune import trial
 
 import platform
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
-from gobi_cath_classification.pipeline.evaluation import evaluate
 from gobi_cath_classification.scripts_finn.baseline_models import RandomBaseline, ZeroRate
 from gobi_cath_classification.pipeline.train_eval import trial_dirname_creator
 
@@ -52,11 +52,18 @@ def training_function(config: dict) -> None:
     # Predictions
     y_pred_val = model.predict(embeddings=data_set.X_val)
 
-    eval_dict = evaluate(
+    evaluation = Evaluation(
         y_true=data_set.y_val,
-        y_pred=y_pred_val,
-        class_names_training=class_names,
+        predictions=y_pred_val,
+        train_labels=class_names,
+        model_name=str(model.__class__.__name__),
     )
+    evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+    evaluation.compute_std_err()
+
+    eval_dict = {}
+    for k, v in evaluation.eval_dict.items():
+        eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
     tune.report(**eval_dict)
 
 
