@@ -35,7 +35,7 @@ from gobi_cath_classification.pipeline.data.data_loading import REPO_ROOT_DIR
 
 
 METRICS = ["accuracy", "mcc", "f1", "kappa", "bacc"]
-LEVELS = ["c-level", "a-level", "t-level", "h-level", "mean"]
+LEVELS: List[str] = ["c-level", "a-level", "t-level", "h-level", "mean"]
 ERRORS = ["c-error", "a-error", "t-error", "h-error", "mean-error"]
 
 
@@ -339,6 +339,7 @@ class Evaluation:
 def plot_metric_bars(
     different_evals: List[Evaluation],
     metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"],
+    levels: List[str] = None,
     save: bool = False,
 ) -> None:
     """
@@ -349,17 +350,26 @@ def plot_metric_bars(
                         The Evaluation.model_name of the objects should be different
         metric: The metric that is plotted. Should be computed in all Evaluation objects, otherwise it
         will not show in the final plot
+        levels: choose the different levels you want to show in the plot ["c-level", "a-level", "t-level", "c-level", "mean"] are possible
         save: set to True if you want to save the plot in REPO_ROOT_DIR/plots (default: False)
 
     Returns:
         prints a plot and/or saves it to REPO_ROOT_DIR/plots
 
     """
+    if levels is None:
+        levels = LEVELS
+
+    for lvl in levels:
+        if lvl not in LEVELS:
+            warnings.warn(
+                f"{lvl} is not a valid level. Please choose out of the following: {LEVELS}"
+            )
 
     frames = list()
     for evaluation in different_evals:
         # for each evaluation object, compute the data frame add it to the list of all data frames
-        frames.append(Evaluation_to_frame(evaluation, metric))
+        frames.append(Evaluation_to_frame(evaluation, metric, levels))
 
     # concatenate all the accumulated data frames containing all the necessary data
     df = pd.concat(frames, ignore_index=True)
@@ -549,19 +559,22 @@ def metric_for_level(
 
 
 def Evaluation_to_frame(
-    evaluation: Evaluation, metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"]
+    evaluation: Evaluation, metric: Literal["accuracy", "mcc", "f1", "kappa", "bacc"], levels=None
 ) -> pd.DataFrame:
     """
     Converts the data from the Evaluation dict into a Dataframe which can then be used for plotting
     Args:
         evaluation: an Evaluation object
         metric: the metric for which the DataFrame should be generated
+        levels: which levels should be used
 
     Returns:
         A pandas Dataframe with the columns: [metric, level, model_name, metric_error, error]
         if errors are available
 
     """
+    if levels is None:
+        levels = LEVELS
     # check if the evaluation contains the specified metric
     if evaluation.eval_dict is not None and metric in evaluation.eval_dict:
         # convert the metric dict in the eval_dict to a DataFrame used for plotting
@@ -572,7 +585,7 @@ def Evaluation_to_frame(
                 "model": evaluation.model_name,
             }
         )
-        df = tmp.assign(level=pd.Categorical(tmp["level"], categories=LEVELS))
+        df = tmp.assign(level=pd.Categorical(tmp["level"], categories=levels))
 
         # if the errors are available, add the errors to the DataFrame otherwise add the error 0
         if evaluation.error_dict is not None and metric in evaluation.error_dict:
@@ -582,7 +595,9 @@ def Evaluation_to_frame(
             tmp = df.assign(metric_error=np.repeat(0, 5), error=ERRORS)
 
         df = tmp.assign(error=pd.Categorical(tmp["error"], categories=ERRORS))
-        return df
+
+        # only return the wanted levels
+        return df[df.level.isin(levels)]
     else:
         warnings.warn(f"The requested metric was not computed for {evaluation.model_name}")
         return pd.DataFrame()
