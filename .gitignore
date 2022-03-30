@@ -13,6 +13,7 @@ data
 **/sample_data
 *.fasta
 *.h5
+*.html
 *.txt
 *.dt
 model checkpoints
