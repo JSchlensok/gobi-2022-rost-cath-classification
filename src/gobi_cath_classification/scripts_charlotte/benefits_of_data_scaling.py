@@ -14,17 +14,17 @@ def apply_style(p):
 
 
 def bar_plot(
-        title: str,
-        a: Dict[str, float],
-        b: Dict[str, float],
-        a_upper_error,
-        b_upper_error,
-        a_lower_error,
-        b_lower_error,
-        legend_label_a: str,
-        legend_label_b: str,
-        x_axis_label: str,
-        y_axis_label: str
+    title: str,
+    a: Dict[str, float],
+    b: Dict[str, float],
+    a_upper_error,
+    b_upper_error,
+    a_lower_error,
+    b_lower_error,
+    legend_label_a: str,
+    legend_label_b: str,
+    x_axis_label: str,
+    y_axis_label: str,
 ):
     assert a.keys() == b.keys()
 
@@ -71,10 +71,22 @@ def bar_plot(
     )
 
     p.add_layout(
-        Whisker(source=source, base=dodge("x_labels", -0.13, range=p.x_range), upper="a_upper_error", lower="a_lower_error", level="overlay")
+        Whisker(
+            source=source,
+            base=dodge("x_labels", -0.13, range=p.x_range),
+            upper="a_upper_error",
+            lower="a_lower_error",
+            level="overlay",
+        )
     )
     p.add_layout(
-        Whisker(source=source, base=dodge("x_labels", +0.13, range=p.x_range), upper="b_upper_error", lower="b_lower_error", level="overlay")
+        Whisker(
+            source=source,
+            base=dodge("x_labels", +0.13, range=p.x_range),
+            upper="b_upper_error",
+            lower="b_lower_error",
+            level="overlay",
+        )
     )
 
     p.xaxis.axis_label = x_axis_label
@@ -85,7 +97,7 @@ def bar_plot(
     p.xaxis.major_label_text_font_size = "10pt"
     p.yaxis.major_label_text_font_size = "10pt"
 
-    p.title.text_font_size = '12pt'
+    p.title.text_font_size = "12pt"
 
     p.x_range.range_padding = 0.1
     p.xgrid.grid_line_color = None
@@ -103,7 +115,7 @@ def plot_with_error_bars():
     from bokeh.models import ColumnDataSource, Whisker
     from bokeh.transform import factor_cmap
 
-    groups = ['A', 'B', 'C', 'D']
+    groups = ["A", "B", "C", "D"]
     counts = [5, 3, 4, 2]
     error = [0.8, 0.4, 0.4, 0.3]
     upper = [x + e for x, e in zip(counts, error)]
@@ -111,12 +123,20 @@ def plot_with_error_bars():
 
     source = ColumnDataSource(data=dict(groups=groups, counts=counts, upper=upper, lower=lower))
 
-    p = figure(x_range=groups, plot_height=350, toolbar_location=None, title="Values",
-               y_range=(0, 7))
-    p.vbar(x='groups', top='counts', width=0.9, source=source, legend="groups",
-           line_color='white',
-           fill_color=factor_cmap('groups', palette=["#962980", "#295f96", "#29966c", "#968529"],
-                                  factors=groups))
+    p = figure(
+        x_range=groups, plot_height=350, toolbar_location=None, title="Values", y_range=(0, 7)
+    )
+    p.vbar(
+        x="groups",
+        top="counts",
+        width=0.9,
+        source=source,
+        legend="groups",
+        line_color="white",
+        fill_color=factor_cmap(
+            "groups", palette=["#962980", "#295f96", "#29966c", "#968529"], factors=groups
+        ),
+    )
 
     p.add_layout(
         Whisker(source=source, base="groups", upper="upper", lower="lower", level="overlay")
@@ -132,10 +152,22 @@ def plot_with_error_bars():
 def main():
     bar_plot(
         title="Comparison of Training with Scaled Data and Non-scaled Data",
-        a={"Set 1": 76.4607, "Set 2": 78.4314, "Set 3": 79.085, "Set 4": 79.085, "Set 5": 78.4314,
-           "Average over Set 1-5": 78.3},
-        b={"Set 1": 75.1634, "Set 2": 75.1634, "Set 3": 75.817, "Set 4": 76.4706, "Set 5": 73.2026,
-           "Average over Set 1-5": 75.1},
+        a={
+            "Set 1": 76.4607,
+            "Set 2": 78.4314,
+            "Set 3": 79.085,
+            "Set 4": 79.085,
+            "Set 5": 78.4314,
+            "Average over Set 1-5": 78.3,
+        },
+        b={
+            "Set 1": 75.1634,
+            "Set 2": 75.1634,
+            "Set 3": 75.817,
+            "Set 4": 76.4706,
+            "Set 5": 73.2026,
+            "Average over Set 1-5": 75.1,
+        },
         a_upper_error=[79.0, 80.0, 81.0, 82.0, 83.0, 84.0],
         a_lower_error=[76.0, 75.0, 74.0, 73.0, 72.0, 71.0],
         b_upper_error=[76.0, 77.0, 76.0, 77.0, 76.0, 77.0],
@@ -143,9 +175,9 @@ def main():
         legend_label_a="scaled data",
         legend_label_b="non-scaled data",
         x_axis_label="Training runs with different sets of hyperparameter values",
-        y_axis_label="Accuracy on H-level in %"
+        y_axis_label="Accuracy on H-level in %",
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
