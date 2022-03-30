@@ -51,6 +51,7 @@ def main(args):
         num_sanity_val_steps=0,  # a training step runs in < 1 min, no need for this - will throw an error since the validation step that employs the lookup embeddings computed in ArcFaceModel.training_epoch_end() won't have them available
     )
 
+    # TODO set hyperparameters
     model = ArcFaceModel(
         (data.num_classes, data.train_dataloader()),
         data.label_encoder,
@@ -72,6 +73,7 @@ def main(args):
 
 
 if __name__ == "__main__":
+    # TODO parse hyperparameters
     parser = ArgumentParser()
     parser.add_argument("--accelerator", type=str, default="gpu")
     args = parser.parse_args()

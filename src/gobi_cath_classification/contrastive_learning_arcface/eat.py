@@ -16,8 +16,8 @@ class EAT:
         self.decoded_labels = None
 
     def get_neighbors(self, k: int) -> None:
-        distances = self.distance(self.lookup.float(), self.query.float())
-        _, self.neighbor_indices = torch.topk(distances, k, largest=False, dim=0)
+        distances = self.distance(self.query.float(), self.lookup.float())
+        _, self.neighbor_indices = torch.topk(distances, k, largest=False)
 
     def transfer_labels(self, lookup_labels: TensorType[-1, torch.int64]) -> None:
         # TODO handle k>1

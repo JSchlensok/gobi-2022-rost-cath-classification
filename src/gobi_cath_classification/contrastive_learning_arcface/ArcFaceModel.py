@@ -27,18 +27,17 @@ class ArcFaceModel(pl.LightningModule, ModelInterface):
     # TODO set hyperparameters
     def __init__(
         self,
+        config,
         lookup_data: Tuple[int, torch.utils.data.DataLoader],
         label_encoder: LabelEncoder,
         accuracy_calculator: AccuracyCalculator,
         name: str,
-        lr: float = 1e-2,
         acceleration: str = "gpu",
     ):
         super().__init__()
         self.num_classes, self.lookup_data = lookup_data
         self.name = name
         self.epoch = 0
-        self.lr = lr
         self.acceleration = acceleration
         self.label_encoder = label_encoder
         self.accuracy_calculator = accuracy_calculator
@@ -47,22 +46,26 @@ class ArcFaceModel(pl.LightningModule, ModelInterface):
         self.lookup_embeddings = None
         self.query_embeddings = None
 
+        self.model_lr = config["lr"]
+        self.loss_lr = config["loss_lr"]
+        self.l1_size = config["l1_size"]
+        self.l2_size = config["l2_size"]
+        self.batch_size = config["batch_size"]
+
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(1024, 256), torch.nn.ReLU(), torch.nn.Linear(256, 128)
-        )  # TODO tune
+            torch.nn.Linear(1024, self.l1_size), torch.nn.ReLU(), torch.nn.Linear(self.l1_size, self.l2_size)
+        )
         self.loss_function = ArcFaceLoss(
-            num_classes=self.num_classes, embedding_size=128
+            num_classes=self.num_classes, embedding_size=self.l2_size
         )  # TODO tune to also allow SubCenterArcFaceLoss
-        # TODO dynamically set embedding_size
 
     def forward(self, x):
         return self.model(x)
 
     def configure_optimizers(self):
-        # TODO tune optimizer choices & learning rates
-        model_optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
+        model_optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.model_lr)
         loss_optimizer = torch.optim.AdamW(
-            self.loss_function.parameters(), lr=self.lr / 100
+            self.loss_function.parameters(), lr=self.loss_lr
         )  # 1/100 ratio from example at https://colab.research.google.com/github/KevinMusgrave/pytorch-metric-learning/blob/master/examples/notebooks/SubCenterArcFaceMNIST.ipynb
 
         return [model_optimizer, loss_optimizer]
@@ -112,18 +115,40 @@ class ArcFaceModel(pl.LightningModule, ModelInterface):
         loss = self.loss_function(query_projections, y)
         self.log("val_loss", loss, prog_bar=True)
 
+
+
+        # Validation accuracy
+        metrics = self.accuracy_calculator.get_accuracy(
+            query_projections,
+            self.lookup_embeddings,
+            y,
+            self.lookup_labels,
+            False
+        )
+        self.log("val_map", metrics["mean_average_precision"], prog_bar=True)
+        self.log("val_acc_top10", metrics["precision_at_1"], prog_bar=True)
+
         eat = EAT(CosineSimilarity(), self.lookup_embeddings, query_projections)
         eat.get_neighbors(1)
         eat.transfer_labels(self.lookup_labels)
         eat.decode_labels(self.label_encoder)
 
-        predicted_labels = eat.decoded_labels
-        true_labels = self.label_encoder.inverse_transform(y.cpu().flatten())
+        predicted_labels = eat.encoded_labels.cpu().flatten()
+        true_labels = y.cpu().flatten()
 
-        # Compute accuracy
-        accuracy = accuracy_score(true_labels, predicted_labels)
+        self.log("val_acc", accuracy_score(true_labels, predicted_labels), prog_bar=True)
 
-        self.log("val_acc", accuracy, prog_bar=True)
+        # TODO compute top-k accuracy
+        """
+        # Compute accuracy scores
+        for k in [1, 2, 5, 10, 25, 50, 100]:
+            accuracy = torchmetrics.Accuracy(average="micro", top_k=k)  # TODO change to macro?
+            self.log(
+                f"val_acc_top{k}",
+                accuracy(predicted_labels, true_labels),
+                prog_bar=True if k in [1, 25] else False
+            )
+        """
 
     def test_step(self, batch, batch_idx):
         x, y = batch
