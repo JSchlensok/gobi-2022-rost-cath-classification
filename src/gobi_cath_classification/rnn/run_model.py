@@ -14,7 +14,7 @@ from gobi_cath_classification.pipeline.sample_weights import (
 
 from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.evaluation import evaluate
-from gobi_cath_classification.rnn.models import RNNModel, BRNN, BRNN_embedded
+from gobi_cath_classification.rnn.models import RNNModel, BRNN, BRNN_embedded, RNN_embedded
 from gobi_cath_classification.rnn.pipeline import load_data
 from gobi_cath_classification.pipeline.data_loading import DATA_DIR
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
@@ -45,8 +45,7 @@ args = sys.argv
 if len(args) > 2 and (args[1] == "-m" or args[1] == "--model"):
     model = torch.load(args[2])
 else:
-    model = BRNN_embedded(
-        hidden_size=256,
+    model = RNN_embedded(
         num_layers=1,
         class_names=class_names,
         class_weights=class_weights,
@@ -54,12 +53,12 @@ else:
         batch_size=32,
     )
 
-for e in range(100):
+for e in range(50):
     metrics = model.train_one_epoch(X_train, y_train, report_progress=True)
     print(f"Epoch {e + 1}")
     print(f"Avg Loss {metrics['loss_avg']}")
     print(metrics)
-    if (e % 9) == 0:
+    if (e % 10) == 0 and e > 0:
         torch.save(model, (DATA_DIR / "brnn.pth"))
     with torch.no_grad():
         y_pred = model.predict(X_val)
