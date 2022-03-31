@@ -50,7 +50,7 @@ else:
         class_names=class_names,
         class_weights=class_weights,
         lr=1e-3,
-        batch_size=32,
+        batch_size=1,
     )
 
 for e in range(50):
