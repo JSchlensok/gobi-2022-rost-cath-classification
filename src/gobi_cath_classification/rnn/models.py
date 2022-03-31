@@ -222,6 +222,7 @@ class RNN_embedded(nn.Module):
         self.device = torch_utils.get_device()
         self.batch_size = batch_size
         self.class_names = class_names
+        self.output_size = len(class_names)
 
         self.lstm = nn.LSTM(
             1024, len(class_names), num_layers, batch_first=True, bidirectional=False
@@ -233,8 +234,8 @@ class RNN_embedded(nn.Module):
         )
 
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
+        h0 = torch.zeros(self.num_layers, x.size(0), self.output_size).to(self.device)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.output_size).to(self.device)
         x, _ = self.lstm(x, (h0, c0))
         x = self.softmax(x[:, -1, :])
         return x
