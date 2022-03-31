@@ -226,7 +226,7 @@ class RNN_embedded(nn.Module):
 
         self.lstm = nn.LSTM(
             1024, len(class_names), num_layers, batch_first=True, bidirectional=False
-        )
+        ).to(self.device)
         self.softmax = nn.Softmax(dim=1)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.loss_function = torch.nn.CrossEntropyLoss(
