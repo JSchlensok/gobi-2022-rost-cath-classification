@@ -46,11 +46,11 @@ if len(args) > 2 and (args[1] == "-m" or args[1] == "--model"):
     model = torch.load(args[2])
 else:
     model = BRNN_embedded(
-        hidden_size=512,
+        hidden_size=256,
         num_layers=1,
         class_names=class_names,
         class_weights=class_weights,
-        lr=1e-4,
+        lr=1e-3,
         batch_size=32,
     )
 
