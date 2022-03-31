@@ -45,12 +45,13 @@ args = sys.argv
 if len(args) > 2 and (args[1] == "-m" or args[1] == "--model"):
     model = torch.load(args[2])
 else:
-    model = RNN_embedded(
+    model = BRNN_embedded(
+        hidden_size=1024,
         num_layers=1,
         class_names=class_names,
         class_weights=class_weights,
         lr=1e-3,
-        batch_size=16,
+        batch_size=32,
     )
 
 for e in range(50):
