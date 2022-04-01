@@ -263,7 +263,7 @@ class Evaluation:
                     for level in ["c", "a", "t", "h", "avg"]:
 
                         # for all available metrics calculate the standard error for all levels
-                        error_dict[f"{METRICS[i]}"][f"{METRICS[i]}_{level}"] = 1.96 * np.std(
+                        error_dict[f"{METRICS[i]}"][f"{METRICS[i]}_{level}"] = 1.96 * np.nanstd(
                             np.array(
                                 [
                                     boot[METRICS[i]][f"{METRICS[i]}_{level}"]
@@ -291,13 +291,8 @@ class Evaluation:
                         data=self.eval_dict[metric],
                         index=[self.model_name if self.model_name is not None else "Performance"],
                     )
-
-                    # only multiply by 100 if the metric is accuracy
-                    if metric == "accuracy" or metric == "bacc":
-                        df = df.multiply(100).round(2).astype(str)
-
-                    else:
-                        df = df.round(2).astype(str)
+                    # round the metrics to 2 decimal places
+                    df = df.round(2).astype(str)
 
                     # assign a name to the dataframe
                     df.name = (
@@ -308,13 +303,9 @@ class Evaluation:
 
                     # add the standard error if available
                     if self.error_dict is not None:
-                        # only multiply standard error if the metric is accuracy
-                        if metric == "accuracy" or metric == "bacc":
-                            errors = (np.array(list(self.error_dict[metric].values())) * 100).round(
-                                2
-                            )
-                        else:
-                            errors = np.array(list(self.error_dict[metric].values())).round(2)
+
+                        # round the errors to two decimal places
+                        errors = np.array(list(self.error_dict[metric].values())).round(2)
 
                         df = df + " +/- " + [str(err) for err in errors]
 
