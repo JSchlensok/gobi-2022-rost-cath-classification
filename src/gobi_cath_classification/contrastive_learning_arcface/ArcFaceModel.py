@@ -48,8 +48,7 @@ class ArcFaceModel(pl.LightningModule, ModelInterface):
 
         self.model_lr = config["lr"]
         self.loss_lr = config["loss_lr"]
-        self.l1_size = config["l1_size"]
-        self.l2_size = config["l2_size"]
+        self.l1_size, self.l2_size = config["layer_sizes"]
         self.batch_size = config["batch_size"]
 
         self.model = torch.nn.Sequential(
