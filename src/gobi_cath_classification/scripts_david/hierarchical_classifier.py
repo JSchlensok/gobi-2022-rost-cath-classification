@@ -77,6 +77,7 @@ class HierarchicalClassifier:
             without_duplicates=True,
             shuffle_data=True,
             reloading_allowed=True,
+            load_tmp_holdout_set=False,
         )
         self.dataset.scale()
         print("Data successfully read in!")
@@ -392,5 +393,6 @@ if __name__ == "__main__":
         shuffle_data=True,
         reloading_allowed=True,
         level_cutoff="H",
+        load_tmp_holdout_set=False,
     )
     dataset.scale()

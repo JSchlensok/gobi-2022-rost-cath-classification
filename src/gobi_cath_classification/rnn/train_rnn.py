@@ -32,6 +32,7 @@ def training_function(config: dict) -> None:
         without_duplicates=True,
         load_strings=True,
         reloading_allowed=True,
+        load_tmp_holdout_set=False,
     )
     X_train, y_train_labels = dataset.get_split("train", x_encoding="string", zipped=False)
 

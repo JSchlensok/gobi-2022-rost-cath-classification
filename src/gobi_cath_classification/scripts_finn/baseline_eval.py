@@ -29,6 +29,7 @@ def training_function(config: dict) -> None:
         shuffle_data=False,
         rng=rng,
         reloading_allowed=True,
+        load_tmp_holdout_set=False,
     )
     data_set.scale()
 
@@ -50,16 +51,17 @@ def training_function(config: dict) -> None:
         raise ValueError(f"Model class {model_class} does not exist.")
 
     # Predictions
-    y_pred_val = model.predict(embeddings=data_set.X_val)
+    y_pred_test = model.predict(embeddings=data_set.X_test)
 
     evaluation = Evaluation(
-        y_true=data_set.y_val,
-        predictions=y_pred_val,
+        y_true=data_set.y_test,
+        predictions=y_pred_test,
         train_labels=class_names,
         model_name=str(model.__class__.__name__),
     )
-    evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+    evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True, bacc=True)
     evaluation.compute_std_err()
+    evaluation.print_evaluation()
 
     eval_dict = {}
     for k, v in evaluation.eval_dict.items():
@@ -94,7 +96,7 @@ def main():
                 [
                     {
                         "model_class": RandomBaseline.__name__,
-                        "class_balance": tune.choice([True, False]),
+                        "class_balance": False,
                     },
                     {"model_class": ZeroRate.__name__},
                 ]
