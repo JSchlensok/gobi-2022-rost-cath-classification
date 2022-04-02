@@ -25,8 +25,8 @@ class Prediction:
         return y_pred_strings_val
 
 
-def save_predictions(pred: Prediction, directory: Path, filename: str) -> None:
-    with open(Path(directory / filename), "w") as f:
+def save_predictions(pred: Prediction, filepath: Path) -> None:
+    with open(filepath, "w") as f:
         column_names = "\t".join(pred.probabilities.columns)
         f.write(f"{column_names}\n")
         for probas in pred.probabilities.values:
@@ -34,6 +34,20 @@ def save_predictions(pred: Prediction, directory: Path, filename: str) -> None:
             f.write(f"{p}\n")
 
 
-def read_in_predictions(filepath: Path) -> Prediction:
+def read_in_proba_predictions(filepath: Path) -> Prediction:
     df = pd.read_csv(filepath_or_buffer=filepath, sep="\t")
     return Prediction(probabilities=df)
+
+
+def read_in_label_predictions(filepath: Path, train_labels: List[str]) -> Prediction:
+    df_argmax = pd.read_csv(filepath_or_buffer=filepath, sep="\t", names=["cath_label"])
+    df_probas = pd.DataFrame(
+        data=np.zeros(shape=(df_argmax.shape[0], len(train_labels))),
+        columns=sorted(list(set([str(label) for label in train_labels]))),
+    )
+    labels = []
+    for i, label in enumerate(df_argmax["cath_label"].to_numpy()):
+        df_probas.at[i, label] = 1.0
+        labels.append(label)
+
+    return Prediction(probabilities=df_probas)
