@@ -41,6 +41,7 @@ dataset = load_data(
     without_duplicates=True,
     load_strings=True,
     reloading_allowed=True,
+    load_tmp_holdout_set=False,
 )
 
 sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
