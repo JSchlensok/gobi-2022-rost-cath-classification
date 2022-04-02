@@ -21,6 +21,7 @@ data_set = load_data(
     rng=rng,
     load_only_small_sample=False,
     reloading_allowed=True,
+    load_tmp_holdout_set=False,
 )
 x = data_set.train_labels
 

@@ -78,6 +78,7 @@ def training_function(config: dict) -> None:
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
+        load_tmp_holdout_set=False,
     )
     # scale if parameter is set in config dict, if not set: default scale = True
     if "scale" not in config["model"].keys() or config["model"]["scale"]:
@@ -249,7 +250,7 @@ def main():
     )
     # Default Path for local_dir --> defines location of ray files
     # Can be changed to any location
-    local_dir = REPO_ROOT_DIR / "model checkpoints"
+    local_dir = REPO_ROOT_DIR / "ray_results"
     print(f"local_dir = {local_dir}")
 
     ray.init()
