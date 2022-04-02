@@ -29,6 +29,7 @@ def training_function(config: dict) -> None:
         shuffle_data=False,
         rng=rng,
         reloading_allowed=True,
+        load_tmp_holdout_set=False,
     )
     data_set.scale()
 

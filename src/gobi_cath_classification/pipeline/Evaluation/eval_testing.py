@@ -30,6 +30,7 @@ def main():
             rng=rng,
             load_only_small_sample=False,
             reloading_allowed=True,
+            load_tmp_holdout_set=False,
         )
         model1 = RandomBaseline(
             data=data_set, class_balance=False, rng=rng, random_seed=random_seed
