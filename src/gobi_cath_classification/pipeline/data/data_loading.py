@@ -58,6 +58,7 @@ def load_data(
     data_dir: Path,
     rng: np.random.RandomState,
     without_duplicates: bool,
+    load_tmp_holdout_set: bool,
     shuffle_data: bool = True,
     load_only_small_sample: bool = False,
     reloading_allowed: bool = False,
@@ -72,9 +73,13 @@ def load_data(
     path_sequences_train = data_dir / "train74k.fasta"
     path_sequences_val = data_dir / "val200.fasta"
     path_sequences_test = data_dir / "test219.fasta"
+    path_sequences_tmp_holdout = data_dir / "holdout390.fasta"
 
     path_embeddings = data_dir / "cath_v430_dom_seqs_S100_161121.h5"
     path_labels = data_dir / "cath-domain-list.txt"
+
+    if load_tmp_holdout_set:
+        path_labels = data_dir / "cath-domain-list-updated.txt"
 
     if load_only_small_sample:
         path_sequences_train = data_dir / "sample_data/sample_train100.fasta"
@@ -108,11 +113,17 @@ def load_data(
     id2seqs_train = read_in_sequences(path_sequences_train)
     id2seqs_val = read_in_sequences(path_sequences_val)
     id2seqs_test = read_in_sequences(path_sequences_test)
+    id2seqs_tmp_holdout = {}
 
     id2seqs_all = {**id2seqs_train, **id2seqs_val, **id2seqs_test}
+    if load_tmp_holdout_set:
+        id2seqs_tmp_holdout = read_in_sequences(path_sequences_tmp_holdout)
+        id2seqs_all = {**id2seqs_all, **id2seqs_tmp_holdout}
+
     print(f"len(id2seqs_train) = {len(id2seqs_train)}")
     print(f"len(id2seqs_val) = {len(id2seqs_val)}")
     print(f"len(id2seqs_test) = {len(id2seqs_test)}")
+    print(f"len(id2seqs_tmp_holdout) = {len(id2seqs_tmp_holdout)}")
     print(f"len(id2seqs_all = {len(id2seqs_all)}")
 
     print("Reading in labels ...")
@@ -155,6 +166,11 @@ def load_data(
                     id2seqs_all.pop(cath_id, None)
                     id2label.pop(cath_id, None)
                     id2embedding.pop(cath_id, None)
+    X_tmp_holdout = None
+    y_tmp_holdout = None
+    if load_tmp_holdout_set:
+        X_tmp_holdout = np.array([embeddings[prot_id] for prot_id in id2seqs_tmp_holdout.keys()])
+        y_tmp_holdout = ([id2label[prot_id] for prot_id in id2seqs_tmp_holdout.keys()],)
 
     dataset = Dataset(
         X_train=np.array([embeddings[prot_id] for prot_id in id2seqs_train.keys()]),
@@ -164,6 +180,8 @@ def load_data(
         y_val=[id2label[prot_id] for prot_id in id2seqs_val.keys()],
         X_test=np.array([embeddings[prot_id] for prot_id in id2seqs_test.keys()]),
         y_test=[id2label[prot_id] for prot_id in id2seqs_test.keys()],
+        X_tmp_holdout=X_tmp_holdout,
+        y_tmp_holdout=y_tmp_holdout,
     )
 
     if load_strings:
