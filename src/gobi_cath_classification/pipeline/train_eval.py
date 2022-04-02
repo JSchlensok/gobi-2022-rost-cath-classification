@@ -250,7 +250,7 @@ def main():
     )
     # Default Path for local_dir --> defines location of ray files
     # Can be changed to any location
-    local_dir = REPO_ROOT_DIR / "ray_results"
+    local_dir = REPO_ROOT_DIR / "model checkpoints"
     print(f"local_dir = {local_dir}")
 
     ray.init()
