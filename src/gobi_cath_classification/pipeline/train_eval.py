@@ -111,6 +111,9 @@ def training_function(config: dict) -> None:
         loss_weights = None
         if "loss_weights" in config["model"].keys():
             loss_weights = torch.tensor(config["model"]["loss_weights"])
+        weight_decay = 0.0
+        if "weight_decay" in config["model"].keys():
+            weight_decay = torch.tensor(config["model"]["weight_decay"])
 
         model = NeuralNetworkModel(
             lr=config["model"]["lr"],
@@ -121,6 +124,7 @@ def training_function(config: dict) -> None:
             optimizer=config["model"]["optimizer"],
             loss_function=config["model"]["loss_function"],
             loss_weights=loss_weights,
+            weight_decay=weight_decay,
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
             random_seed=RANDOM_SEED,
