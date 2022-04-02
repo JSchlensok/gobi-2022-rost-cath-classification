@@ -140,6 +140,7 @@ class DistanceModel(ModelInterface):
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         emb_tensor = torch.tensor(embeddings).to(self.device)
+        self.X_train_tensor = self.X_train_tensor.to(self.device)
         pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08).to(self.device)
 
         distances = [
@@ -451,6 +452,32 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
     return torch.Tensor(matrix)
 
 
+def compute_predictions_by_majority_vote(
+    predictions_from_models: List[Prediction], weights: np.ndarray
+) -> Prediction:
+    p_df = predictions_from_models[-1].probabilities
+    num_samples = p_df.values.shape[0]
+
+    ensemble_prediction = np.zeros(shape=(p_df.values.shape))
+
+    predictions = []
+    for i, pred in enumerate(predictions_from_models):
+        predictions.append(pred.probabilities.values * weights[i])
+
+    for row_j in range(num_samples):
+        max_row = -1
+        max_index = -1
+        for p in predictions:
+            row = p[row_j]
+            if np.max(row) > max_row:
+                max_row = np.max(row)
+                max_index = np.argmax(row)
+        ensemble_prediction[row_j][max_index] = 1.0
+
+    columns = predictions_from_models[-1].probabilities.columns
+    return Prediction(probabilities=pd.DataFrame(data=ensemble_prediction, columns=columns))
+
+
 def compute_predictions_for_ensemble_model(
     predictions_from_models: List[Prediction], weights: np.ndarray
 ) -> Prediction:
@@ -460,9 +487,9 @@ def compute_predictions_for_ensemble_model(
     with those probabilities.
 
     """
-    np.testing.assert_allclose(
-        actual=np.sum(weights), desired=1.0
-    ), f"The given weights don't sum up to one, but instead to: {np.sum(weights)}"
+    # np.testing.assert_allclose(
+    #     actual=np.sum(weights), desired=1.0
+    # ), f"The given weights don't sum up to one, but instead to: {np.sum(weights)}"
     assert len(predictions_from_models) == len(weights), (
         f"The amount of given predictions does not equal the amount of given weights: "
         f"{len(predictions_from_models)} != {len(weights)}"

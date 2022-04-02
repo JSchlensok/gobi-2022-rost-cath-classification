@@ -14,6 +14,7 @@ from gobi_cath_classification.scripts_charlotte.models import (
     log_loss,
     compute_predictions_for_ensemble_model,
     HierarchicalLoss,
+    compute_predictions_by_majority_vote,
 )
 from gobi_cath_classification.pipeline.utils.torch_utils import get_device
 
@@ -204,4 +205,22 @@ def test_compute_predictions_for_ensemble_model():
     )
     np.testing.assert_allclose(
         actual=ensemble_pred.probabilities, desired=np.array([[1.6, 2.6, 3.6], [2.6, 3.6, 4.6]])
+    )
+
+
+def test_compute_predictions_by_majority_vote():
+    col_names = ["1.200.45.10", "3.20.25.40", "3.200.10.75"]
+
+    pred1 = Prediction(
+        pd.DataFrame(data=np.array([[0.3, 0.2, 0.5], [0.7, 0.2, 0.1]]), columns=col_names)
+    )
+    pred2 = Prediction(
+        pd.DataFrame(data=np.array([[0.4, 0.3, 0.3], [0.3, 0.6, 0.1]]), columns=col_names)
+    )
+
+    ensemble_pred = compute_predictions_by_majority_vote(
+        predictions_from_models=[pred1, pred2], weights=[0.5, 0.5]
+    )
+    np.testing.assert_allclose(
+        ensemble_pred.probabilities.values, np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0]])
     )
