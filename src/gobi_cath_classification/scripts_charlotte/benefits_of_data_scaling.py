@@ -1,11 +1,16 @@
+import numpy as np
+from pathlib import Path
+
 from typing import Dict
 
-from bokeh.plotting import figure, show, output_notebook
-from bokeh.models import FixedTicker, Span, LabelSet, Label
-from bokeh.layouts import gridplot
+from bokeh.plotting import figure, show
 
 from bokeh.models import ColumnDataSource, Whisker
 from bokeh.transform import dodge
+
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
+from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
+from gobi_cath_classification.pipeline.prediction import read_in_proba_predictions
 
 
 def apply_style(p):
@@ -17,18 +22,34 @@ def bar_plot(
     title: str,
     a: Dict[str, float],
     b: Dict[str, float],
-    a_upper_error,
-    b_upper_error,
-    a_lower_error,
-    b_lower_error,
+    a_errors: Dict[str, float],
+    b_errors: Dict[str, float],
     legend_label_a: str,
     legend_label_b: str,
     x_axis_label: str,
     y_axis_label: str,
 ):
+    print(f"a.keys() = {a.keys()}")
+    print(f"b.keys() = {b.keys()}")
+    print(f"a_errors.keys() = {a_errors.keys()}")
+    print(f"b_errors.keys() = {b_errors.keys()}")
+
     assert a.keys() == b.keys()
 
+    a_upper_error = []
+    a_lower_error = []
+    for k, v in a.items():
+        a_upper_error.append(v + a_errors[k])
+        a_lower_error.append(v - a_errors[k])
+
+    b_upper_error = []
+    b_lower_error = []
+    for k, v in b.items():
+        b_upper_error.append(v + b_errors[k])
+        b_lower_error.append(v - b_errors[k])
+
     x_labels = list(a.keys())
+    print(f"x_labels = {x_labels}")
     source = ColumnDataSource(
         {
             "x_labels": x_labels,
@@ -111,67 +132,76 @@ def bar_plot(
     show(p)
 
 
-def plot_with_error_bars():
-    from bokeh.models import ColumnDataSource, Whisker
-    from bokeh.transform import factor_cmap
-
-    groups = ["A", "B", "C", "D"]
-    counts = [5, 3, 4, 2]
-    error = [0.8, 0.4, 0.4, 0.3]
-    upper = [x + e for x, e in zip(counts, error)]
-    lower = [x - e for x, e in zip(counts, error)]
-
-    source = ColumnDataSource(data=dict(groups=groups, counts=counts, upper=upper, lower=lower))
-
-    p = figure(
-        x_range=groups, plot_height=350, toolbar_location=None, title="Values", y_range=(0, 7)
-    )
-    p.vbar(
-        x="groups",
-        top="counts",
-        width=0.9,
-        source=source,
-        legend="groups",
-        line_color="white",
-        fill_color=factor_cmap(
-            "groups", palette=["#962980", "#295f96", "#29966c", "#968529"], factors=groups
-        ),
-    )
-
-    p.add_layout(
-        Whisker(source=source, base="groups", upper="upper", lower="lower", level="overlay")
-    )
-
-    p.xgrid.grid_line_color = None
-    p.legend.orientation = "horizontal"
-    p.legend.location = "top_center"
-
-    show(p)
-
-
 def main():
+    # load dataset
+    dataset = load_data(
+        data_dir=DATA_DIR,
+        rng=np.random.RandomState(1),
+        without_duplicates=True,
+        reloading_allowed=True,
+    )
+    dataset.scale()
+    evaluations = []
+
+    # load all predictions which should be evaluated
+    # run 1
+    # directory = Path(
+    #     "/Users/x/Downloads/training_function_2022-03-30_19-54-42_scaled_vs_non_scaled/gobi-2022-rost-cath-classification/ray_results/training_function_2022-03-30_19-54-42"
+    # )
+
+    # run 2
+    directory = Path(
+        "/Users/x/Downloads/content/gobi-2022-rost-cath-classification/ray_results/training_function_2022-04-01_17-31-32"
+    )
+
+    pathlist = sorted(Path(directory).glob("**/*predictions_val.csv"))
+    print(f"pathlist = {pathlist}")
+    for path in pathlist:
+        model_name = str(path).split("/")[-2]
+        print(f"model_name = {model_name}")
+        pred = read_in_proba_predictions(path)
+        evaluation = Evaluation(
+            y_true=dataset.y_val,
+            predictions=pred,
+            train_labels=dataset.train_labels,
+            model_name=model_name,
+        )
+        evaluation.compute_metrics(accuracy=True)
+        evaluation.compute_std_err(bootstrap_n=100)
+        evaluations.append(evaluation)
+
+    results_acc_scaled = {}
+    results_error_scaled = {}
+    results_acc_non_scaled = {}
+    results_error_non_scaled = {}
+
+    num_sets = int(len(evaluations) / 2)
+
+    for i in range(num_sets):
+        set_i = f"Set {i + 1}"
+
+        results_acc_non_scaled[set_i] = evaluations[i].eval_dict["accuracy"]["accuracy_h"] * 100
+        results_error_non_scaled[set_i] = evaluations[i].error_dict["accuracy"]["accuracy_h"] * 100
+
+        results_acc_scaled[set_i] = (
+            evaluations[i + num_sets].eval_dict["accuracy"]["accuracy_h"] * 100
+        )
+        results_error_scaled[set_i] = (
+            evaluations[i + num_sets].error_dict["accuracy"]["accuracy_h"] * 100
+        )
+
+    results_acc_non_scaled["Mean of Set 1-5"] = sum(results_acc_non_scaled.values()) / num_sets
+    results_error_non_scaled["Mean of Set 1-5"] = sum(results_error_non_scaled.values()) / num_sets
+
+    results_acc_scaled["Mean of Set 1-5"] = sum(results_acc_scaled.values()) / num_sets
+    results_error_scaled["Mean of Set 1-5"] = sum(results_error_scaled.values()) / num_sets
+
     bar_plot(
         title="Comparison of Training with Scaled Data and Non-scaled Data",
-        a={
-            "Set 1": 76.4607,
-            "Set 2": 78.4314,
-            "Set 3": 79.085,
-            "Set 4": 79.085,
-            "Set 5": 78.4314,
-            "Average over Set 1-5": 78.3,
-        },
-        b={
-            "Set 1": 75.1634,
-            "Set 2": 75.1634,
-            "Set 3": 75.817,
-            "Set 4": 76.4706,
-            "Set 5": 73.2026,
-            "Average over Set 1-5": 75.1,
-        },
-        a_upper_error=[79.0, 80.0, 81.0, 82.0, 83.0, 84.0],
-        a_lower_error=[76.0, 75.0, 74.0, 73.0, 72.0, 71.0],
-        b_upper_error=[76.0, 77.0, 76.0, 77.0, 76.0, 77.0],
-        b_lower_error=[75.0, 74.0, 70.0, 71.0, 72.0, 43.0],
+        a=results_acc_scaled,
+        b=results_acc_non_scaled,
+        a_errors=results_error_scaled,
+        b_errors=results_error_non_scaled,
         legend_label_a="scaled data",
         legend_label_b="non-scaled data",
         x_axis_label="Training runs with different sets of hyperparameter values",
