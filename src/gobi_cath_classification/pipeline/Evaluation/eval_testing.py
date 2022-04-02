@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+from timeit import timeit
 
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED, set_random_seeds
@@ -79,8 +80,61 @@ def main():
 
         plot_metric_line(different_evals=all_dicts, metric="accuracy", levels=["C", "H"], save=True)
 
-    # testing_line_chart()
+    def testing_print_eval():
+        random_seed = RANDOM_SEED
+        set_random_seeds(seed=random_seed)
+        rng = np.random.RandomState(random_seed)
+        print(f"rng = {rng}")
+
+        data_dir = DATA_DIR
+
+        data_set = load_data(
+            data_dir=data_dir,
+            without_duplicates=True,
+            shuffle_data=False,
+            rng=rng,
+            load_only_small_sample=False,
+            reloading_allowed=True,
+        )
+        x = data_set.train_labels
+
+        model1 = RandomBaseline(
+            data=data_set, class_balance=False, rng=rng, random_seed=random_seed
+        )
+        model2 = RandomBaseline(data=data_set, class_balance=True, rng=rng, random_seed=random_seed)
+        model3 = ZeroRate(data=data_set, rng=rng, random_seed=random_seed)
+
+        predictions1 = model1.predict(model1.data.X_test)
+        predictions2 = model2.predict(model2.data.X_test)
+        predictions3 = model3.predict(model3.data.X_val)
+
+        eval1 = Evaluation(
+            y_true=data_set.y_test,
+            predictions=predictions1,
+            train_labels=data_set.train_labels,
+            model_name="Random Baseline",
+        )
+
+        eval1.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True, bacc=True)
+
+        eval1.compute_std_err()
+
+        eval1.print_evaluation()
+
+        eval2 = Evaluation(
+            y_true=data_set.y_test,
+            predictions=predictions2,
+            train_labels=data_set.train_labels,
+            model_name="Random Baseline with weights",
+        )
+
+        eval2.compute_metrics(accuracy=True, bacc=True)
+
+        eval2.print_evaluation()
+
+    testing_line_chart()
     testing_bar_chart()
+    testing_print_eval()
 
 
 if __name__ == "__main__":
