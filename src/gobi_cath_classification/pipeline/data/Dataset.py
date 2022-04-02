@@ -104,6 +104,8 @@ class Dataset:
         valid_labels = [label[:cath_level] for label in self.train_labels]
 
         def _filter_x_based_on_y(X, y):
+            if X is None or y is None:
+                return X, y
             x_filtered, y_filtered = [
                 list(unzipped)
                 for unzipped in zip(
