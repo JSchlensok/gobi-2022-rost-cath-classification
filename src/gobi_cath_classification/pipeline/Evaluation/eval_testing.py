@@ -97,7 +97,9 @@ def main():
         )
         x = data_set.train_labels
 
-        model1 = RandomBaseline(data=data_set, class_balance=False, rng=rng, random_seed=random_seed)
+        model1 = RandomBaseline(
+            data=data_set, class_balance=False, rng=rng, random_seed=random_seed
+        )
         model2 = RandomBaseline(data=data_set, class_balance=True, rng=rng, random_seed=random_seed)
         model3 = ZeroRate(data=data_set, rng=rng, random_seed=random_seed)
 
@@ -128,7 +130,6 @@ def main():
         eval2.compute_metrics(accuracy=True, bacc=True)
 
         eval2.print_evaluation()
-
 
     testing_line_chart()
     testing_bar_chart()
