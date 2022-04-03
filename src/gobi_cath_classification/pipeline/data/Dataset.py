@@ -42,13 +42,13 @@ class Dataset:
                 "train": self.X_train.shape,
                 "val": self.X_val.shape,
                 "test": self.X_test.shape,
-                "tmp_holdout": self.X_test.shape,
+                "tmp_holdout": self.X_tmp_holdout.shape,
             },
             "y": {
                 "train": len(self.y_train),
                 "val": len(self.y_val),
                 "test": len(self.X_test),
-                "tmp_holdout": len(self.X_test),
+                "tmp_holdout": len(self.X_tmp_holdout),
             },
         }
 
@@ -169,9 +169,7 @@ class Dataset:
         self.X_train = scaler.transform(self.X_train)
         self.X_val = scaler.transform(self.X_val)
         self.X_test = scaler.transform(self.X_test)
-        self.X_tmp_holdout = (
-            scaler.transform(self.X_tmp_holdout) if self.X_tmp_holdout is not None else None
-        )
+        self.X_tmp_holdout = scaler.transform(self.X_tmp_holdout)
 
     def load_strings(
         self, train: List[str], val: List[str], test: List[str], tmp_holdout: List[str]
