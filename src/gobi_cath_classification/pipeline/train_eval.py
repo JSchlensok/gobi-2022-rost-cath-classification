@@ -78,7 +78,7 @@ def training_function(config: dict) -> None:
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
-        load_tmp_holdout_set=False,
+        load_tmp_holdout_set=True,
     )
     # scale if parameter is set in config dict, if not set: default scale = True
     if "scale" not in config["model"].keys() or config["model"]["scale"]:
