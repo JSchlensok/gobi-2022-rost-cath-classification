@@ -78,7 +78,7 @@ def training_function(config: dict) -> None:
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
-        load_tmp_holdout_set=False,
+        load_tmp_holdout_set=True,
     )
     # scale if parameter is set in config dict, if not set: default scale = True
     if "scale" not in config["model"].keys() or config["model"]["scale"]:
@@ -215,7 +215,6 @@ def training_function(config: dict) -> None:
             model.save_checkpoint(
                 save_to_dir=checkpoint_dir,
             )
-
             save_predictions(pred=y_pred_val, filepath=checkpoint_dir / "predictions_val.csv")
             y_pred_test = model.predict(embeddings=dataset.X_test)
             save_predictions(pred=y_pred_test, filepath=checkpoint_dir / "predictions_test.csv")
