@@ -25,8 +25,8 @@ class Prediction:
         return y_pred_strings_val
 
 
-def save_predictions(pred: Prediction, directory: Path, filename: str) -> None:
-    with open(Path(directory / filename), "w") as f:
+def save_predictions(pred: Prediction, filepath: Path) -> None:
+    with open(Path(filepath), "w") as f:
         column_names = "\t".join(pred.probabilities.columns)
         f.write(f"{column_names}\n")
         for probas in pred.probabilities.values:

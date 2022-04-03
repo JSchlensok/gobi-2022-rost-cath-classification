@@ -123,7 +123,7 @@ def training_function(config: dict) -> None:
             loss_weights=loss_weights,
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
-            random_seed=RANDOM_SEED,
+            random_seed=config["random_seed"],
         )
 
     elif model_class == RandomForestModel.__name__:
@@ -186,7 +186,6 @@ def training_function(config: dict) -> None:
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(embeddings=dataset.X_val)
-        save_predictions(pred=y_pred_val, directory=checkpoint_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
         evaluation = Evaluation(
@@ -195,8 +194,7 @@ def training_function(config: dict) -> None:
             train_labels=class_names,
             model_name=str(model.__class__.__name__),  # can be changed
         )
-        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True, bacc=True)
-        evaluation.compute_std_err()
+        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True, bacc=False)
 
         eval_dict = {}
         for k, v in evaluation.eval_dict.items():
@@ -213,6 +211,9 @@ def training_function(config: dict) -> None:
             model.save_checkpoint(
                 save_to_dir=checkpoint_dir,
             )
+            save_predictions(pred=y_pred_val, filepath=checkpoint_dir / "predictions_val.csv")
+            y_pred_test = model.predict(embeddings=dataset.X_test)
+            save_predictions(pred=y_pred_test, filepath=checkpoint_dir / "predictions_test.csv")
         else:
             n_bad += 1
             if n_bad >= n_thresh:
