@@ -44,10 +44,18 @@ else:
 
 for i in range(len(models)):
     model = models[i]
+    print(f"Predicting for model{files[i].name}")
     y_pred = model.predict(X_test)
 
     evaluation = Evaluation(
         y_true=y_test, predictions=y_pred, train_labels=class_names, model_name=files[i].name
     )
+    print("Computing scores...")
     evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+    print("Computing error...")
     evaluation.compute_std_err()
+
+    eval_dict = {}
+    for k, v in evaluation.eval_dict.items():
+        eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
+    print(f"eval_dict = {eval_dict}")
