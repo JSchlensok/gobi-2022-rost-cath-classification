@@ -48,11 +48,11 @@ if len(args) > 2 and (args[1] == "-m" or args[1] == "--model"):
     model = torch.load(args[2])
 else:
     model = BRNN_embedded(
-        hidden_size=1024,
+        hidden_size=256,
         num_layers=1,
         class_names=class_names,
         class_weights=class_weights,
-        lr=1e-3,
+        lr=1e-4,
         batch_size=32,
     )
 
@@ -69,12 +69,7 @@ for e in range(50):
         evaluation = Evaluation(
             y_true=y_val, predictions=y_pred, train_labels=class_names, model_name="BRNN"
         )  # can be changed
-        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
-        evaluation.compute_std_err()
-
-        eval_dict = {}
-        for k, v in evaluation.eval_dict.items():
-            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
-        print(f"eval_dict = {eval_dict}")
+        evaluation.compute_metrics(accuracy=True)
+        evaluation.print_evaluation()
 
 torch.save(model, (DATA_DIR / "brnn.pth"))
