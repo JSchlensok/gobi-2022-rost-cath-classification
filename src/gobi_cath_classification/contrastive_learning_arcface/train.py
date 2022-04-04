@@ -22,6 +22,7 @@ def train(num_epochs: int):
         shuffle_data=False,
         load_only_small_sample=False,
         reloading_allowed=True,
+        load_tmp_holdout_set=False,
     )
 
     # TODO move to Dataset class

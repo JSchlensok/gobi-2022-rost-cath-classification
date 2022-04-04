@@ -13,6 +13,7 @@ data
 **/sample_data
 *.fasta
 *.h5
+*.html
 *.txt
 *.dt
 model checkpoints
@@ -381,3 +382,6 @@ cython_debug/
 
 # Checkpoint files
 /src/gobi_cath_classification/model checkpoints/
+
+# RDATA files
+/.RDataFiles/1527078135.RData
