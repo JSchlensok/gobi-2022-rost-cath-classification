@@ -159,7 +159,7 @@ def training_function(config: dict) -> None:
     # set variables for early stopping
     highest_acc_h = 0
     n_bad = 0
-    n_thresh = 20
+    n_thresh = 30
     # If training is resumed, value will be overwritten
     epoch_start = 0
 

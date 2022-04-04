@@ -39,22 +39,12 @@ def main():
             "class_weights": "sqrt_inverse",
             "model": tune.grid_search(
                 [
-                    {
-                        "model_class": NeuralNetworkModel.__name__,
-                        "num_epochs": 800,
-                        "lr": 1e-04,
-                        "batch_size": 256,
-                        "optimizer": "adam",
-                        "loss_function": "CrossEntropyLoss",
-                        "layer_sizes": [1024, 128],
-                        "dropout_sizes": [0.003],
-                        "scale": True,
-                    },
+
 
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 800,
-                        "lr": 1e-03,
+                        "lr": 1e-04,
                         "batch_size": 256,
                         "optimizer": "adam",
                         "loss_function": "CrossEntropyLoss",
@@ -65,7 +55,7 @@ def main():
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 800,
-                        "lr": 1e-03,
+                        "lr": 1e-04,
                         "batch_size": 256,
                         "optimizer": "adam",
                         "loss_function": "CrossEntropyLoss",
@@ -76,7 +66,7 @@ def main():
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 800,
-                        "lr": 1e-03,
+                        "lr": 1e-04,
                         "batch_size": 256,
                         "optimizer": "adam",
                         "loss_function": "CrossEntropyLoss",
@@ -87,7 +77,7 @@ def main():
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 800,
-                        "lr": 1e-03,
+                        "lr": 1e-04,
                         "batch_size": 256,
                         "optimizer": "adam",
                         "loss_function": "CrossEntropyLoss",
@@ -98,12 +88,23 @@ def main():
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 800,
-                        "lr": 1e-03,
+                        "lr": 1e-04,
                         "batch_size": 256,
                         "optimizer": "adam",
                         "loss_function": "CrossEntropyLoss",
                         "layer_sizes": [1024, 128],
                         "dropout_sizes": [0.003, None],
+                        "scale": True,
+                    },
+                    {
+                        "model_class": NeuralNetworkModel.__name__,
+                        "num_epochs": 800,
+                        "lr": 1e-04,
+                        "batch_size": 256,
+                        "optimizer": "adam",
+                        "loss_function": "CrossEntropyLoss",
+                        "layer_sizes": [1024, 128],
+                        "dropout_sizes": [0.003],
                         "scale": True,
                     },
 
