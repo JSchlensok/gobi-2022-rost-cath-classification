@@ -55,7 +55,4 @@ for i in range(len(models)):
     print("Computing error...")
     evaluation.compute_std_err()
 
-    eval_dict = {}
-    for k, v in evaluation.eval_dict.items():
-        eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
-    print(f"eval_dict = {eval_dict}")
+    print(evaluation.eval_dict)
