@@ -36,7 +36,7 @@ X_train, y_train, train_labels, X_val, y_val, X_test, y_test = load_data(
     without_duplicates=True,
     load_strings=True,
     reloading_allowed=True,
-    load_tmp_holdout_set=False
+    load_tmp_holdout_set=False,
 )
 
 sample_weights = compute_inverse_sample_weights(labels=y_train)

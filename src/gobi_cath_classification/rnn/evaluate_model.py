@@ -38,7 +38,7 @@ if len(args) > 2 and (args[1] == "-m" or args[1] == "--model"):
     files = [Path(args[2])]
     models.append(model)
 else:
-    p = (DATA_DIR / "models").glob('**/*')
+    p = (DATA_DIR / "models").glob("**/*")
     files = [x for x in p if x.is_file()]
     models = [torch.load(f) for f in files]
 
