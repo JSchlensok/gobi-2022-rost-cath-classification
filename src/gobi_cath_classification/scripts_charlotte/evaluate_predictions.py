@@ -144,8 +144,9 @@ def plot_overlap_of_two_predictions(
     train_labels: List[CATHLabel],
     pred_1_legend_name: str,
     pred_2_legend_name: str,
+    cath_levels: List,
 ) -> None:
-    for cath_level in ["C", "A", "T", "H"]:
+    for cath_level in cath_levels:
         class_names_for_level = list(set([str(y[:cath_level]) for y in train_labels]))
 
         y_pred_1 = [str(CATHLabel(y)[:cath_level]) for y in pred_1.argmax_labels()]
@@ -209,7 +210,7 @@ def plot_overlap_of_two_predictions(
                 patch.set_color(color)
                 patch.set_alpha(1.0)
 
-        plt.title(f"Predictions on {cath_level}-level")
+        plt.title(f"Predictions for all samples on {cath_level}-level")
         plt.show()
 
 
@@ -220,6 +221,7 @@ def main():
         without_duplicates=True,
         shuffle_data=False,
         reloading_allowed=True,
+        load_tmp_holdout_set=True
     )
     dataset.scale()
 

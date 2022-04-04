@@ -15,6 +15,7 @@ def main():
         without_duplicates=True,
         shuffle_data=False,
         reloading_allowed=True,
+        load_tmp_holdout_set=True,
     )
     dataset.scale()
 
@@ -22,43 +23,71 @@ def main():
     print(f"device = {device}")
     path_dist_model = Path("/content/model_object.model")
 
+    bootstrap_n = 1000
+
     # model_path = Path("")
 
     print(f"\nmodel_path = {path_dist_model}")
     model = torch.load(path_dist_model, map_location=torch.device("cpu"))
     model.device = device
+    split_at = 194
+    # y_pred_val = model.predict(embeddings=dataset.X_val)
+    y_pred_tmph_1 = model.predict(embeddings=dataset.X_tmp_holdout[:split_at])
+    y_pred_tmph_2 = model.predict(embeddings=dataset.X_tmp_holdout[split_at:])
 
-    y_pred_val = model.predict(embeddings=dataset.X_val)
-    y_pred_test = model.predict(embeddings=dataset.X_test)
-
-    eval_val = Evaluation(
-        y_true=dataset.y_val,
-        predictions=y_pred_val,
-        train_labels=dataset.train_labels,
-        model_name="NeuralNetworkModel",
-    )
-
-    eval_val.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
-    eval_val_dict = {}
-    for k, v in eval_val.eval_dict.items():
-        eval_val_dict = {**eval_val_dict, **eval_val.eval_dict[k]}
-    print(f"Evaluation VAL")
-    for k, v in eval_val_dict.items():
-        print(f"{k}: {v}")
-
-    eval_test = Evaluation(
-        y_true=dataset.y_test,
-        predictions=y_pred_test,
+    eval_tmph_1 = Evaluation(
+        y_true=dataset.y_tmp_holdout[:split_at],
+        predictions=y_pred_tmph_1,
         train_labels=dataset.train_labels,
         model_name="DistanceModel",
     )
 
-    eval_test.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
-    eval_test_dict = {}
-    for k, v in eval_test.eval_dict.items():
-        eval_test_dict = {**eval_test_dict, **eval_test.eval_dict[k]}
-    print(f"\nEvaluation on TEST SET")
-    eval_test.print_evaluation()
+    eval_tmph_1.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+    eval_tmph_1.compute_std_err(bootstrap_n=bootstrap_n)
+    print(f"\nEvaluation on TMPH SET")
+    eval_tmph_1.print_evaluation()
+
+    eval_tmph_1 = Evaluation(
+        y_true=dataset.y_tmp_holdout[:split_at],
+        predictions=y_pred_tmph_1,
+        train_labels=dataset.train_labels,
+        model_name="DistanceModel",
+    )
+
+    eval_tmph_1.compute_metrics(accuracy=False, mcc=False, f1=False, kappa=False, bacc=True)
+    print(f"\nEvaluation on TMPH SET")
+    eval_tmph_1.compute_std_err(bootstrap_n=bootstrap_n)
+    eval_tmph_1.print_evaluation()
+
+
+
+
+
+    eval_tmph_2 = Evaluation(
+        y_true=dataset.y_tmp_holdout[split_at:],
+        predictions=y_pred_tmph_2,
+        train_labels=dataset.train_labels,
+        model_name="DistanceModel",
+    )
+
+    eval_tmph_2.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+    eval_tmph_2.compute_std_err(bootstrap_n=bootstrap_n)
+    print(f"\nEvaluation on TMPH SET")
+    eval_tmph_2.print_evaluation()
+
+    eval_tmph_2 = Evaluation(
+        y_true=dataset.y_tmp_holdout[split_at:],
+        predictions=y_pred_tmph_2,
+        train_labels=dataset.train_labels,
+        model_name="DistanceModel",
+    )
+
+    eval_tmph_2.compute_metrics(accuracy=False, mcc=False, f1=False, kappa=False, bacc=True)
+    print(f"\nEvaluation on TMPH SET")
+    eval_tmph_2.compute_std_err(bootstrap_n=bootstrap_n)
+    eval_tmph_2.print_evaluation()
+
+
 
 
 if __name__ == "__main__":
