@@ -18,7 +18,7 @@ from gobi_cath_classification.rnn.pipeline import load_data
 from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 from gobi_cath_classification.rnn.models import RNNModel, BRNN, one_hot_encode
-from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR, load_data
+from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
 
 print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
@@ -32,11 +32,7 @@ else:
 
 X_train, y_train, train_labels, X_val, y_val, X_test, y_test = load_data(
     DATA_DIR,
-    np.random.RandomState(42),
-    without_duplicates=True,
-    load_strings=True,
-    reloading_allowed=True,
-    load_tmp_holdout_set=False,
+    without_duplicates=True
 )
 
 sample_weights = compute_inverse_sample_weights(labels=y_train)
