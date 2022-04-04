@@ -21,9 +21,6 @@ from gobi_cath_classification.rnn.models import RNNModel, BRNN, one_hot_encode
 from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR, load_data
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
 
-# dataset = pickle.load(
-#     open(DATA_DIR / "serialized_dataset_no-duplicates_full_with_strings.pickle", "rb")
-# )
 print(f"torch.cuda.is_available() = {torch.cuda.is_available()}")
 device = torch_utils.get_device()
 print(f"device = {device}")
