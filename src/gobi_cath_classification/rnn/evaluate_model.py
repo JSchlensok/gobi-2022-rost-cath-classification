@@ -59,5 +59,5 @@ for i in range(len(models)):
 
     print("Writing output")
     evaluation.print_evaluation()
-    output_path = DATA_DIR / "results" / (files[i].stem + ".csv")
+    output_path = DATA_DIR / (files[i].stem + ".csv")
     prediction.save_predictions(y_pred, output_path)
