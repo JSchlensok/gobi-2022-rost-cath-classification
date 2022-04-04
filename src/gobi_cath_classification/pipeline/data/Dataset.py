@@ -24,11 +24,15 @@ class Dataset:
     y_val: List[CATHLabel]
     X_test: np.ndarray
     y_test: List[CATHLabel]
+    X_tmp_holdout: Optional[np.ndarray]
+    y_tmp_holdout: Optional[List[CATHLabel]]
+
     stores_strings: bool = False
     X_train_str: List[str] = None
     X_val_str: List[str] = None
     X_test_str: List[str] = None
     label_encoder: LabelEncoder = None
+    X_tmp_holdout_str: List[str] = None
 
     def __post_init__(self):
         # Order labels
@@ -37,8 +41,18 @@ class Dataset:
 
     def shape(self) -> Dict[str, Dict[str, Union[int, Tuple[int, int]]]]:
         return {
-            "X": {"train": self.X_train.shape, "val": self.X_val.shape, "test": self.X_test.shape},
-            "y": {"train": len(self.y_train), "val": len(self.y_val), "test": len(self.X_test)},
+            "X": {
+                "train": self.X_train.shape,
+                "val": self.X_val.shape,
+                "test": self.X_test.shape,
+                "tmp_holdout": self.X_tmp_holdout.shape,
+            },
+            "y": {
+                "train": len(self.y_train),
+                "val": len(self.y_val),
+                "test": len(self.X_test),
+                "tmp_holdout": len(self.X_tmp_holdout),
+            },
         }
 
     def get_copy(self) -> Dataset:
@@ -46,7 +60,7 @@ class Dataset:
 
     def get_split(
         self,
-        split: Literal["train", "val", "test"],
+        split: Literal["train", "val", "test", "tmp_holdout"],
         x_encoding: Literal["embedding-array", "embedding-tensor", "string"] = "embedding-array",
         zipped: bool = False,
         y_encoding: Literal["list", "tensor"] = "list",
@@ -62,6 +76,7 @@ class Dataset:
             "train": (self.X_train, self.y_train),
             "val": (self.X_val, self.y_val),
             "test": (self.X_test, self.y_test),
+            "tmp_holdout": (self.X_tmp_holdout, self.y_tmp_holdout),
         }[split]
 
         if x_encoding == "embedding-tensor":
@@ -73,7 +88,12 @@ class Dataset:
                 raise ValueError(
                     "String representation requested, but no strings loaded. Use Dataset.load_strings() before calling get_split()"
                 )
-            x = {"train": self.X_train_str, "val": self.X_val_str, "test": self.X_test_str}[split]
+            x = {
+                "train": self.X_train_str,
+                "val": self.X_val_str,
+                "test": self.X_test_str,
+                "tmp_holdout": self.X_tmp_holdout_str,
+            }[split]
 
         if y_encoding == "tensor":
             y = torch.from_numpy(np.array(y, dtype=np.int64))
@@ -91,6 +111,8 @@ class Dataset:
         valid_labels = [label[:cath_level] for label in self.train_labels]
 
         def _filter_x_based_on_y(X, y):
+            if X is None or y is None:
+                return X, y
             x_filtered, y_filtered = [
                 list(unzipped)
                 for unzipped in zip(
@@ -109,12 +131,32 @@ class Dataset:
         X_test, y_test = _filter_x_based_on_y(self.X_test, self.y_test)
         X_test = np.array(X_test)
 
-        copy = Dataset(self.X_train, self.y_train, self.train_labels, X_val, y_val, X_test, y_test)
+        if self.X_tmp_holdout is not None:
+            X_tmp_holdout, y_tmp_holdout = _filter_x_based_on_y(
+                self.X_tmp_holdout, self.y_tmp_holdout
+            )
+            X_tmp_holdout = np.array(X_tmp_holdout)
+        else:
+            X_tmp_holdout = None
+            y_tmp_holdout = None
+
+        copy = Dataset(
+            self.X_train,
+            self.y_train,
+            self.train_labels,
+            X_val,
+            y_val,
+            X_test,
+            y_test,
+            X_tmp_holdout,
+            y_tmp_holdout,
+        )
 
         if self.stores_strings:
             X_val_str, _ = _filter_x_based_on_y(self.X_val_str, self.y_val)
             X_test_str, _ = _filter_x_based_on_y(self.X_test_str, self.y_test)
-            copy.load_strings(self.strings["train"], X_val_str, X_test_str)
+            X_tmp_holdout_str, _ = _filter_x_based_on_y(self.X_tmp_holdout_str, self.y_tmp_holdout)
+            copy.load_strings(self.strings["train"], X_val_str, X_test_str, X_tmp_holdout)
 
         return copy
 
@@ -134,12 +176,16 @@ class Dataset:
         self.X_train = scaler.transform(self.X_train)
         self.X_val = scaler.transform(self.X_val)
         self.X_test = scaler.transform(self.X_test)
+        self.X_tmp_holdout = scaler.transform(self.X_tmp_holdout)
 
-    def load_strings(self, train: List[str], val: List[str], test: List[str]) -> None:
+    def load_strings(
+        self, train: List[str], val: List[str], test: List[str], tmp_holdout: List[str]
+    ) -> None:
         self.stores_strings = True
         self.X_train_str = train
         self.X_val_str = val
         self.X_test_str = test
+        self.X_tmp_holdout_str = tmp_holdout
 
     def encode_labels(self) -> None:
         self.label_encoder = LabelEncoder()

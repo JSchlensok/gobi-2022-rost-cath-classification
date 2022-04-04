@@ -7,7 +7,7 @@ import numpy as np
 from ray import tune
 from ray.tune import trial
 
-from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.prediction import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
@@ -78,6 +78,7 @@ def training_function(config: dict) -> None:
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
+        load_tmp_holdout_set=True,
     )
     # scale if parameter is set in config dict, if not set: default scale = True
     if "scale" not in config["model"].keys() or config["model"]["scale"]:
@@ -122,7 +123,7 @@ def training_function(config: dict) -> None:
             loss_weights=loss_weights,
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
-            random_seed=RANDOM_SEED,
+            random_seed=config["random_seed"],
         )
 
     elif model_class == RandomForestModel.__name__:
@@ -185,14 +186,19 @@ def training_function(config: dict) -> None:
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(embeddings=dataset.X_val)
-        save_predictions(pred=y_pred_val, directory=checkpoint_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
-        eval_dict = evaluate(
+        evaluation = Evaluation(
             y_true=dataset.y_val,
-            y_pred=y_pred_val,
-            class_names_training=dataset.train_labels,
+            predictions=y_pred_val,
+            train_labels=class_names,
+            model_name=str(model.__class__.__name__),  # can be changed
         )
+        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True, bacc=False)
+
+        eval_dict = {}
+        for k, v in evaluation.eval_dict.items():
+            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
 
         # Save the model if the average accuracy has risen during the last epoch and check for early stopping
         if eval_dict["accuracy_h"] > highest_acc_h:
@@ -205,6 +211,9 @@ def training_function(config: dict) -> None:
             model.save_checkpoint(
                 save_to_dir=checkpoint_dir,
             )
+            save_predictions(pred=y_pred_val, filepath=checkpoint_dir / "predictions_val.csv")
+            y_pred_test = model.predict(embeddings=dataset.X_test)
+            save_predictions(pred=y_pred_test, filepath=checkpoint_dir / "predictions_test.csv")
         else:
             n_bad += 1
             if n_bad >= n_thresh:

@@ -3,7 +3,11 @@
 ## Project organisation:
 ### Slides:
 Rolling slide deck intro Presentation: https://docs.google.com/presentation/d/1TvTKibsBg_XdaENP_taODn4jPAQi8Y8t9tuwYYHxTKs/edit?usp=sharing \
-Rolling slide deck intermediate Presentation: https://docs.google.com/presentation/d/1_3Y6vuqYIWZX2Ip2UnL3sXAbx9C4tHZRkw7Z2e44vWg/edit?usp=sharing
+Rolling slide deck intermediate Presentation: https://docs.google.com/presentation/d/1_3Y6vuqYIWZX2Ip2UnL3sXAbx9C4tHZRkw7Z2e44vWg/edit?usp=sharing \
+Rolling slide deck final Presentation: https://docs.google.com/presentation/d/1z13lF1WeNIKjIAZgW2vlUoawp6SchPlB3WkiE5Q01-4/edit?usp=sharing
+
+### Report:
+Overleaf Report: https://www.overleaf.com/2953961862zbsyvgtsngst
 
 ### Trello board
 https://trello.com/b/iEvimTbs/gobi-praktikum
