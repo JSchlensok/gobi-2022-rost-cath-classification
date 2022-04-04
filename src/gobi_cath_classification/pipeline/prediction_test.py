@@ -13,8 +13,7 @@ from gobi_cath_classification.pipeline.prediction import (
 
 
 def test_save_and_read_in_prediction():
-    filepath = Path(__file__).parent.parent.parent.parent
-    filename = "pred_test.csv"
+    filepath = Path(__file__).parent.parent.parent.parent / "pred_test.csv"
     pred_1 = Prediction(
         pd.DataFrame(
             data=np.array(
@@ -27,8 +26,8 @@ def test_save_and_read_in_prediction():
             columns=["1.20.35.10", "2.40.50.10", "3.20.25.400", "3.300.20.5"],
         )
     )
-    save_predictions(pred=pred_1, directory=filepath, filename=filename)
-    pred_2 = read_in_predictions(filepath=filepath / "pred_test.csv")
-    os.remove(path=filepath / filename)
+    save_predictions(pred=pred_1, filepath=filepath)
+    pred_2 = read_in_predictions(filepath=filepath)
+    os.remove(path=filepath)
 
     pd.testing.assert_frame_equal(pred_1.probabilities, pred_2.probabilities)

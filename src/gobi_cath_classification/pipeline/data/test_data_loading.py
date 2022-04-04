@@ -12,7 +12,7 @@ def test_loading_with_shuffling():
         shuffle_data=True,
         load_only_small_sample=False,
         reloading_allowed=True,
-        load_tmp_holdout_set=False,
+        load_tmp_holdout_set=True,
     )
 
 
@@ -24,7 +24,7 @@ def test_loading_without_shuffling():
         shuffle_data=True,
         load_only_small_sample=False,
         reloading_allowed=True,
-        load_tmp_holdout_set=False,
+        load_tmp_holdout_set=True,
     )
 
 
@@ -37,5 +37,5 @@ def test_loading_with_strings():
         load_only_small_sample=False,
         reloading_allowed=True,
         load_strings=True,
-        load_tmp_holdout_set=False,
+        load_tmp_holdout_set=True,
     )
