@@ -2,7 +2,11 @@ import pickle
 from collections import Counter
 import h5py
 from pathlib import Path
-from gobi_cath_classification.pipeline.data.data_loading import read_in_embeddings, read_in_sequences, read_in_labels
+from gobi_cath_classification.pipeline.data.data_loading import (
+    read_in_embeddings,
+    read_in_sequences,
+    read_in_labels,
+)
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
@@ -10,11 +14,10 @@ from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent.absolute()
 DATA_DIR = REPO_ROOT_DIR / "data"
 
+
 def load_data(
     data_dir: Path,
-    rng: np.random.RandomState,
     without_duplicates: bool,
-    shuffle_data: bool = True,
     load_only_small_sample: bool = False,
     reloading_allowed: bool = False,
     load_strings: bool = False,
@@ -120,5 +123,3 @@ def load_data(
     )
 
     return return_tuple
-
-
