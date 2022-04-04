@@ -215,6 +215,11 @@ class NeuralNetworkModel(ModelInterface):
                     out_features=layer_sizes[i + 1],
                 ),
             )
+            model.add_module(
+                f"BatchND1_{i}",
+                nn.BatchNorm1d(
+                    num_features=layer_sizes[i + 1])
+            )
             if dropout_sizes[i] is not None:
                 model.add_module(
                     f"Dropout_{i}",
