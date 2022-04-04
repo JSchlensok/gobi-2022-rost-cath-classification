@@ -21,6 +21,7 @@ from gobi_cath_classification.rnn.models import RNNModel, BRNN, one_hot_encode
 from gobi_cath_classification.rnn.pipeline import load_data
 from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
+from pipeline import prediction
 
 _, _, train_labels, _, _, X_test, y_test = load_data(
     DATA_DIR,
@@ -44,15 +45,19 @@ else:
 
 for i in range(len(models)):
     model = models[i]
-    print(f"Predicting for model{files[i].name}")
+    model_name = files[i].name
+    print(f"Predicting for model{model_name}")
     y_pred = model.predict(X_test)
 
     evaluation = Evaluation(
-        y_true=y_test, predictions=y_pred, train_labels=class_names, model_name=files[i].name
+        y_true=y_test, predictions=y_pred, train_labels=class_names, model_name=model_name
     )
     print("Computing scores...")
     evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
-    print("Computing error...")
-    evaluation.compute_std_err()
+    # print("Computing error...")
+    # evaluation.compute_std_err()
 
-    print(evaluation.eval_dict)
+    print("Writing output")
+    evaluation.print_evaluation()
+    output_path = DATA_DIR / "results" / (files[i].stem + ".csv")
+    prediction.save_predictions(y_pred, output_path)
