@@ -21,7 +21,7 @@ from gobi_cath_classification.rnn.models import RNNModel, BRNN, one_hot_encode
 from gobi_cath_classification.rnn.pipeline import load_data
 from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR
 from gobi_cath_classification.pipeline.data.Dataset import Dataset
-from pipeline import prediction
+from gobi_cath_classification.pipeline import prediction
 
 _, _, train_labels, _, _, X_test, y_test = load_data(
     DATA_DIR,
