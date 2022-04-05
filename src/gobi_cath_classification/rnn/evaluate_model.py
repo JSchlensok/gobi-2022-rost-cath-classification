@@ -46,15 +46,15 @@ def print_evaluation(y_true, predictions, name, save_file):
 
 for i in range(len(models)):
     model = models[i]
-    model_name = files[i].name
+    model_name = files[i].stem
     print(f"Predicting for model{model_name} on the test set")
     y_pred = model.predict(X_test)
 
-    output_path = DATA_DIR / (files[i].stem + "_test.csv")
-    print_evaluation(y_test, y_pred, models[i].__name__, output_path)
+    output_path = DATA_DIR / (model_name + "_test.csv")
+    print_evaluation(y_test, y_pred, model_name, output_path)
 
     print(f"Predicting for model{model_name} on the temporal holdout set")
     y_pred = model.predict(X_tmp)
 
-    output_path = DATA_DIR / (files[i].stem + "_tmph.csv")
-    print_evaluation(y_tmp, y_pred, models[i].__name__, output_path)
+    output_path = DATA_DIR / (model_name + "_tmph.csv")
+    print_evaluation(y_tmp, y_pred, model_name, output_path)
