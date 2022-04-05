@@ -17,7 +17,7 @@ DATA_DIR = REPO_ROOT_DIR / "data"
 
 def load_data(
     data_dir: Path,
-    without_duplicates: bool,
+    without_duplicates: bool = True,
     load_only_small_sample: bool = False,
     load_tmp_holdout_set: bool = False
 ):

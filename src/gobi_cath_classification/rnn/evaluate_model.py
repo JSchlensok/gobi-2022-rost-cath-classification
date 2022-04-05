@@ -14,9 +14,7 @@ from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR
 from gobi_cath_classification.pipeline import prediction
 
 _, _, train_labels, _, _, X_test, y_test, X_tmp, y_tmp = load_data(
-    data_dir=DATA_DIR,
-    without_duplicates=True,
-    load_tmp_holdout_set=True
+    data_dir=DATA_DIR, without_duplicates=True, load_tmp_holdout_set=True
 )
 class_names = sorted(set(train_labels))
 
