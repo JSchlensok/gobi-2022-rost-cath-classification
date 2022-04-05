@@ -19,7 +19,7 @@ def load_data(
     data_dir: Path,
     without_duplicates: bool = True,
     load_only_small_sample: bool = False,
-    load_tmp_holdout_set: bool = False
+    load_tmp_holdout_set: bool = False,
 ):
     print(f"Loading data from directory: {data_dir}")
 
@@ -65,8 +65,13 @@ def load_data(
 
     print("Reading in embeddings ...")
     if load_tmp_holdout_set:
-        id2emb_tmp_holdout = read_in_embeddings(path_to_file=path_embeddings_tmp_holdout, save_ram=True)
-        id2embedding = {**read_in_embeddings(path_to_file=path_embeddings, save_ram=True), **id2emb_tmp_holdout}
+        id2emb_tmp_holdout = read_in_embeddings(
+            path_to_file=path_embeddings_tmp_holdout, save_ram=True
+        )
+        id2embedding = {
+            **read_in_embeddings(path_to_file=path_embeddings, save_ram=True),
+            **id2emb_tmp_holdout,
+        }
     else:
         id2embedding = read_in_embeddings(path_to_file=path_embeddings, save_ram=True)
     embeddings = {key: id2embedding[key] for key in id2seqs_all.keys()}

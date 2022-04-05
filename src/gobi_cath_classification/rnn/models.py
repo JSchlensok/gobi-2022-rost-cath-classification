@@ -209,14 +209,7 @@ class BRNN(nn.Module):
 
 
 class RNN_embedded(nn.Module):
-    def __init__(
-        self,
-        num_layers,
-        class_names,
-        class_weights=None,
-        lr=0.01,
-        batch_size=32
-    ):
+    def __init__(self, num_layers, class_names, class_weights=None, lr=0.01, batch_size=32):
         super(RNN_embedded, self).__init__()
         self.num_layers = num_layers
         self.device = torch_utils.get_device()
@@ -330,8 +323,8 @@ class BRNN_embedded(nn.Module):
         loss_sum = 0
 
         for i in range(0, len(embeddings), self.batch_size):
-            list_indices = list_perm[i: i + self.batch_size]
-            tensor_indices = tensor_perm[i: i + self.batch_size]
+            list_indices = list_perm[i : i + self.batch_size]
+            tensor_indices = tensor_perm[i : i + self.batch_size]
             batch_X = [embeddings[index] for index in list_indices]
             # Pad the embeddings
             batch_X = pad_embeddings(batch_X).to(self.device)

@@ -31,8 +31,7 @@ else:
     resources_per_trial = {"cpu": 1}
 
 X_train, y_train, train_labels, X_val, y_val, X_test, y_test = load_data(
-    DATA_DIR,
-    without_duplicates=True
+    DATA_DIR, without_duplicates=True
 )
 
 sample_weights = compute_inverse_sample_weights(labels=y_train)

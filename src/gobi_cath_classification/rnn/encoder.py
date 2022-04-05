@@ -14,7 +14,7 @@ categories = dict(zip(categories, range(num_categories)))
 def pad_embeddings(emb: List) -> torch.Tensor:
     max_len = np.max([x.shape[0] for x in emb])
     # Pad
-    padded = [np.pad(x, ((max_len - len(x), 0), (0, 0)), 'constant') for x in emb]
+    padded = [np.pad(x, ((max_len - len(x), 0), (0, 0)), "constant") for x in emb]
     padded = np.array(padded, dtype=np.float32)
     return torch.tensor(padded)
 
