@@ -13,7 +13,7 @@ from gobi_cath_classification.pipeline.sample_weights import (
 )
 
 from gobi_cath_classification.pipeline.utils import torch_utils
-from gobi_cath_classification.rnn.models import RNNModel, BRNN, BRNN_embedded, RNN_embedded
+from gobi_cath_classification.rnn.models import RNNModel, BRNN, BRNN_embedded, RNN_embedded, GRU_embedded
 from gobi_cath_classification.rnn.pipeline import load_data
 from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
@@ -42,12 +42,12 @@ args = sys.argv
 if len(args) > 2 and (args[1] == "-m" or args[1] == "--model"):
     model = torch.load(args[2])
 else:
-    model = BRNN_embedded(
-        hidden_size=256,
+    model = GRU_embedded(
+        hidden_size=1024,
         num_layers=1,
         class_names=class_names,
         class_weights=class_weights,
-        lr=1e-4,
+        lr=1e-2,
         batch_size=32,
     )
 
