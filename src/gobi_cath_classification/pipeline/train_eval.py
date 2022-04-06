@@ -129,6 +129,10 @@ def training_function(config: dict) -> None:
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
             random_seed=config["random_seed"],
+            X_train=dataset.X_train,
+            y_train=dataset.y_train,
+            X_val=dataset.X_val,
+            y_val=dataset.y_val,
         )
 
     elif model_class == RandomForestModel.__name__:
@@ -189,6 +193,7 @@ def training_function(config: dict) -> None:
             sample_weights=sample_weights if sample_weights is not None else None,
         )
 
+
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(embeddings=dataset.X_val)
 
@@ -199,7 +204,7 @@ def training_function(config: dict) -> None:
             train_labels=class_names,
             model_name=str(model.__class__.__name__),  # can be changed
         )
-        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True, bacc=False)
+        evaluation.compute_metrics(accuracy=True, mcc=False, f1=False, kappa=False, bacc=False)
         eval_dict = {}
         for k, v in evaluation.eval_dict.items():
             eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
@@ -224,8 +229,18 @@ def training_function(config: dict) -> None:
             if n_bad >= n_thresh:
                 break
 
+        # eval on train
+        eval_train = Evaluation(
+            y_true=dataset.y_val,
+            predictions=y_pred_val,
+            train_labels=class_names,
+            model_name=str(model.__class__.__name__),
+        )
+        eval_train.compute_metrics(accuracy=True, mcc=False, f1=False, kappa=False, bacc=False)
+
         tune.report(
             **eval_dict,
+            **{f"{k}_train": v for k, v in eval_train.items()},
             **{f"model_{k}": v for k, v in model_metrics_dict.items()},
             **{"highest_acc_h": highest_acc_h},
         )

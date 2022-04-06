@@ -194,6 +194,10 @@ class NeuralNetworkModel(ModelInterface):
         random_seed: int = 42,
         weight_decay: float = 0.0,
         loss_weights: torch.Tensor = None,
+        X_train=None,
+        y_train=None,
+        X_val=None,
+        y_val=None,
     ):
         assert len(layer_sizes) == len(dropout_sizes)
         self.device = torch_utils.get_device()
@@ -202,6 +206,11 @@ class NeuralNetworkModel(ModelInterface):
         self.rng = rng
         print(f"rng = {rng}")
         set_random_seeds(seed=random_seed)
+
+        self.X_train = torch.tensor(X_train).to(self.device)
+        self.y_train = torch.tensor(y_train).to(self.device)
+        self.X_val = torch.tensor(X_val).to(self.device)
+        self.y_val = torch.tensor(y_val).to(self.device)
 
         self.batch_size = batch_size
         self.class_names = sorted(class_names)
@@ -280,7 +289,7 @@ class NeuralNetworkModel(ModelInterface):
         labels: List[str],
         sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
-
+        self.model.train()
         permutation = torch.randperm(len(embeddings_tensor))
         X = embeddings_tensor.to(self.device)
         y_indices = torch.tensor([self.class_names.index(label) for label in labels]).to(
@@ -303,15 +312,27 @@ class NeuralNetworkModel(ModelInterface):
             loss.backward()
             self.optimizer.step()
 
+
         loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
+
+        model_specific_metrics["loss_train"] = loss_sum
+        model_specific_metrics["loss_train / len"] = loss_sum / len(embeddings)
+
+        y_pred_val = self.model(self.X_val)
+        loss_val = self.loss_function(y_pred_val, self.y_val)
+        model_specific_metrics["loss_val"] = loss_val
+        model_specific_metrics["loss_val / len"] = loss_val / len(self.y_val)
+
         return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
+        self.model.eval()
         predicted_probabilities = self.model(torch.from_numpy(embeddings).float().to(self.device))
         df = pd.DataFrame(
             predicted_probabilities, columns=[str(label) for label in self.class_names]
         ).astype("float")
+        self.model.train()
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path) -> None:
