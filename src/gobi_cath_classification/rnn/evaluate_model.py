@@ -54,6 +54,8 @@ for i in range(len(models)):
     print_evaluation(y_test, y_pred, model_name, output_path)
 
     print(f"Predicting for model{model_name} on the temporal holdout set")
+    print(X_tmp.shape)
+    print(X_test.shape)
     y_pred = model.predict(X_tmp)
 
     output_path = DATA_DIR / (model_name + "_tmph.csv")
