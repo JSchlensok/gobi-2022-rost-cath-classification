@@ -33,7 +33,7 @@ def load_data(
 
     if load_tmp_holdout_set:
         path_labels = data_dir / "cath-domain-list-updated.txt"
-        path_embeddings_tmp_holdout = data_dir / "temporal_holdout_set.h5"
+        path_embeddings_tmp_holdout = data_dir / "temporal_holdout_set_full.h5"
 
     if load_only_small_sample:
         path_sequences_train = data_dir / "sample_data/sample_train100.fasta"
