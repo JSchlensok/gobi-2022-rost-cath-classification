@@ -36,8 +36,8 @@ def print_evaluation(y_true, predictions, name, save_file):
     )
     print("Computing scores...")
     evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
-    # print("Computing error...")
-    # evaluation.compute_std_err()
+    print("Computing error...")
+    evaluation.compute_std_err()
 
     print("Writing output")
     evaluation.print_evaluation()
