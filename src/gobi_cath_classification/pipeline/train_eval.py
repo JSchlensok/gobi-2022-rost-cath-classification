@@ -230,17 +230,18 @@ def training_function(config: dict) -> None:
                 break
 
         # eval on train
-        eval_train = Evaluation(
-            y_true=dataset.y_val,
-            predictions=y_pred_val,
-            train_labels=class_names,
-            model_name=str(model.__class__.__name__),
-        )
-        eval_train.compute_metrics(accuracy=True, mcc=False, f1=False, kappa=False, bacc=False)
+        # y_pred_train = model.predict(embeddings_train)
+        # eval_train = Evaluation(
+        #     y_true=dataset.y_train,
+        #     predictions=y_pred_train,
+        #     train_labels=class_names,
+        #     model_name=str(model.__class__.__name__),
+        # )
+        # eval_train.compute_metrics(accuracy=True, mcc=False, f1=False, kappa=False, bacc=False)
 
         tune.report(
             **eval_dict,
-            **{f"{k}_train": v for k, v in eval_train.items()},
+            # **{f"{k}_train": v for k, v in eval_train.eval_dict.items()},
             **{f"model_{k}": v for k, v in model_metrics_dict.items()},
             **{"highest_acc_h": highest_acc_h},
         )
