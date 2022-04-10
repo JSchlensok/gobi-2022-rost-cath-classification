@@ -1,6 +1,7 @@
 from __future__ import annotations
 from functools import total_ordering
 from typing_extensions import Literal
+from typing import Union
 
 
 @total_ordering
@@ -44,7 +45,17 @@ class CATHLabel:
         """
         return self._string.__hash__()
 
-    def __getitem__(self, cath_level: Literal["C", "A", "T", "H"]) -> CATHLabel:
-        index = "CATH".index(cath_level)
-        label = ".".join(self._levels[: index + 1])
-        return CATHLabel(label)
+    def __getitem__(self, key: Union[Literal["C", "A", "T", "H"], slice]) -> Union[CATHLabel, str]:
+        if isinstance(key, slice):
+            if isinstance(key.start, int) or isinstance(key.stop, int):
+                raise KeyError("Int indices not supported for CATH labels")
+            elif key.start is None:
+                return CATHLabel(".".join(self._levels[: "CATH".index(key.stop) + 1]))
+            elif isinstance(key.start, str) and key.start in "CATH":
+                return CATHLabel(
+                    ".".join(self._levels["CATH".index(key.step) : "CATH".index(key.stop) + 1])
+                )
+            elif key.step is not None:
+                raise KeyError("Step size not supported for CATH labels")
+
+        return self._levels["CATH".index(key)]
