@@ -111,7 +111,6 @@ def main():
                         "dropout_sizes": [0.02],
                         "scale": True,
                     },
-
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 500,
@@ -184,7 +183,6 @@ def main():
                         "dropout_sizes": [0.02],
                         "scale": True,
                     },
-
                     {
                         "model_class": NeuralNetworkModel.__name__,
                         "num_epochs": 500,
@@ -257,7 +255,6 @@ def main():
                         "dropout_sizes": [0.02],
                         "scale": True,
                     },
-
                 ]
             ),
         },

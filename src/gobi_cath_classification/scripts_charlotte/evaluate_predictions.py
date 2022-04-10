@@ -145,6 +145,7 @@ def plot_overlap_of_two_predictions(
     pred_1_legend_name: str,
     pred_2_legend_name: str,
     cath_levels: List,
+    which_set: str,
 ) -> None:
     for cath_level in cath_levels:
         class_names_for_level = list(set([str(y[:cath_level]) for y in train_labels]))
@@ -167,32 +168,32 @@ def plot_overlap_of_two_predictions(
         y_pred_2_venn = []
 
         for i in range(len(y_true_str)):
-            print(f"i = {i}")
+            # print(f"i = {i}")
             y_true_venn.append(str(y_true_str[i]) + f"_{i}")
             if y_pred_1[i] != y_true_str[i]:
                 y_pred_1_venn.append(str(y_pred_1[i]) + f"_{i}_false")
-                print(f"str(y_pred_1[i]) + f'_{i}_false' = {str(y_pred_1[i]) + f'_{i}_false'}")
+                # print(f"str(y_pred_1[i]) + f'_{i}_false' = {str(y_pred_1[i]) + f'_{i}_false'}")
             else:
                 y_pred_1_venn.append(str(y_pred_1[i]) + f"_{i}")
 
             if y_pred_2[i] != y_true_str[i]:
                 y_pred_2_venn.append(str(y_pred_2[i]) + f"_{i}_false")
-                print(f"str(y_pred_2[i]) + f'_{i}_false' = {str(y_pred_2[i]) + f'_{i}_false'}")
+                # print(f"str(y_pred_2[i]) + f'_{i}_false' = {str(y_pred_2[i]) + f'_{i}_false'}")
             else:
                 y_pred_2_venn.append(str(y_pred_2[i]) + f"_{i}")
 
-        print(f"len(y_true_venn) = {len(y_true_venn)}")
-        print(f"len(set(y_true_venn)) = {len(set(y_true_venn))}")
-
-        print(f"len(y_pred_1_venn) = {len(y_pred_1_venn)}")
-        print(f"len(set(y_pred_1_venn)) = {len(set(y_pred_1_venn))}")
-
-        print(f"len(y_pred_2_venn) = {len(y_pred_2_venn)}")
-        print(f"len(set(y_pred_2_venn)) = {len(set(y_pred_2_venn))}")
+        # print(f"len(y_true_venn) = {len(y_true_venn)}")
+        # print(f"len(set(y_true_venn)) = {len(set(y_true_venn))}")
+        #
+        # print(f"len(y_pred_1_venn) = {len(y_pred_1_venn)}")
+        # print(f"len(set(y_pred_1_venn)) = {len(set(y_pred_1_venn))}")
+        #
+        # print(f"len(y_pred_2_venn) = {len(y_pred_2_venn)}")
+        # print(f"len(set(y_pred_2_venn)) = {len(set(y_pred_2_venn))}")
 
         c = venn3(
             [set(y_true_venn), set(y_pred_1_venn), set(y_pred_2_venn)],
-            ("Ground truth", pred_1_legend_name, pred_2_legend_name),
+            ("Ground truth on " + which_set, pred_1_legend_name, pred_2_legend_name),
         )
 
         patch_id2color = {
@@ -221,7 +222,7 @@ def main():
         without_duplicates=True,
         shuffle_data=False,
         reloading_allowed=True,
-        load_tmp_holdout_set=True
+        load_tmp_holdout_set=True,
     )
     dataset.scale()
 
