@@ -129,10 +129,6 @@ def training_function(config: dict) -> None:
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
             random_seed=config["random_seed"],
-            X_train=dataset.X_train,
-            y_train=dataset.y_train,
-            X_val=dataset.X_val,
-            y_val=dataset.y_val,
         )
 
     elif model_class == RandomForestModel.__name__:
@@ -260,7 +256,7 @@ def main():
     )
     # Default Path for local_dir --> defines location of ray files
     # Can be changed to any location
-    local_dir = REPO_ROOT_DIR / "model checkpoints"
+    local_dir = REPO_ROOT_DIR / "ray_results"
     print(f"local_dir = {local_dir}")
 
     ray.init()
@@ -276,11 +272,18 @@ def main():
             "model": tune.grid_search(
                 [
                     {
-                        # dir to model checkpoint files from local_dir
-                        "checkpoint_dir": Path(
-                            "training_function_2022-03-09_01-45-07\\training_function_2ad2b_00000_0_class_weights=inverse,layer_sizes=[1024],lr=1e-05,optimizer=adam,random_seed=1_2022-03-09_01-45-07"
-                        ),
-                        "local_dir": local_dir,
+                        "model_class": GaussianNaiveBayesModel.__name__,
+                        "num_epochs": 1,
+                    },
+                    {
+                        "model_class": RandomForestModel.__name__,
+                        "num_epochs": 1,
+                        "max_depth": 25,
+                    },
+                    {
+                        "model_class": DistanceModel.__name__,
+                        "num_epochs": 1,
+                        "distance_order": 2,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -292,10 +295,6 @@ def main():
                         "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],
-                    },
-                    {
-                        "model_class": GaussianNaiveBayesModel.__name__,
-                        "num_epochs": 1,
                     },
                 ]
             ),
