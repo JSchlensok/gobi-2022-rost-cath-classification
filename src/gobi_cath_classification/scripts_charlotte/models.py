@@ -275,7 +275,7 @@ class NeuralNetworkModel(ModelInterface):
         labels: List[str],
         sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
-
+        self.model.train()
         permutation = torch.randperm(len(embeddings_tensor))
         X = embeddings_tensor.to(self.device)
         y_indices = torch.tensor([self.class_names.index(label) for label in labels]).to(
@@ -302,10 +302,12 @@ class NeuralNetworkModel(ModelInterface):
         return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
+        self.model.eval()
         predicted_probabilities = self.model(torch.from_numpy(embeddings).float().to(self.device))
         df = pd.DataFrame(
             predicted_probabilities, columns=[str(label) for label in self.class_names]
         ).astype("float")
+        self.model.train()
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path) -> None:
