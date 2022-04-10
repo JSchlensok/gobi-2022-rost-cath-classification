@@ -194,10 +194,6 @@ class NeuralNetworkModel(ModelInterface):
         random_seed: int = 42,
         weight_decay: float = 0.0,
         loss_weights: torch.Tensor = None,
-        X_train=None,
-        y_train=None,
-        X_val=None,
-        y_val=None,
     ):
         assert len(layer_sizes) == len(dropout_sizes)
         self.device = torch_utils.get_device()
@@ -206,23 +202,6 @@ class NeuralNetworkModel(ModelInterface):
         self.rng = rng
         print(f"rng = {rng}")
         set_random_seeds(seed=random_seed)
-
-        X_val_ = X_val
-        y_val_ = []
-        for y in y_val:
-            y_val_.append(y)
-
-        len_y = len(y_val_) - 1
-        for i in range(len_y, -1, -1):
-
-            if y_val[i] not in class_names:
-                X_val_ = np.delete(X_val_, i, axis=0)
-                del y_val_[i]
-
-        self.X_train = torch.tensor(X_train).to(self.device)
-        self.y_train = y_train
-        self.X_val = torch.tensor(X_val_).to(self.device)
-        self.y_val = y_val_
 
         self.batch_size = batch_size
         self.class_names = sorted(class_names)
@@ -322,19 +301,6 @@ class NeuralNetworkModel(ModelInterface):
 
         loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
-
-        model_specific_metrics["loss_train"] = float(loss_sum)
-        model_specific_metrics["loss_train / len"] = float(loss_sum / len(embeddings))
-
-        y_indices_val = torch.tensor([self.class_names.index(str(y)) for y in self.y_val]).to(
-            self.device
-        )
-        y_one_hot_val = 1.0 * one_hot(y_indices_val, num_classes=len(self.class_names))
-        y_pred_val = self.model(self.X_val.float())
-
-        loss_val = self.loss_function(y_pred_val, y_one_hot_val)
-        model_specific_metrics["loss_val"] = float(loss_val)
-        model_specific_metrics["loss_val / len"] = float(loss_val / len(self.y_val))
 
         return model_specific_metrics
 
