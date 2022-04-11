@@ -35,7 +35,7 @@ def main():
         resources_per_trial=resources_per_trial,
         num_samples=1,
         config={
-            "random_seed": tune.grid_search([1]),
+            "random_seed": tune.grid_search([42]),
             "class_weights": tune.grid_search(["inverse"]),
             "model": tune.grid_search(
                 [
