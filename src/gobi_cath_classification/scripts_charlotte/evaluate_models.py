@@ -114,13 +114,20 @@ def main():
         ).glob("**/*model_object.model")
     )
     paths_best_models = sorted(
-        Path("/Users/x/Desktop/bioinformatik/SEM_5/GoBi/best_models").glob("**/*model_object.model")
+        Path(
+            "/Users/x/Desktop/bioinformatik/SEM_5/GoBi/best_models/final_choices/content_FCNN_1_hidden_layer_2_BEST/gobi-2022-rost-cath-classification/ray_results/training_function_2022-04-03_12-53-23/training_function_0c2ef_00000_0_BEST"
+        ).glob("**/*model_object.model")
+    )
+    paths_best_models = sorted(
+        Path(
+            "/Users/x/Downloads/content_7"
+        ).glob("**/*model_object.model")
     )
 
-    for model_path in paths_best_models:
+    for model_path in sorted(paths_best_models):
 
         # if "content_FCNN_1_hidden_layer_2_BEST/gobi-2022-rost-cath-classification/ray_results/training_function_2022-04-03_12-53-23/training_function_0c2ef_00000_0" in str(model_path):
-        if "FCNN" in str(model_path):
+        if "" in str(model_path):
             print(f"\nmodel_path = {model_path}")
             model = torch.load(model_path, map_location=torch.device("cpu"))
             model.device = device
@@ -137,10 +144,8 @@ def main():
                 model_name=model_name,
             )
 
-            eval_val.compute_metrics(
-                accuracy=True,
-            )
-            eval_val.compute_std_err(bootstrap_n=bootstrap_n)
+            eval_val.compute_metrics(accuracy=True)
+            # eval_val.compute_std_err(bootstrap_n=bootstrap_n)
             print(f"\nEvaluation on VAL SET")
             eval_val.print_evaluation()
 
@@ -154,7 +159,7 @@ def main():
             )
 
             eval_test.compute_metrics(accuracy=True)
-            eval_test.compute_std_err(bootstrap_n=bootstrap_n)
+            # eval_test.compute_std_err(bootstrap_n=bootstrap_n)
             print(f"\nEvaluation on TEST SET")
             eval_test.print_evaluation()
 
@@ -168,7 +173,7 @@ def main():
             )
 
             eval_tmph.compute_metrics(accuracy=True)
-            eval_tmph.compute_std_err(bootstrap_n=bootstrap_n)
+            # eval_tmph.compute_std_err(bootstrap_n=bootstrap_n)
             print(f"\nEvaluation on TMPH SET")
             eval_tmph.print_evaluation()
 
