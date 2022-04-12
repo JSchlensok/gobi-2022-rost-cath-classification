@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from pathlib import Path
 
@@ -29,11 +31,6 @@ def bar_plot(
     x_axis_label: str,
     y_axis_label: str,
 ):
-    print(f"a.keys() = {a.keys()}")
-    print(f"b.keys() = {b.keys()}")
-    print(f"a_errors.keys() = {a_errors.keys()}")
-    print(f"b_errors.keys() = {b_errors.keys()}")
-
     assert a.keys() == b.keys()
 
     a_upper_error = []
@@ -139,29 +136,24 @@ def main():
         rng=np.random.RandomState(1),
         without_duplicates=True,
         reloading_allowed=True,
+        load_tmp_holdout_set=True,
     )
     dataset.scale()
     evaluations = []
 
     # load all predictions which should be evaluated
-    # run 1
-    # directory = Path(
-    #     "/Users/x/Downloads/training_function_2022-03-30_19-54-42_scaled_vs_non_scaled/gobi-2022-rost-cath-classification/ray_results/training_function_2022-03-30_19-54-42"
-    # )
-
-    # run 2
     directory = Path(
-        "/Users/x/Downloads/content/gobi-2022-rost-cath-classification/ray_results/training_function_2022-04-01_17-31-32"
+        "/Users/x/Downloads/training_function_2022-03-30_19-54-42_scaled_vs_non_scaled/gobi-2022-rost-cath-classification/ray_results/training_function_2022-03-30_19-54-42"
     )
 
-    pathlist = sorted(Path(directory).glob("**/*predictions_val.csv"))
+    pathlist = sorted(Path(directory).glob("**/*predictions_test.csv"))
     print(f"pathlist = {pathlist}")
     for path in pathlist:
         model_name = str(path).split("/")[-2]
         print(f"model_name = {model_name}")
         pred = read_in_proba_predictions(path)
         evaluation = Evaluation(
-            y_true=dataset.y_val,
+            y_true=dataset.y_test,
             predictions=pred,
             train_labels=dataset.train_labels,
             model_name=model_name,
@@ -189,12 +181,27 @@ def main():
         results_error_scaled[set_i] = (
             evaluations[i + num_sets].error_dict["accuracy"]["accuracy_h"] * 100
         )
-
     results_acc_non_scaled["Mean of Set 1-5"] = sum(results_acc_non_scaled.values()) / num_sets
-    results_error_non_scaled["Mean of Set 1-5"] = sum(results_error_non_scaled.values()) / num_sets
+    error_non_scaled = (
+        ((sum(results_error_non_scaled.values()) / num_sets) / 1.96) / math.sqrt(num_sets)
+    ) * 1.96
+    results_error_non_scaled["Mean of Set 1-5"] = error_non_scaled
+    # results_error_non_scaled["Mean of Set 1-5"] = sum(results_error_non_scaled.values()) / num_sets
+    print(
+        f"results_acc_non_scaled[\"Mean of Set 1-5\"] = {results_acc_non_scaled['Mean of Set 1-5']}"
+    )
+    print(
+        f"results_error_non_scaled['Mean of Set 1-5'] = {results_error_non_scaled['Mean of Set 1-5']}"
+    )
 
     results_acc_scaled["Mean of Set 1-5"] = sum(results_acc_scaled.values()) / num_sets
-    results_error_scaled["Mean of Set 1-5"] = sum(results_error_scaled.values()) / num_sets
+    error_scaled = (
+        ((sum(results_error_non_scaled.values()) / num_sets) / 1.96) / math.sqrt(num_sets)
+    ) * 1.96
+    results_error_scaled["Mean of Set 1-5"] = error_scaled
+    # results_error_scaled["Mean of Set 1-5"] = sum(results_error_scaled.values()) / num_sets
+    print(f"results_acc_scaled['Mean of Set 1-5'] = {results_acc_scaled['Mean of Set 1-5']}")
+    print(f"results_error_scaled['Mean of Set 1-5''] = {results_error_scaled['Mean of Set 1-5']}")
 
     bar_plot(
         title="Comparison of Training with Scaled Data and Non-scaled Data",

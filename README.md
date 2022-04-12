@@ -37,7 +37,7 @@ https://githubplus.com/Rostlab/EAT
 ## Data
 Download the following data:
 
-- Sequences Training: https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/train74k.fasta
+- Sequences Training: https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/train66k.fasta
 - Sequences Validation: https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/val200.fasta
 - Sequences Test: https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/test219.fasta
 
@@ -94,7 +94,8 @@ clone_dialog()
 !echo $PYTHONPATH
 
 # Download data
-!wget -P /content/gobi-2022-rost-cath-classification/data https://raw.githubusercontent.com/Rostlab/EAT/main/data/ProtTucker/train74k.fasta
+!wget -P /content/gobi-2022-rost-cath-classification/data https://raw.githubusercontent.com/Rostlab/EAT/main/data/ProtTucker/train66k.fasta
+!mv /content/gobi-2022-rost-cath-classification/data/train66k.fasta /content/gobi-2022-rost-cath-classification/data/train74k.fasta
 !wget -P /content/gobi-2022-rost-cath-classification/data https://raw.githubusercontent.com/Rostlab/EAT/main/data/ProtTucker/test219.fasta
 !wget -P /content/gobi-2022-rost-cath-classification/data https://raw.githubusercontent.com/Rostlab/EAT/main/data/ProtTucker/val200.fasta
 !wget -P /content/gobi-2022-rost-cath-classification/data https://rostlab.org/~deepppi/cath-domain-list.txt

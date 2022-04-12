@@ -20,13 +20,13 @@ from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 
 class RandomForestModel(ModelInterface):
     def __init__(
-            self,
-            n_estimators=100,
-            max_depth=None,
-            bootstrap=True,
-            oob_score=False,
-            n_jobs=None,
-            class_weight=None,
+        self,
+        n_estimators=100,
+        max_depth=None,
+        bootstrap=True,
+        oob_score=False,
+        n_jobs=None,
+        class_weight=None,
     ):
         self.model = RandomForestClassifier(
             n_estimators=n_estimators,
@@ -38,11 +38,11 @@ class RandomForestModel(ModelInterface):
         )
 
     def train_one_epoch(
-            self,
-            embeddings: np.ndarray,
-            embeddings_tensor: torch.Tensor,
-            labels: List[str],
-            sample_weights: Optional[np.ndarray],
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
         model_specific_metrics = {}
@@ -80,11 +80,11 @@ class GaussianNaiveBayesModel(ModelInterface):
         self.model = GaussianNB()
 
     def train_one_epoch(
-            self,
-            embeddings: np.ndarray,
-            embeddings_tensor: torch.Tensor,
-            labels: List[str],
-            sample_weights: Optional[np.ndarray],
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
         self.model.fit(X=embeddings, y=labels, sample_weight=sample_weights)
         model_specific_metrics = {}
@@ -119,7 +119,7 @@ class GaussianNaiveBayesModel(ModelInterface):
 
 class DistanceModel(ModelInterface):
     def __init__(
-            self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int
+        self, embeddings: np.ndarray, labels: List[str], class_names: List[str], distance_ord: int
     ):
         self.device = torch_utils.get_device()
         self.X_train_tensor = torch.tensor(embeddings).to(self.device)
@@ -130,11 +130,11 @@ class DistanceModel(ModelInterface):
         self.distance_ord = distance_ord
 
     def train_one_epoch(
-            self,
-            embeddings: np.ndarray,
-            embeddings_tensor: torch.Tensor,
-            labels: List[str],
-            sample_weights: Optional[np.ndarray],
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
         return {}
 
@@ -181,23 +181,19 @@ class DistanceModel(ModelInterface):
 
 class NeuralNetworkModel(ModelInterface):
     def __init__(
-            self,
-            lr: float,
-            class_names: List[str],
-            layer_sizes: List[int],
-            dropout_sizes: List[Optional[float]],
-            batch_size: int,
-            optimizer: str,
-            loss_function: Literal["CrossEntropyLoss", "HierarchicalLogLoss", "HierarchicalMSELoss"],
-            class_weights: torch.Tensor,
-            rng: np.random.RandomState,
-            random_seed: int = 42,
-            weight_decay: float = 0.0,
-            loss_weights: torch.Tensor = None,
-            X_train=None,
-            y_train=None,
-            X_val=None,
-            y_val=None,
+        self,
+        lr: float,
+        class_names: List[str],
+        layer_sizes: List[int],
+        dropout_sizes: List[Optional[float]],
+        batch_size: int,
+        optimizer: str,
+        loss_function: Literal["CrossEntropyLoss", "HierarchicalLogLoss", "HierarchicalMSELoss"],
+        class_weights: torch.Tensor,
+        rng: np.random.RandomState,
+        random_seed: int = 42,
+        weight_decay: float = 0.0,
+        loss_weights: torch.Tensor = None,
     ):
         assert len(layer_sizes) == len(dropout_sizes)
         self.device = torch_utils.get_device()
@@ -206,23 +202,6 @@ class NeuralNetworkModel(ModelInterface):
         self.rng = rng
         print(f"rng = {rng}")
         set_random_seeds(seed=random_seed)
-
-        X_val_ = X_val
-        y_val_ = []
-        for y in y_val:
-            y_val_.append(y)
-
-        len_y = len(y_val_)-1
-        for i in range(len_y, -1, -1):
-
-            if y_val[i] not in class_names:
-                X_val_ = np.delete(X_val_, i, axis=0)
-                del y_val_[i]
-
-        self.X_train = torch.tensor(X_train).to(self.device)
-        self.y_train = y_train
-        self.X_val = torch.tensor(X_val_).to(self.device)
-        self.y_val = y_val_
 
         self.batch_size = batch_size
         self.class_names = sorted(class_names)
@@ -236,11 +215,7 @@ class NeuralNetworkModel(ModelInterface):
                     out_features=layer_sizes[i + 1],
                 ),
             )
-            model.add_module(
-                f"BatchND1_{i}",
-                nn.BatchNorm1d(
-                    num_features=layer_sizes[i + 1])
-            )
+            model.add_module(f"BatchND1_{i}", nn.BatchNorm1d(num_features=layer_sizes[i + 1]))
             if dropout_sizes[i] is not None:
                 model.add_module(
                     f"Dropout_{i}",
@@ -295,11 +270,11 @@ class NeuralNetworkModel(ModelInterface):
             raise ValueError(f"Optimizer is not valid: {optimizer}")
 
     def train_one_epoch(
-            self,
-            embeddings: np.ndarray,
-            embeddings_tensor: torch.Tensor,
-            labels: List[str],
-            sample_weights: Optional[np.ndarray],
+        self,
+        embeddings: np.ndarray,
+        embeddings_tensor: torch.Tensor,
+        labels: List[str],
+        sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
         self.model.train()
         permutation = torch.randperm(len(embeddings_tensor))
@@ -324,22 +299,8 @@ class NeuralNetworkModel(ModelInterface):
             loss.backward()
             self.optimizer.step()
 
-
         loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
-
-        model_specific_metrics["loss_train"] = float(loss_sum)
-        model_specific_metrics["loss_train / len"] = float(loss_sum / len(embeddings))
-
-        y_indices_val = torch.tensor([self.class_names.index(str(y)) for y in self.y_val]).to(
-            self.device
-        )
-        y_one_hot_val = 1.0 * one_hot(y_indices_val, num_classes=len(self.class_names))
-        y_pred_val = self.model(self.X_val.float())
-
-        loss_val = self.loss_function(y_pred_val, y_one_hot_val)
-        model_specific_metrics["loss_val"] = float(loss_val)
-        model_specific_metrics["loss_val / len"] = float(loss_val / len(self.y_val))
 
         return model_specific_metrics
 
@@ -375,7 +336,7 @@ class NeuralNetworkModel(ModelInterface):
 
 
 def log_loss(
-        y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights: torch.Tensor = None
+    y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights: torch.Tensor = None
 ) -> torch.Tensor:
     x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
 
@@ -391,7 +352,7 @@ def log_loss(
 
 
 def mean_squared_error(
-        y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights=None
+    y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights=None
 ) -> torch.Tensor:
     return (y_pred - y_true).pow(2).sum()
 
@@ -399,7 +360,7 @@ def mean_squared_error(
 class HierarchicalLoss:
     """
 
-    Computes the weighted averaged accuracy over all levels.
+    Computes the weighted averaged loss over all levels.
     The goal is to 'punish' a model less for a prediction that's incorrect on the H-level, but
     correct on all other levels in comparison to a prediction which is incorrect on more levels
     than just the H-level.
@@ -415,12 +376,12 @@ class HierarchicalLoss:
     """
 
     def __init__(
-            self,
-            loss_function: Callable[[torch.Tensor, torch.Tensor, Optional[torch.Tensor]], torch.Tensor],
-            class_weights: torch.Tensor,
-            hierarchical_weights: torch.Tensor,
-            class_names: List[str],
-            device,
+        self,
+        loss_function: Callable[[torch.Tensor, torch.Tensor, Optional[torch.Tensor]], torch.Tensor],
+        class_weights: torch.Tensor,
+        hierarchical_weights: torch.Tensor,
+        class_names: List[str],
+        device,
     ):
         assert len(hierarchical_weights) == 4
         assert torch.allclose(
@@ -496,7 +457,7 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
 
 
 def compute_predictions_by_majority_vote(
-        predictions_from_models: List[Prediction], weights: np.ndarray
+    predictions_from_models: List[Prediction], weights: np.ndarray
 ) -> Prediction:
     p_df = predictions_from_models[-1].probabilities
     num_samples = p_df.values.shape[0]
@@ -522,7 +483,7 @@ def compute_predictions_by_majority_vote(
 
 
 def compute_predictions_for_ensemble_model(
-        predictions_from_models: List[Prediction], weights: np.ndarray
+    predictions_from_models: List[Prediction], weights: np.ndarray
 ) -> Prediction:
     """
 

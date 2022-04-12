@@ -59,10 +59,6 @@ def main():
     eval_tmph_1.compute_std_err(bootstrap_n=bootstrap_n)
     eval_tmph_1.print_evaluation()
 
-
-
-
-
     eval_tmph_2 = Evaluation(
         y_true=dataset.y_tmp_holdout[split_at:],
         predictions=y_pred_tmph_2,
@@ -86,8 +82,6 @@ def main():
     print(f"\nEvaluation on TMPH SET")
     eval_tmph_2.compute_std_err(bootstrap_n=bootstrap_n)
     eval_tmph_2.print_evaluation()
-
-
 
 
 if __name__ == "__main__":
