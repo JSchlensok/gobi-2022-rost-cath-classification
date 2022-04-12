@@ -13,9 +13,8 @@ from sklearn.naive_bayes import GaussianNB
 from torch import nn
 from torch.nn.functional import one_hot
 
-from gobi_cath_classification.pipeline.data_loading import label_for_level
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
-from gobi_cath_classification.pipeline.utils import torch_utils
+from gobi_cath_classification.pipeline.utils import torch_utils, CATHLabel
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 
 
@@ -141,6 +140,7 @@ class DistanceModel(ModelInterface):
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         emb_tensor = torch.tensor(embeddings).to(self.device)
+        self.X_train_tensor = self.X_train_tensor.to(self.device)
         pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08).to(self.device)
 
         distances = [
@@ -215,6 +215,7 @@ class NeuralNetworkModel(ModelInterface):
                     out_features=layer_sizes[i + 1],
                 ),
             )
+            model.add_module(f"BatchND1_{i}", nn.BatchNorm1d(num_features=layer_sizes[i + 1]))
             if dropout_sizes[i] is not None:
                 model.add_module(
                     f"Dropout_{i}",
@@ -287,6 +288,7 @@ class NeuralNetworkModel(ModelInterface):
         for i in range(0, len(embeddings), self.batch_size):
             self.optimizer.zero_grad()
             indices = permutation[i : i + self.batch_size]
+
             batch_X = X[indices].float()
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
@@ -299,6 +301,7 @@ class NeuralNetworkModel(ModelInterface):
 
         loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
+
         return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
@@ -335,7 +338,6 @@ class NeuralNetworkModel(ModelInterface):
 def log_loss(
     y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights: torch.Tensor = None
 ) -> torch.Tensor:
-
     x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
 
     if sample_weights is not None:
@@ -358,7 +360,7 @@ def mean_squared_error(
 class HierarchicalLoss:
     """
 
-    Computes the weighted averaged accuracy over all levels.
+    Computes the weighted averaged loss over all levels.
     The goal is to 'punish' a model less for a prediction that's incorrect on the H-level, but
     correct on all other levels in comparison to a prediction which is incorrect on more levels
     than just the H-level.
@@ -386,7 +388,7 @@ class HierarchicalLoss:
             torch.sum(hierarchical_weights).to(device), torch.tensor([1.0]).to(device)
         )
         self.loss_function = loss_function
-        self.class_weights = class_weights.to(device)
+        self.class_weights = class_weights if class_weights is None else class_weights.to(device)
         self.hierarchical_weights = hierarchical_weights.to(device)
         self.class_names = class_names
         self.device = device
@@ -443,9 +445,7 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
 
     """
     assert level in ["C", "A", "T", "H"]
-    class_names_level = sorted(
-        list(set([label_for_level(cn, cath_level=level) for cn in class_names]))
-    )
+    class_names_level = sorted(list(set([str(CATHLabel(cn)[:level]) for cn in class_names])))
     matrix = []
     for cn in class_names:
         row = []
@@ -454,6 +454,32 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
         matrix.append(row)
 
     return torch.Tensor(matrix)
+
+
+def compute_predictions_by_majority_vote(
+    predictions_from_models: List[Prediction], weights: np.ndarray
+) -> Prediction:
+    p_df = predictions_from_models[-1].probabilities
+    num_samples = p_df.values.shape[0]
+
+    ensemble_prediction = np.zeros(shape=(p_df.values.shape))
+
+    predictions = []
+    for i, pred in enumerate(predictions_from_models):
+        predictions.append(pred.probabilities.values * weights[i])
+
+    for row_j in range(num_samples):
+        max_row = -1
+        max_index = -1
+        for p in predictions:
+            row = p[row_j]
+            if np.max(row) > max_row:
+                max_row = np.max(row)
+                max_index = np.argmax(row)
+        ensemble_prediction[row_j][max_index] = 1.0
+
+    columns = predictions_from_models[-1].probabilities.columns
+    return Prediction(probabilities=pd.DataFrame(data=ensemble_prediction, columns=columns))
 
 
 def compute_predictions_for_ensemble_model(
@@ -465,9 +491,9 @@ def compute_predictions_for_ensemble_model(
     with those probabilities.
 
     """
-    np.testing.assert_allclose(
-        actual=np.sum(weights), desired=1.0
-    ), f"The given weights don't sum up to one, but instead to: {np.sum(weights)}"
+    # np.testing.assert_allclose(
+    #     actual=np.sum(weights), desired=1.0
+    # ), f"The given weights don't sum up to one, but instead to: {np.sum(weights)}"
     assert len(predictions_from_models) == len(weights), (
         f"The amount of given predictions does not equal the amount of given weights: "
         f"{len(predictions_from_models)} != {len(weights)}"

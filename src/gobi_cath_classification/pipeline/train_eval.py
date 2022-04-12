@@ -7,7 +7,7 @@ import numpy as np
 from ray import tune
 from ray.tune import trial
 
-from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.prediction import save_predictions
 from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_sample_weights,
@@ -78,6 +78,7 @@ def training_function(config: dict) -> None:
         without_duplicates=True,
         shuffle_data=True,
         reloading_allowed=True,
+        load_tmp_holdout_set=True,
     )
     # scale if parameter is set in config dict, if not set: default scale = True
     if "scale" not in config["model"].keys() or config["model"]["scale"]:
@@ -111,6 +112,10 @@ def training_function(config: dict) -> None:
         loss_weights = None
         if "loss_weights" in config["model"].keys():
             loss_weights = torch.tensor(config["model"]["loss_weights"])
+        weight_decay = 0.0
+        if "weight_decay" in config["model"].keys():
+            weight_decay = torch.tensor(config["model"]["weight_decay"])
+
         model = NeuralNetworkModel(
             lr=config["model"]["lr"],
             class_names=[str(cn) for cn in class_names],
@@ -120,9 +125,10 @@ def training_function(config: dict) -> None:
             optimizer=config["model"]["optimizer"],
             loss_function=config["model"]["loss_function"],
             loss_weights=loss_weights,
+            weight_decay=weight_decay,
             class_weights=torch.Tensor(class_weights) if class_weights is not None else None,
             rng=rng,
-            random_seed=RANDOM_SEED,
+            random_seed=config["random_seed"],
         )
 
     elif model_class == RandomForestModel.__name__:
@@ -169,7 +175,7 @@ def training_function(config: dict) -> None:
         epoch_start = eval_dict["config"]["last_epoch"] + 1
         tune.report(**eval_dict)
         print(
-            f"model: {model}\n epoch: {epoch_start-1}\n h-accuracy {highest_acc_h}\n eval-dict:\n{eval_dict}"
+            f"model: {model}\n epoch: {epoch_start-1}\n h-accuracy {highest_acc_h}\n evaluation-dict:\n{eval_dict}"
         )
         print(f"Resuming training on model {model.__class__.__name__} on epoch {epoch_start}...")
 
@@ -185,16 +191,20 @@ def training_function(config: dict) -> None:
 
         print(f"Predicting for X_val with model {model.__class__.__name__}...")
         y_pred_val = model.predict(embeddings=dataset.X_val)
-        save_predictions(pred=y_pred_val, directory=checkpoint_dir, filename="predictions.csv")
 
         # evaluate and save results in ray tune
-        eval_dict = evaluate(
+        evaluation = Evaluation(
             y_true=dataset.y_val,
-            y_pred=y_pred_val,
-            class_names_training=dataset.train_labels,
+            predictions=y_pred_val,
+            train_labels=class_names,
+            model_name=str(model.__class__.__name__),  # can be changed
         )
+        evaluation.compute_metrics(accuracy=True, mcc=False, f1=False, kappa=False, bacc=False)
+        eval_dict = {}
+        for k, v in evaluation.eval_dict.items():
+            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
 
-        # Save the model if the average accuracy has risen during the last epoch and check for early stopping
+        # Save the model if the accuracy_h has risen during the last epoch and check for early stopping
         if eval_dict["accuracy_h"] > highest_acc_h:
             highest_acc_h = eval_dict["accuracy_h"]
             n_bad = 0
@@ -205,6 +215,10 @@ def training_function(config: dict) -> None:
             model.save_checkpoint(
                 save_to_dir=checkpoint_dir,
             )
+            save_predictions(pred=y_pred_val, filepath=checkpoint_dir / "predictions_val.csv")
+            y_pred_test = model.predict(embeddings=dataset.X_test)
+            save_predictions(pred=y_pred_test, filepath=checkpoint_dir / "predictions_test.csv")
+
         else:
             n_bad += 1
             if n_bad >= n_thresh:
@@ -212,8 +226,8 @@ def training_function(config: dict) -> None:
 
         tune.report(
             **eval_dict,
-            **{f"model_{k}": v for k, v in model_metrics_dict.items()},
             **{"highest_acc_h": highest_acc_h},
+            **{f"model_{k}": v for k, v in model_metrics_dict.items()},
         )
 
 
@@ -242,7 +256,7 @@ def main():
     )
     # Default Path for local_dir --> defines location of ray files
     # Can be changed to any location
-    local_dir = REPO_ROOT_DIR / "model checkpoints"
+    local_dir = REPO_ROOT_DIR / "ray_results"
     print(f"local_dir = {local_dir}")
 
     ray.init()
@@ -258,11 +272,18 @@ def main():
             "model": tune.grid_search(
                 [
                     {
-                        # dir to model checkpoint files from local_dir
-                        "checkpoint_dir": Path(
-                            "training_function_2022-03-09_01-45-07\\training_function_2ad2b_00000_0_class_weights=inverse,layer_sizes=[1024],lr=1e-05,optimizer=adam,random_seed=1_2022-03-09_01-45-07"
-                        ),
-                        "local_dir": local_dir,
+                        "model_class": GaussianNaiveBayesModel.__name__,
+                        "num_epochs": 1,
+                    },
+                    {
+                        "model_class": RandomForestModel.__name__,
+                        "num_epochs": 1,
+                        "max_depth": 25,
+                    },
+                    {
+                        "model_class": DistanceModel.__name__,
+                        "num_epochs": 1,
+                        "distance_order": 2,
                     },
                     {
                         "model_class": NeuralNetworkModel.__name__,
@@ -270,14 +291,10 @@ def main():
                         "lr": tune.choice([1e-2, 1e-3, 1e-4, 1e-5, 1e-6]),
                         "batch_size": 32,
                         "optimizer": tune.choice(["adam", "sgd"]),
-                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLoss"]),
+                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLogLoss"]),
                         "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],
-                    },
-                    {
-                        "model_class": GaussianNaiveBayesModel.__name__,
-                        "num_epochs": 1,
                     },
                 ]
             ),
