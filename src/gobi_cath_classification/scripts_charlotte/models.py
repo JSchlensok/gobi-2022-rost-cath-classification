@@ -54,17 +54,17 @@ class RandomForestModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        print(f"Attempting to save model 'RandomForestModel' in file model_object.model")
+        print(f"Attempting to save model {self.__class__.__name__} in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
         try:
             torch.save(self, checkpoint_file_path)
             print(f"Checkpoint saved to: {checkpoint_file_path}")
         except:
-            print(f"Failed to save model 'RandomForestModel'")
+            print(f"Failed to save model {self.__class__.__name__}")
 
     def load_model_from_checkpoint(self, checkpoint_dir: Path):
-        print(f"Attempting to reload model 'RandomForestModel' from file: {checkpoint_dir}")
+        print(f"Attempting to reload model {self.__class__.__name__} from file: {checkpoint_dir}")
         try:
             model_file_path = os.path.join(checkpoint_dir, "model_object.model")
             model = torch.load(model_file_path)
@@ -96,17 +96,17 @@ class GaussianNaiveBayesModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        print(f"Attempting to save model 'GaussianNaiveBayesModel' in file model_object.model")
+        print(f"Attempting to save model {self.__class__.__name__} in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
         try:
             torch.save(self, checkpoint_file_path)
             print(f"Checkpoint saved to: {checkpoint_file_path}")
         except:
-            print(f"Failed to save model 'GaussianNaiveBayesModel'")
+            print(f"Failed to save model {self.__class__.__name__}")
 
     def load_model_from_checkpoint(self, checkpoint_dir: Path):
-        print(f"Attempting to reload model 'GaussianNaiveBayesModel' from file: {checkpoint_dir}")
+        print(f"Attempting to reload model {self.__class__.__name__} from file: {checkpoint_dir}")
         try:
             model_file_path = os.path.join(checkpoint_dir, "model_object.model")
             model = torch.load(model_file_path)
@@ -158,17 +158,17 @@ class DistanceModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        print(f"Attempting to save model 'DistanceModel' in file model_object.model")
+        print(f"Attempting to save model {self.__class__.__name__} in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
         try:
             torch.save(self, checkpoint_file_path)
             print(f"Checkpoint saved to: {checkpoint_file_path}")
         except:
-            print(f"Failed to save model 'DistanceModel'")
+            print(f"Failed to save model {self.__class__.__name__}")
 
     def load_model_from_checkpoint(self, checkpoint_dir: Path):
-        print(f"Attempting to reload model 'DistanceModel' from file: {checkpoint_dir}")
+        print(f"Attempting to reload model {self.__class__.__name__} from file: {checkpoint_dir}")
         try:
             model_file_path = os.path.join(checkpoint_dir, "model_object.model")
             model = torch.load(model_file_path)
@@ -314,17 +314,17 @@ class NeuralNetworkModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path) -> None:
-        print(f"Attempting to save model 'NeuralNetworkModel' in file model_object.model")
+        print(f"Attempting to save model {self.__class__.__name__} in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
         try:
             torch.save(self, checkpoint_file_path)
             print(f"Checkpoint saved to: {checkpoint_file_path}")
         except:
-            print(f"Failed to save model 'NeuralNetworkModel'")
+            print(f"Failed to save model {self.__class__.__name__}")
 
     def load_model_from_checkpoint(self, checkpoint_dir: Path):
-        print(f"Attempting to reload model 'NeuralNetworkModel' from file: {checkpoint_dir}")
+        print(f"Attempting to reload model {self.__class__.__name__} from file: {checkpoint_dir}")
         try:
             model_file_path = os.path.join(checkpoint_dir, "model_object.model")
             model = torch.load(model_file_path)
@@ -491,9 +491,6 @@ def compute_predictions_for_ensemble_model(
     with those probabilities.
 
     """
-    # np.testing.assert_allclose(
-    #     actual=np.sum(weights), desired=1.0
-    # ), f"The given weights don't sum up to one, but instead to: {np.sum(weights)}"
     assert len(predictions_from_models) == len(weights), (
         f"The amount of given predictions does not equal the amount of given weights: "
         f"{len(predictions_from_models)} != {len(weights)}"

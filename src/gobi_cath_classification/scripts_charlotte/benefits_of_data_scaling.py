@@ -11,7 +11,7 @@ from bokeh.models import ColumnDataSource, Whisker
 from bokeh.transform import dodge
 
 from gobi_cath_classification.pipeline.Evaluation import Evaluation
-from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
+from gobi_cath_classification.pipeline.data import load_data, DATA_DIR, REPO_ROOT_DIR
 from gobi_cath_classification.pipeline.prediction import read_in_proba_predictions
 
 
@@ -20,7 +20,7 @@ def apply_style(p):
     p.background_fill_color = "#fafafa"
 
 
-def bar_plot(
+def show_bar_plot(
     title: str,
     a: Dict[str, float],
     b: Dict[str, float],
@@ -142,78 +142,85 @@ def main():
     evaluations = []
 
     # load all predictions which should be evaluated
-    directory = Path(
-        "/Users/x/Downloads/training_function_2022-03-30_19-54-42_scaled_vs_non_scaled/gobi-2022-rost-cath-classification/ray_results/training_function_2022-03-30_19-54-42"
-    )
+    directory = REPO_ROOT_DIR / "scaled_vs_non_scaled"
 
-    pathlist = sorted(Path(directory).glob("**/*predictions_test.csv"))
-    print(f"pathlist = {pathlist}")
-    for path in pathlist:
-        model_name = str(path).split("/")[-2]
-        print(f"model_name = {model_name}")
-        pred = read_in_proba_predictions(path)
-        evaluation = Evaluation(
-            y_true=dataset.y_test,
-            predictions=pred,
-            train_labels=dataset.train_labels,
-            model_name=model_name,
+    for which_pred in ["predictions_test", "predictions_val"]:
+        pathlist = sorted(Path(directory).glob(f"**/*{which_pred}.csv"))
+        print(f"pathlist = {pathlist}")
+        for path in pathlist:
+            model_name = str(path).split("/")[-2]
+            print(f"model_name = {model_name}")
+            pred = read_in_proba_predictions(path)
+            y_true = dataset.y_test
+            if "val" in which_pred:
+                y_true = dataset.y_val
+
+            evaluation = Evaluation(
+                y_true=y_true,
+                predictions=pred,
+                train_labels=dataset.train_labels,
+                model_name=model_name,
+            )
+            evaluation.compute_metrics(accuracy=True)
+            evaluation.compute_std_err(bootstrap_n=100)
+            evaluations.append(evaluation)
+
+        results_acc_scaled = {}
+        results_error_scaled = {}
+        results_acc_non_scaled = {}
+        results_error_non_scaled = {}
+
+        num_sets = int(len(evaluations) / 2)
+
+        for i in range(num_sets):
+            set_i = f"Set {i + 1}"
+
+            results_acc_non_scaled[set_i] = evaluations[i].eval_dict["accuracy"]["accuracy_h"] * 100
+            results_error_non_scaled[set_i] = (
+                evaluations[i].error_dict["accuracy"]["accuracy_h"] * 100
+            )
+
+            results_acc_scaled[set_i] = (
+                evaluations[i + num_sets].eval_dict["accuracy"]["accuracy_h"] * 100
+            )
+            results_error_scaled[set_i] = (
+                evaluations[i + num_sets].error_dict["accuracy"]["accuracy_h"] * 100
+            )
+        results_acc_non_scaled["Mean of Set 1-5"] = sum(results_acc_non_scaled.values()) / num_sets
+        error_non_scaled = (
+            ((sum(results_error_non_scaled.values()) / num_sets) / 1.96) / math.sqrt(num_sets)
+        ) * 1.96
+        results_error_non_scaled["Mean of Set 1-5"] = error_non_scaled
+        # results_error_non_scaled["Mean of Set 1-5"] = sum(results_error_non_scaled.values()) / num_sets
+        print(
+            f"results_acc_non_scaled[\"Mean of Set 1-5\"] = {results_acc_non_scaled['Mean of Set 1-5']}"
         )
-        evaluation.compute_metrics(accuracy=True)
-        evaluation.compute_std_err(bootstrap_n=100)
-        evaluations.append(evaluation)
-
-    results_acc_scaled = {}
-    results_error_scaled = {}
-    results_acc_non_scaled = {}
-    results_error_non_scaled = {}
-
-    num_sets = int(len(evaluations) / 2)
-
-    for i in range(num_sets):
-        set_i = f"Set {i + 1}"
-
-        results_acc_non_scaled[set_i] = evaluations[i].eval_dict["accuracy"]["accuracy_h"] * 100
-        results_error_non_scaled[set_i] = evaluations[i].error_dict["accuracy"]["accuracy_h"] * 100
-
-        results_acc_scaled[set_i] = (
-            evaluations[i + num_sets].eval_dict["accuracy"]["accuracy_h"] * 100
+        print(
+            f"results_error_non_scaled['Mean of Set 1-5'] = {results_error_non_scaled['Mean of Set 1-5']}"
         )
-        results_error_scaled[set_i] = (
-            evaluations[i + num_sets].error_dict["accuracy"]["accuracy_h"] * 100
+
+        results_acc_scaled["Mean of Set 1-5"] = sum(results_acc_scaled.values()) / num_sets
+        error_scaled = (
+            ((sum(results_error_non_scaled.values()) / num_sets) / 1.96) / math.sqrt(num_sets)
+        ) * 1.96
+        results_error_scaled["Mean of Set 1-5"] = error_scaled
+        # results_error_scaled["Mean of Set 1-5"] = sum(results_error_scaled.values()) / num_sets
+        print(f"results_acc_scaled['Mean of Set 1-5'] = {results_acc_scaled['Mean of Set 1-5']}")
+        print(
+            f"results_error_scaled['Mean of Set 1-5''] = {results_error_scaled['Mean of Set 1-5']}"
         )
-    results_acc_non_scaled["Mean of Set 1-5"] = sum(results_acc_non_scaled.values()) / num_sets
-    error_non_scaled = (
-        ((sum(results_error_non_scaled.values()) / num_sets) / 1.96) / math.sqrt(num_sets)
-    ) * 1.96
-    results_error_non_scaled["Mean of Set 1-5"] = error_non_scaled
-    # results_error_non_scaled["Mean of Set 1-5"] = sum(results_error_non_scaled.values()) / num_sets
-    print(
-        f"results_acc_non_scaled[\"Mean of Set 1-5\"] = {results_acc_non_scaled['Mean of Set 1-5']}"
-    )
-    print(
-        f"results_error_non_scaled['Mean of Set 1-5'] = {results_error_non_scaled['Mean of Set 1-5']}"
-    )
 
-    results_acc_scaled["Mean of Set 1-5"] = sum(results_acc_scaled.values()) / num_sets
-    error_scaled = (
-        ((sum(results_error_non_scaled.values()) / num_sets) / 1.96) / math.sqrt(num_sets)
-    ) * 1.96
-    results_error_scaled["Mean of Set 1-5"] = error_scaled
-    # results_error_scaled["Mean of Set 1-5"] = sum(results_error_scaled.values()) / num_sets
-    print(f"results_acc_scaled['Mean of Set 1-5'] = {results_acc_scaled['Mean of Set 1-5']}")
-    print(f"results_error_scaled['Mean of Set 1-5''] = {results_error_scaled['Mean of Set 1-5']}")
-
-    bar_plot(
-        title="Comparison of Training with Scaled Data and Non-scaled Data",
-        a=results_acc_scaled,
-        b=results_acc_non_scaled,
-        a_errors=results_error_scaled,
-        b_errors=results_error_non_scaled,
-        legend_label_a="scaled data",
-        legend_label_b="non-scaled data",
-        x_axis_label="Training runs with different sets of hyperparameter values",
-        y_axis_label="Accuracy on H-level in %",
-    )
+        show_bar_plot(
+            title="Comparison of Training with Scaled Data and Non-scaled Data",
+            a=results_acc_scaled,
+            b=results_acc_non_scaled,
+            a_errors=results_error_scaled,
+            b_errors=results_error_non_scaled,
+            legend_label_a="scaled data",
+            legend_label_b="non-scaled data",
+            x_axis_label="Training runs with different sets of hyperparameter values",
+            y_axis_label="Accuracy on H-level in %",
+        )
 
 
 if __name__ == "__main__":

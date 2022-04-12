@@ -35,11 +35,20 @@ def save_predictions(pred: Prediction, filepath: Path) -> None:
 
 
 def read_in_proba_predictions(filepath: Path) -> Prediction:
+    """
+    Reads in probabilities from given file and returns a Prediction object.
+    """
     df = pd.read_csv(filepath_or_buffer=filepath, sep="\t")
     return Prediction(probabilities=df)
 
 
 def read_in_label_predictions(filepath: Path, train_labels: List[str]) -> Prediction:
+    """
+    Reads in labels from given file and returns a Prediction object with probabilities.
+    The given train_labels are the colunms names from the Predictions DataFrame.
+    The probability for the label in each row in the given file is 100%. For all other labels
+    in that row (and therefore for each sample) is 0%.
+    """
     df_argmax = pd.read_csv(filepath_or_buffer=filepath, sep="\t", names=["cath_label"])
     df_probas = pd.DataFrame(
         data=np.zeros(shape=(df_argmax.shape[0], len(train_labels))),

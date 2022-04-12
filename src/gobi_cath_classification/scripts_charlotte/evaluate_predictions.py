@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Dict, List
+from typing import List
 
 import torch
 from pathlib import Path
@@ -24,7 +24,7 @@ CATH_COLOURS = {
 }
 
 
-def plot_sequence_lengths(
+def plot_label_frequency_in_train_for_each_level(
     y_true: List[CATHLabel],
     y_pred: List[CATHLabel],
     y_train: List[str],
@@ -168,28 +168,16 @@ def plot_overlap_of_two_predictions(
         y_pred_2_venn = []
 
         for i in range(len(y_true_str)):
-            # print(f"i = {i}")
             y_true_venn.append(str(y_true_str[i]) + f"_{i}")
             if y_pred_1[i] != y_true_str[i]:
                 y_pred_1_venn.append(str(y_pred_1[i]) + f"_{i}_false")
-                # print(f"str(y_pred_1[i]) + f'_{i}_false' = {str(y_pred_1[i]) + f'_{i}_false'}")
             else:
                 y_pred_1_venn.append(str(y_pred_1[i]) + f"_{i}")
 
             if y_pred_2[i] != y_true_str[i]:
                 y_pred_2_venn.append(str(y_pred_2[i]) + f"_{i}_false")
-                # print(f"str(y_pred_2[i]) + f'_{i}_false' = {str(y_pred_2[i]) + f'_{i}_false'}")
             else:
                 y_pred_2_venn.append(str(y_pred_2[i]) + f"_{i}")
-
-        # print(f"len(y_true_venn) = {len(y_true_venn)}")
-        # print(f"len(set(y_true_venn)) = {len(set(y_true_venn))}")
-        #
-        # print(f"len(y_pred_1_venn) = {len(y_pred_1_venn)}")
-        # print(f"len(set(y_pred_1_venn)) = {len(set(y_pred_1_venn))}")
-        #
-        # print(f"len(y_pred_2_venn) = {len(y_pred_2_venn)}")
-        # print(f"len(set(y_pred_2_venn)) = {len(set(y_pred_2_venn))}")
 
         c = venn3(
             [set(y_true_venn), set(y_pred_1_venn), set(y_pred_2_venn)],
@@ -226,8 +214,8 @@ def main():
     )
     dataset.scale()
 
-    model_path = Path(
-        "/Users/x/Desktop/bioinformatik/SEM_5/GoBi/best_models/final_choices/content_training_function_950cc_00006_6_NeuralNetworkModel_CHOSEN_MODEL/gobi-2022-rost-cath-classification/ray_results/training_function_2022-03-27_06-31-49/training_function_950cc_00006_6/model_object.model"
+    model_path = sorted(
+        Path("/Users/x/Desktop/bioinformatik/SEM_5/GoBi/best_models").glob("**/*model_object.model")
     )
     model = torch.load(model_path, map_location=torch.device("cpu"))
     model.device = torch_utils.get_device()
@@ -240,7 +228,7 @@ def main():
 
     y_train = [str(y) for y in dataset.y_train]
 
-    plot_sequence_lengths(
+    plot_label_frequency_in_train_for_each_level(
         y_true=y_true, y_pred=y_pred, y_train=y_train, train_labels=dataset.train_labels
     )
 

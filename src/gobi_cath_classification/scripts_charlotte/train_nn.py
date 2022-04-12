@@ -51,7 +51,6 @@ def main():
                         "dropout_sizes": [0.015, None],
                         "scale": True,
                     },
-
                 ]
             ),
         },
