@@ -268,7 +268,7 @@ def main():
         num_samples=1,
         config={
             "random_seed": RANDOM_SEED,
-            "class_weights": tune.choice(["none", "inverse", "sqrt_inverse"]),
+            "class_weights": tune.choice(["none"]),
             "model": tune.grid_search(
                 [
                     {
@@ -279,11 +279,6 @@ def main():
                         "model_class": RandomForestModel.__name__,
                         "num_epochs": 1,
                         "max_depth": 25,
-                    },
-                    {
-                        "model_class": DistanceModel.__name__,
-                        "num_epochs": 1,
-                        "distance_order": 2,
                     },
                 ]
             ),
