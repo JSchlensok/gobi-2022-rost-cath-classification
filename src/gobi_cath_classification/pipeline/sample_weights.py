@@ -16,7 +16,7 @@ def compute_inverse_class_weights(labels: List[str]) -> np.ndarray:
                  class weight for dog = 0.25)
     """
     class_counts = compute_class_counts([CATHLabel(label) for label in labels])
-    inverse_class_counts = np.array([1/count for count in class_counts])
+    inverse_class_counts = np.array([1 / count for count in class_counts])
     return inverse_class_counts
 
 
