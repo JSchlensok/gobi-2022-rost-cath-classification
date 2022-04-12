@@ -285,17 +285,6 @@ def main():
                         "num_epochs": 1,
                         "distance_order": 2,
                     },
-                    {
-                        "model_class": NeuralNetworkModel.__name__,
-                        "num_epochs": 100,
-                        "lr": tune.choice([1e-2, 1e-3, 1e-4, 1e-5, 1e-6]),
-                        "batch_size": 32,
-                        "optimizer": tune.choice(["adam", "sgd"]),
-                        "loss_function": tune.choice(["CrossEntropyLoss", "HierarchicalLogLoss"]),
-                        "loss_weights": [1 / 4, 1 / 4, 1 / 4, 1 / 4],
-                        "layer_sizes": [1024, 2048],
-                        "dropout_sizes": [0.2, None],
-                    },
                 ]
             ),
         },
