@@ -54,17 +54,17 @@ class RandomForestModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        print(f"Attempting to save model 'RandomForestModel' in file model_object.model")
+        print(f"Attempting to save model {self.__class__.__name__} in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
         try:
             torch.save(self, checkpoint_file_path)
             print(f"Checkpoint saved to: {checkpoint_file_path}")
         except:
-            print(f"Failed to save model 'RandomForestModel'")
+            print(f"Failed to save model {self.__class__.__name__}")
 
     def load_model_from_checkpoint(self, checkpoint_dir: Path):
-        print(f"Attempting to reload model 'RandomForestModel' from file: {checkpoint_dir}")
+        print(f"Attempting to reload model {self.__class__.__name__} from file: {checkpoint_dir}")
         try:
             model_file_path = os.path.join(checkpoint_dir, "model_object.model")
             model = torch.load(model_file_path)
@@ -96,17 +96,17 @@ class GaussianNaiveBayesModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        print(f"Attempting to save model 'GaussianNaiveBayesModel' in file model_object.model")
+        print(f"Attempting to save model {self.__class__.__name__} in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
         try:
             torch.save(self, checkpoint_file_path)
             print(f"Checkpoint saved to: {checkpoint_file_path}")
         except:
-            print(f"Failed to save model 'GaussianNaiveBayesModel'")
+            print(f"Failed to save model {self.__class__.__name__}")
 
     def load_model_from_checkpoint(self, checkpoint_dir: Path):
-        print(f"Attempting to reload model 'GaussianNaiveBayesModel' from file: {checkpoint_dir}")
+        print(f"Attempting to reload model {self.__class__.__name__} from file: {checkpoint_dir}")
         try:
             model_file_path = os.path.join(checkpoint_dir, "model_object.model")
             model = torch.load(model_file_path)
@@ -140,6 +140,7 @@ class DistanceModel(ModelInterface):
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
         emb_tensor = torch.tensor(embeddings).to(self.device)
+        self.X_train_tensor = self.X_train_tensor.to(self.device)
         pdist = torch.nn.PairwiseDistance(p=self.distance_ord, eps=1e-08).to(self.device)
 
         distances = [
@@ -157,17 +158,17 @@ class DistanceModel(ModelInterface):
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path):
-        print(f"Attempting to save model 'DistanceModel' in file model_object.model")
+        print(f"Attempting to save model {self.__class__.__name__} in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
         try:
             torch.save(self, checkpoint_file_path)
             print(f"Checkpoint saved to: {checkpoint_file_path}")
         except:
-            print(f"Failed to save model 'DistanceModel'")
+            print(f"Failed to save model {self.__class__.__name__}")
 
     def load_model_from_checkpoint(self, checkpoint_dir: Path):
-        print(f"Attempting to reload model 'DistanceModel' from file: {checkpoint_dir}")
+        print(f"Attempting to reload model {self.__class__.__name__} from file: {checkpoint_dir}")
         try:
             model_file_path = os.path.join(checkpoint_dir, "model_object.model")
             model = torch.load(model_file_path)
@@ -214,6 +215,7 @@ class NeuralNetworkModel(ModelInterface):
                     out_features=layer_sizes[i + 1],
                 ),
             )
+            model.add_module(f"BatchND1_{i}", nn.BatchNorm1d(num_features=layer_sizes[i + 1]))
             if dropout_sizes[i] is not None:
                 model.add_module(
                     f"Dropout_{i}",
@@ -274,7 +276,7 @@ class NeuralNetworkModel(ModelInterface):
         labels: List[str],
         sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
-
+        self.model.train()
         permutation = torch.randperm(len(embeddings_tensor))
         X = embeddings_tensor.to(self.device)
         y_indices = torch.tensor([self.class_names.index(label) for label in labels]).to(
@@ -286,6 +288,7 @@ class NeuralNetworkModel(ModelInterface):
         for i in range(0, len(embeddings), self.batch_size):
             self.optimizer.zero_grad()
             indices = permutation[i : i + self.batch_size]
+
             batch_X = X[indices].float()
             batch_y = y_one_hot[indices]
             y_pred = self.model(batch_X)
@@ -298,27 +301,30 @@ class NeuralNetworkModel(ModelInterface):
 
         loss_avg = float(loss_sum / (math.ceil(len(embeddings) / self.batch_size)))
         model_specific_metrics = {"loss_avg": loss_avg}
+
         return model_specific_metrics
 
     def predict(self, embeddings: np.ndarray) -> Prediction:
+        self.model.eval()
         predicted_probabilities = self.model(torch.from_numpy(embeddings).float().to(self.device))
         df = pd.DataFrame(
             predicted_probabilities, columns=[str(label) for label in self.class_names]
         ).astype("float")
+        self.model.train()
         return Prediction(probabilities=df)
 
     def save_checkpoint(self, save_to_dir: Path) -> None:
-        print(f"Attempting to save model 'NeuralNetworkModel' in file model_object.model")
+        print(f"Attempting to save model {self.__class__.__name__} in file model_object.model")
         print(f"Saving into directory: '{save_to_dir}'")
         checkpoint_file_path = os.path.join(save_to_dir, "model_object.model")
         try:
             torch.save(self, checkpoint_file_path)
             print(f"Checkpoint saved to: {checkpoint_file_path}")
         except:
-            print(f"Failed to save model 'NeuralNetworkModel'")
+            print(f"Failed to save model {self.__class__.__name__}")
 
     def load_model_from_checkpoint(self, checkpoint_dir: Path):
-        print(f"Attempting to reload model 'NeuralNetworkModel' from file: {checkpoint_dir}")
+        print(f"Attempting to reload model {self.__class__.__name__} from file: {checkpoint_dir}")
         try:
             model_file_path = os.path.join(checkpoint_dir, "model_object.model")
             model = torch.load(model_file_path)
@@ -332,7 +338,6 @@ class NeuralNetworkModel(ModelInterface):
 def log_loss(
     y_pred: torch.Tensor, y_true: torch.Tensor, sample_weights: torch.Tensor = None
 ) -> torch.Tensor:
-
     x_log_y = torch.special.xlogy(input=y_true, other=y_pred)
 
     if sample_weights is not None:
@@ -355,7 +360,7 @@ def mean_squared_error(
 class HierarchicalLoss:
     """
 
-    Computes the weighted averaged accuracy over all levels.
+    Computes the weighted averaged loss over all levels.
     The goal is to 'punish' a model less for a prediction that's incorrect on the H-level, but
     correct on all other levels in comparison to a prediction which is incorrect on more levels
     than just the H-level.
@@ -451,6 +456,32 @@ def H_to_level_matrix(class_names: List[str], level: str) -> torch.Tensor:
     return torch.Tensor(matrix)
 
 
+def compute_predictions_by_majority_vote(
+    predictions_from_models: List[Prediction], weights: np.ndarray
+) -> Prediction:
+    p_df = predictions_from_models[-1].probabilities
+    num_samples = p_df.values.shape[0]
+
+    ensemble_prediction = np.zeros(shape=(p_df.values.shape))
+
+    predictions = []
+    for i, pred in enumerate(predictions_from_models):
+        predictions.append(pred.probabilities.values * weights[i])
+
+    for row_j in range(num_samples):
+        max_row = -1
+        max_index = -1
+        for p in predictions:
+            row = p[row_j]
+            if np.max(row) > max_row:
+                max_row = np.max(row)
+                max_index = np.argmax(row)
+        ensemble_prediction[row_j][max_index] = 1.0
+
+    columns = predictions_from_models[-1].probabilities.columns
+    return Prediction(probabilities=pd.DataFrame(data=ensemble_prediction, columns=columns))
+
+
 def compute_predictions_for_ensemble_model(
     predictions_from_models: List[Prediction], weights: np.ndarray
 ) -> Prediction:
@@ -460,9 +491,6 @@ def compute_predictions_for_ensemble_model(
     with those probabilities.
 
     """
-    np.testing.assert_allclose(
-        actual=np.sum(weights), desired=1.0
-    ), f"The given weights don't sum up to one, but instead to: {np.sum(weights)}"
     assert len(predictions_from_models) == len(weights), (
         f"The amount of given predictions does not equal the amount of given weights: "
         f"{len(predictions_from_models)} != {len(weights)}"
