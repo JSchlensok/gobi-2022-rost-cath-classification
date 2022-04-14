@@ -17,7 +17,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
 from gobi_cath_classification.pipeline.utils import torch_utils
-from gobi_cath_classification.pipeline.evaluation import evaluate
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
 from gobi_cath_classification.rnn.models import RNNModel, BRNN, one_hot_encode
 from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR, load_data
@@ -41,6 +41,7 @@ dataset = load_data(
     without_duplicates=True,
     load_strings=True,
     reloading_allowed=True,
+    load_tmp_holdout_set=False,
 )
 
 sample_weights = compute_inverse_sample_weights(labels=dataset.y_train)
@@ -68,6 +69,16 @@ for e in range(100):
     torch.cuda.empty_cache()
     with torch.no_grad():
         y_pred = model.predict(X_val)
-        print(evaluate(y_val, y_pred, class_names))
+
+        evaluation = Evaluation(
+            y_true=y_val, predictions=y_pred, train_labels=class_names, model_name="BRNN"
+        )  # can be changed
+        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
+        evaluation.compute_std_err()
+
+        eval_dict = {}
+        for k, v in evaluation.eval_dict.items():
+            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
+        print(f"eval_dict = {eval_dict}")
 
 torch.save(model, (DATA_DIR / "brnn.pth"))

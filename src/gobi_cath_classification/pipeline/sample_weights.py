@@ -15,10 +15,9 @@ def compute_inverse_class_weights(labels: List[str]) -> np.ndarray:
                 (class weight for cat = 1,
                  class weight for dog = 0.25)
     """
-    counts_labels = Counter(labels)
-    class_weights = np.array([1 / value for key, value in sorted(counts_labels.items())])
-    assert len(class_weights) == len(list(set(labels)))
-    return class_weights
+    class_counts = compute_class_counts([CATHLabel(label) for label in labels])
+    inverse_class_counts = np.array([1 / count for count in class_counts])
+    return inverse_class_counts
 
 
 def compute_inverse_sample_weights(labels: List[str]) -> np.ndarray:

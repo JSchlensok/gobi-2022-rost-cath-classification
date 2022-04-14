@@ -24,11 +24,13 @@ data1 = Dataset(
     y_val=[CATHLabel(label) for label in [id1, id2, id4]],
     X_test=x1,
     y_test=[CATHLabel(label) for label in [id1, id5, id6]],
+    X_tmp_holdout=None,
+    y_tmp_holdout=None,
 )
 
 
 data1_with_strings = deepcopy(data1)
-data1_with_strings.load_strings(["1", "2", "5"], ["1", "2", "6"], ["1", "2", "5"])
+data1_with_strings.load_strings(["1", "2", "5"], ["1", "2", "6"], ["1", "2", "5"], [])
 
 
 def test_string_representation():
@@ -59,6 +61,8 @@ data2 = Dataset(
     y_val=[CATHLabel("1.8.20.300"), CATHLabel("2.2.2.2")],
     X_test=np.array([[5], [6]]),
     y_test=[CATHLabel("1.8.20.300"), CATHLabel("2.20.3.3")],
+    X_tmp_holdout=None,
+    y_tmp_holdout=None,
 )
 
 data2 = data2.get_filtered_version("A")
