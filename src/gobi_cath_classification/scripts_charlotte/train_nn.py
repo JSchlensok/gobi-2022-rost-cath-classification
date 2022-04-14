@@ -4,12 +4,8 @@ from ray import tune
 
 from gobi_cath_classification.pipeline.utils import torch_utils
 from gobi_cath_classification.pipeline.data import REPO_ROOT_DIR
-from gobi_cath_classification.scripts_charlotte.models import (
-    NeuralNetworkModel,
-)
-from gobi_cath_classification.pipeline.train_eval import (
-    training_function,
-)
+from gobi_cath_classification.scripts_charlotte.models import NeuralNetworkModel
+from gobi_cath_classification.pipeline.train_eval import training_function
 
 
 def main():
