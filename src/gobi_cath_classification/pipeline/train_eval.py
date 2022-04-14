@@ -212,9 +212,7 @@ def training_function(config: dict) -> None:
             print(f"Attempting to save {model_class} as intermediate checkpoint...")
             # Delete old model_object and save new improved model
             remove_files(checkpoint_dir=checkpoint_dir, filetype="model_object")
-            model.save_checkpoint(
-                save_to_dir=checkpoint_dir,
-            )
+            model.save_checkpoint(save_to_dir=checkpoint_dir,)
             save_predictions(pred=y_pred_val, filepath=checkpoint_dir / "predictions_val.csv")
             y_pred_test = model.predict(embeddings=dataset.X_test)
             save_predictions(pred=y_pred_test, filepath=checkpoint_dir / "predictions_test.csv")
@@ -268,15 +266,8 @@ def main():
             "class_weights": tune.choice(["none"]),
             "model": tune.grid_search(
                 [
-                    {
-                        "model_class": GaussianNaiveBayesModel.__name__,
-                        "num_epochs": 1,
-                    },
-                    {
-                        "model_class": RandomForestModel.__name__,
-                        "num_epochs": 1,
-                        "max_depth": 25,
-                    },
+                    {"model_class": GaussianNaiveBayesModel.__name__, "num_epochs": 1,},
+                    {"model_class": RandomForestModel.__name__, "num_epochs": 1, "max_depth": 25,},
                 ]
             ),
         },

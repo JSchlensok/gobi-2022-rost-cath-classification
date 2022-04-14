@@ -365,7 +365,7 @@ class HierarchicalClassifier:
         # CREATE DATE       : 15.03.2022
         # UPDATE            : ---
         ########################################################################################
-        
+
         eval_dict = {
             "accuracy_c": accuracy_for_level(
                 y_true=self.dataset.y_val,
@@ -399,4 +399,3 @@ class HierarchicalClassifier:
             + eval_dict["accuracy_h"]
         ) / 4
         return eval_dict
-

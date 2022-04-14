@@ -10,9 +10,7 @@ from gobi_cath_classification.pipeline.sample_weights import (
     compute_inverse_class_weights,
 )
 from gobi_cath_classification.pipeline.utils.torch_utils import RANDOM_SEED
-from gobi_cath_classification.rnn.models import (
-    RNNModel,
-)
+from gobi_cath_classification.rnn.models import RNNModel
 from gobi_cath_classification.rnn.models import RNNModel, BRNN
 from gobi_cath_classification.pipeline.data.data_loading import DATA_DIR, load_data
 from gobi_cath_classification.pipeline.data.Dataset import Dataset

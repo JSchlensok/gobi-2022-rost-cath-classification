@@ -25,10 +25,7 @@ CATH_COLOURS = {
 
 
 def plot_label_frequency_in_train_for_each_level(
-    y_true: List[CATHLabel],
-    y_pred: List[CATHLabel],
-    y_train: List[str],
-    train_labels: List[str],
+    y_true: List[CATHLabel], y_pred: List[CATHLabel], y_train: List[str], train_labels: List[str],
 ):
     plt_dict = {}
 
@@ -80,21 +77,11 @@ def plot_label_frequency_in_train_for_each_level(
                 y_red.append(1)
 
         # --- Scatter plot ---
-        p_scatter = figure(
-            height=height,
-            width=width,
-            y_axis_location=None,
-            x_axis_type="log",
-        )
+        p_scatter = figure(height=height, width=width, y_axis_location=None, x_axis_type="log",)
         apply_style(p_scatter)
 
         p_scatter.scatter(
-            x=x_red,
-            y=y_red,
-            color="red",
-            alpha=0.3,
-            size=4,
-            legend_label="Incorrect prediction",
+            x=x_red, y=y_red, color="red", alpha=0.3, size=4, legend_label="Incorrect prediction",
         )
         p_scatter.scatter(
             x=x_green,

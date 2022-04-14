@@ -91,10 +91,7 @@ def main():
             "random_seed": RANDOM_SEED,
             "model": tune.grid_search(
                 [
-                    {
-                        "model_class": RandomBaseline.__name__,
-                        "class_balance": False,
-                    },
+                    {"model_class": RandomBaseline.__name__, "class_balance": False,},
                     {"model_class": ZeroRate.__name__},
                 ]
             ),
