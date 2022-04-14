@@ -3,8 +3,8 @@ from utilities import return_chains
 
 
 def extract_domains():
-    new_entries = open("data/cath-b-newest-entries.txt", "r")
-    full_file = open("data/temporal_holdout_set.txt", "w")
+    new_entries = open("cath latest release data/cath-b-newest-entries.txt", "r")
+    full_file = open("cath latest release data/temporal_holdout_set.txt", "w")
     count_total = 36572
     counter = 0
     for entry in new_entries.read().split("\n"):

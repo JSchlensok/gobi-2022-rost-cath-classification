@@ -10,7 +10,7 @@ def get_pdb_or_cif_files():
     # "cath-b-newest-all" from CATH FTP server from the 17.03.2022 contains all domains from CATH database including
     # the newest additions
     # (ftp://orengoftp.biochem.ucl.ac.uk/cath/releases/daily-release/newest/)
-    file_cath_b_newest_all = open("data/cath-b-newest-all.txt", "r").read()
+    file_cath_b_newest_all = open("cath latest release data/cath-b-newest-all.txt", "r").read()
     array_cath_b_newest_all = []
     # Read all entries and safe them into an array
     for line in file_cath_b_newest_all.split("\n"):
@@ -26,7 +26,7 @@ def get_pdb_or_cif_files():
     # "cath-domain-list" from CATH FTP server from the 17.03.2022 contains all domains from CATH database excluding
     # the newest additions
     # (ftp://orengoftp.biochem.ucl.ac.uk/cath/releases/all-releases/v4_3_0/cath-classification-data/)
-    cath_domain_list = open("data/cath-domain-list.txt", "r").read()
+    cath_domain_list = open("cath latest release data/cath-domain-list.txt", "r").read()
     array_cath_domains = []
     cath_domain_list = cath_domain_list.split(
         "#---------------------------------------------------------------------"
@@ -67,7 +67,7 @@ def get_pdb_or_cif_files():
             os.rmdir(f"PDB\\{pdbDir}\\{dir1}")
     # Create a formated file for the extracted newest entries in CATH
     # ID - label - boundary
-    new_entry_file = open("data/cath-b-newest-entries.txt", "w")
+    new_entry_file = open("cath latest release data/cath-b-newest-entries.txt", "w")
     for key in dict_cath_b_newest_all.keys():
         new_entry_file.write(
             f"{key}    {dict_cath_b_newest_all.get(key)[0]}    {dict_cath_b_newest_all.get(key)[1]}\n"

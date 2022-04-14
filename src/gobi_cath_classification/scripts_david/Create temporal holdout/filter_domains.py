@@ -63,10 +63,10 @@ def remove_sequence_similarities_to_data_set(
 
 def remove_duplicates():
     # Remove redundancies with training, validation and test sets
-    file_temporal_holdout = open("data/temporal_holdout_set.txt", "r").read()
-    file_train74k = open("data/train74k.fasta", "r").read()
-    file_test300 = open("data/test300.fasta", "r").read()
-    file_val200 = open("data/val200.fasta", "r").read()
+    file_temporal_holdout = open("cath latest release data/temporal_holdout_set.txt", "r").read()
+    file_train74k = open("cath latest release data/train74k.fasta", "r").read()
+    file_test300 = open("cath latest release data/test300.fasta", "r").read()
+    file_val200 = open("cath latest release data/val200.fasta", "r").read()
 
     present_domains = []
     for line in file_train74k.split("\n"):
@@ -92,7 +92,7 @@ def remove_duplicates():
         if not present_domains.__contains__(domain.split("    ")[0].upper()):
             new_domains[domain.split("    ")[0]] = domain
     all_domains_non_redundant_with_training = open(
-        "data/temporal_holdout_set_no_duplicates.txt", "w"
+        "cath latest release data/temporal_holdout_set_no_duplicates.txt", "w"
     )
     for key in new_domains.keys():
         all_domains_non_redundant_with_training.write(f"{new_domains.get(key)}\n")
@@ -116,6 +116,6 @@ def remove_internal_duplicates(path_to_holdout_set):
             Labels.append(line.split("    ")[1].strip())
             Sequences.append(line.split("    ")[3].strip())
             out.append(line)
-    outfile = open(f"data/holdout{len(IDs)}.text", "w")
+    outfile = open(f"cath latest release data/holdout{len(IDs)}.text", "w")
     for entry in out:
         outfile.write(f"{entry}\n")
