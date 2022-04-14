@@ -1,0 +1,351 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(tidyverse)
+library(pals)
+library(RColorBrewer)
+library(readxl)
+library(magrittr)
+library(RColorBrewer)
+```
+
+# reading in the data
+```{r}
+results <- read_excel("./results.xlsx")
+results <- as.data.table(results)
+results[, value := as.numeric(value)]
+results[, error := as.numeric(error)]
+
+
+# set orders for display
+level_order <- c("C-level", "A-level", "T-level", "H-level", "mean")
+model_order <- c("RandomBaseline", "ZeroRate", "RandomForest", "NaiveBayes","LSTM", "Distance", "LogReg","FCNN 1 Hidden", "ProtTucker + LogReg Mean","ArcFace", "ProtTucker", "ArcFace + LogReg Mean", "LSTM + NaiveBayes Mean")
+dataset_order <- c("test219", "holdout389")
+
+results[, dataset := factor(dataset, levels = dataset_order)]
+results[, level := factor(level, levels = level_order)]
+```
+
+# setting the theme for the plots
+```{r}
+plot_theme <- theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                    text = element_text(size=17),
+                    plot.title = element_text(hjust = 0.5))
+
+mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(11)
+```
+
+
+# plots for the test219 set
+
+# model performance over all levels of CATH (Accuracy)
+```{r}
+models <- c("NaiveBayes", "LSTM", "Distance", "LogReg", "FCNN 1 Hidden", "ArcFace", "ProtTucker")
+results[metric=="accuracy" & dataset == "test219" & model %in% models] %>%
+ggplot(., aes(factor(model, levels = model_order), value, fill = level)) +
+  geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Model performance over all levels of CATH",
+       x="",
+       y="Accuracy") +
+  guides(fill=guide_legend("Levels of CATH")) + 
+  plot_theme
+
+ggsave("all_levels_accuracy_test219.png", plot = last_plot(), height=6, width = 12)
+```
+
+# model performance over H-level and mean (Accuracy)
+```{r}
+results[metric=="accuracy" & (level == "H-level" | level == "mean") & dataset == "test219"] %>%
+ggplot(., aes(factor(model, levels = model_order), value, fill = level)) +
+    geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Model performance on H-level and mean",
+       x="",
+       y="Accuracy") +
+  guides(fill=guide_legend("Levels of CATH")) + 
+  plot_theme
+
+ggsave("H-level_mean_accuracy_test219.png", plot = last_plot(), height = 6, width = 10)
+```
+
+# all metrics on the H-level for each model
+```{r}
+models_1 <- c("NaiveBayes", "LSTM", "Distance", "LogReg", "FCNN 1 Hidden", "ArcFace", "ProtTucker")
+results[level == "H-level" & dataset == "test219" & model %in% models_1] %>%
+ggplot(., aes(factor(metric), value, fill = factor(model, levels = model_order))) +
+  geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Different Metrics for the H-level",
+       x="",
+       y="value") +
+  guides(fill=guide_legend(title = "Model")) +
+  plot_theme
+
+ggsave("H-level_all-metrics_test219.png", plot = last_plot(), height = 6, width = 12)
+```
+
+# model performance only H-level (Accuracy)
+```{r}
+results[metric=="accuracy" & (level == "H-level") & dataset == "test219"] %>%
+ggplot(., aes(factor(model, levels = model_order), value, fill = level)) +
+    geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle = 0), position = position_dodge(width = 0.9), hjust=0.5, vjust= -3.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Model performance on H-level",
+       x="",
+       y="Accuracy") +
+  guides(fill="none") + 
+  plot_theme
+
+ggsave("H-level_accuracy_test219.png", plot = last_plot(), height = 6, width = 11)
+```
+
+# plots for the temporal hold out set 
+# model performance over all levels of CATH (Accuracy)
+```{r}
+results[metric=="accuracy" & dataset == "holdout389"] %>%
+ggplot(., aes(factor(model, levels = model_order), value, fill = level)) +
+  geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Model performance over all levels of CATH in Accuracy",
+       x="",
+       y="Accuracy") +
+  guides(fill=guide_legend("Levels of CATH")) + 
+  plot_theme
+
+ggsave("all_levels_accuracy_holdout389.png", plot = last_plot(), height=6, width = 12)
+```
+
+# model performance only H-level and mean (Accuracy)
+```{r}
+results[metric=="accuracy" & (level == "H-level" | level == "mean") & dataset == "holdout389"] %>%
+ggplot(., aes(factor(model, levels = model_order), value, fill = level)) +
+    geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Model performance on H-level and mean",
+       x="",
+       y="Accuracy") +
+  guides(fill=guide_legend("Levels of CATH")) + 
+  plot_theme
+
+ggsave("H-level_mean_accuracy_holdout389.png", plot = last_plot(), height = 6, width = 10)
+```
+
+# model performance only H-level (Accuracy)
+```{r}
+results[metric=="accuracy" & (level == "H-level") & dataset == "holdout389"] %>%
+ggplot(., aes(factor(model, levels = model_order), value, fill = level)) +
+    geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle = 0), position = position_dodge(width = 0.9), hjust=0.5, vjust= -2.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Model performance on H-level",
+       x="",
+       y="Accuracy") +
+  guides(fill = "none") +
+  plot_theme
+
+ggsave("H-level_accuracy_holdout389.png", plot = last_plot(), height = 6, width = 11)
+```
+
+# plot for acccuracy on the H-level for both test219 and holdout389
+```{r}
+results[metric=="accuracy" & level == "H-level" & !(model %in% c("ProtTucker + LogReg Mean", "ArcFace + LogReg Mean", "LSTM + NaiveBayes Mean"))] %>%
+ggplot(., aes(factor(model, levels = model_order), value, fill = dataset)) +
+    geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle = 90), position = position_dodge(width = 0.6), hjust=-1.2, vjust= 0.2) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Model performance on H-level",
+       x="",
+       y="Accuracy") + 
+  guides(fill=guide_legend(title = "Dataset")) +
+  plot_theme
+
+
+ggsave(filename = "accuracy_h-level_test219_holdout389_without_ensemble.png", plot = last_plot(), height = 6, width = 12)
+```
+
+# plot only best models on the H-level for both test219 and holdout389
+```{r}
+results[metric=="accuracy" & level == "H-level" & !(model %in% c("RandomBaseline", "ZeroRate", "RandomForest", "ArcFace + LogReg Mean", "ProtTucker + LogReg Mean"))] %>%
+ggplot(., aes(factor(model, levels = model_order), value, fill = dataset)) +
+    geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle = 90), position = position_dodge(width = 0.6), hjust=-1.2, vjust=0.3) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Model performance on H-level",
+       x="",
+       y="Accuracy") + 
+  guides(fill=guide_legend(title = "Dataset")) +
+  plot_theme
+
+ggsave(filename = "bestmodels_h-level_accuracy.png", plot = last_plot(), height = 6, width = 10)
+```
+
+# FCNN plot für charlotte, alle level nur accuracy
+```{r}
+results[metric =="accuracy" & model %in% c("LogReg", "FCNN 1 Hidden") & dataset == "test219"] %>%
+  ggplot(., aes(level, value, fill = model)) +
+  geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin = value-error, ymax = value+error), width = .15, position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle= 90), position = position_dodge(width = 0.6), hjust = -1.2, vjust=0.4) + 
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "Accuracy on all levels on test219",
+       x="",
+       y="Accuracy") +
+  guides(fill = guide_legend(title = "Model")) +
+  plot_theme
+
+ggsave(filename = "FCNN_accuracy_alllevels_test219.png", plot = last_plot(), height = 6, width = 8)
+```
+
+# plot hierarchical loss vs crossentropy loss
+```{r}
+charlotte_data <- data.table("model" = factor(c(rep("LogReg Hierarchical", 3), rep("LogReg CrossEntropy", 3)), levels = c("LogReg Hierarchical", "LogReg CrossEntropy")),
+                             "dataset" = rep(c("val200", "test219", "holdout389"), 2),
+                             "value" = c(0.82, 0.75, 0.85, 0.79, 0.75, 0.84),
+                             "error" = c(0.06, 0.06, 0.06, 0.05, 0.06, 0.06))
+
+charlotte_data %>%
+  ggplot(., aes(dataset, value, fill = model)) + 
+  geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle = 90), position = position_dodge(width = 0.6), hjust=-1, vjust=0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "Hierarchical loss vs CrossEntropy loss",
+       x = "",
+       y = "Accuracy") + 
+  guides(fill = guide_legend(title = "Model")) + 
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+                    text = element_text(size=17),
+                    plot.title = element_text(hjust = 0.5))
+
+ggsave(filename = "hierarchical_vs_crossentropy_h-level_accuracy.png", plot = last_plot(), height = 5, width = 8)
+```
+
+
+# plots for ensemble model 1
+```{r}
+model_order_ensemble_1 <- c("ProtTucker", "LogReg", "ProtTucker + LogReg Mean")
+results[metric=="accuracy" & level == "H-level" & (model %in% model_order_ensemble_1)] %>%
+ggplot(., aes(factor(model, levels = model_order_ensemble_1), value, fill = dataset)) +
+  geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle = 90), position = position_dodge(width = 0.6), hjust=-1, vjust=0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "ProtTucke + LogReg Ensemble",
+       x="",
+       y="Accuracy") + 
+  guides(fill=guide_legend(title = "Dataset")) +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1),
+                    text = element_text(size=17),
+                    plot.title = element_text(hjust = 0.5))
+
+ggsave(filename = "ensemble1_h-level_accuracy_bothsets.png", plot = last_plot(), height = 6, width = 8)
+```
+
+# plots for ensemble model 2
+```{r}
+model_order_ensemble_2 <- c("ArcFace", "LogReg", "ArcFace + LogReg Mean")
+results[metric=="accuracy" & level == "H-level" & (model %in% model_order_ensemble_2)] %>%
+ggplot(., aes(factor(model, levels = model_order_ensemble_2), value, fill = dataset)) +
+    geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle = 90), position = position_dodge(width = 0.6), hjust=-1, vjust=0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "ArcFace + LogReg Ensemble",
+       x="",
+       y="Accuracy") + 
+  guides(fill=guide_legend(title = "Dataset")) +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1),
+                    text = element_text(size=17),
+                    plot.title = element_text(hjust = 0.5))
+
+ggsave(filename = "ensemble2_h-level_accuracy_bothsets.png", plot = last_plot(), height = 6, width = 8)
+```
+
+# plots for ensemble model 3
+```{r}
+model_order_ensemble_3 <- c("LSTM", "NaiveBayes", "LSTM + NaiveBayes Mean")
+results[metric=="accuracy" & level == "H-level" & (model %in% model_order_ensemble_3)] %>%
+ggplot(., aes(factor(model, levels = model_order_ensemble_3), value, fill = dataset)) +
+    geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width=.15, 
+                position = position_dodge(.6)) +
+  geom_text(aes(label=value, angle = 90), position = position_dodge(width = 0.6), hjust=-1.5, vjust=0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "LSTM + NaiveBayes Ensemble",
+       x="",
+       y="Accuracy") + 
+  guides(fill=guide_legend(title = "Dataset")) +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1),
+                    text = element_text(size=17),
+                    plot.title = element_text(hjust = 0.5))
+
+ggsave(filename = "ensemble3_h-level_accuracy_bothsets.png", plot = last_plot(), height = 6, width = 8)
+```
+
+# plot für Jakob
+```{r}
+jakob_data <- data.table(
+  "hidden_size" = factor(c(256, 512, 1024)),
+  "value" = c(0.39, 0.64, 0.5),
+  "error" = c(0.08, 0.08, 0.08)
+)
+
+jakob_data %>%
+  ggplot(., aes(hidden_size, value, fill = "#66c2a5")) +
+  geom_col(width = 0.6, position = position_dodge2(padding = 0.3)) +
+  geom_errorbar(aes(ymin=value-error, ymax=value+error), width= .3) + 
+  geom_text(aes(label=value), position = position_dodge(width = 0.6), hjust=0.5, vjust = -3) +
+  scale_fill_manual(values = mycolors) +
+  scale_y_continuous(limits = c(0,1)) + 
+  labs(title = "Hidden Layer size impact on Accuracy",
+       x="Hidden Layer Size",
+       y="Accuracy") +
+  guides(fill = "none") +
+  theme(text = element_text(size = 17),
+        plot.title = element_text(hjust = 0.5))
+
+ggsave("LSTM_hidden_layer_accuracy.png", plot = last_plot(), height = 4, width = 6)
+
+```
+
