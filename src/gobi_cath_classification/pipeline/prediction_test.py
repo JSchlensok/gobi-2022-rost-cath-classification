@@ -16,7 +16,13 @@ def test_save_and_read_in_prediction():
     filepath = Path(__file__).parent.parent.parent.parent / "pred_test.csv"
     pred_1 = Prediction(
         pd.DataFrame(
-            data=np.array([[0.1, 0.1, 0.1, 0.7], [0.05, 0.3, 0.6, 0.05], [0.9, 0.01, 0.01, 0.08],]),
+            data=np.array(
+                [
+                    [0.1, 0.1, 0.1, 0.7],
+                    [0.05, 0.3, 0.6, 0.05],
+                    [0.9, 0.01, 0.01, 0.08],
+                ]
+            ),
             columns=["1.20.35.10", "2.40.50.10", "3.20.25.400", "3.300.20.5"],
         )
     )

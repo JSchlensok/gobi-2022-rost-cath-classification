@@ -18,7 +18,10 @@ def main():
     else:
         resources_per_trial = {"cpu": 1}
 
-    reporter = tune.CLIReporter(max_report_frequency=120, infer_limit=10,)
+    reporter = tune.CLIReporter(
+        max_report_frequency=120,
+        infer_limit=10,
+    )
     local_dir = REPO_ROOT_DIR / "ray_results"
 
     ray.init()

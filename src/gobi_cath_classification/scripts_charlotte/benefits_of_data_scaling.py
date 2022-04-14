@@ -59,7 +59,13 @@ def show_bar_plot(
         }
     )
 
-    p = figure(x_range=x_labels, y_range=(0, 100), height=350, width=900, title=title,)
+    p = figure(
+        x_range=x_labels,
+        y_range=(0, 100),
+        height=350,
+        width=900,
+        title=title,
+    )
     apply_style(p)
 
     p.vbar(

@@ -28,7 +28,10 @@ def main():
         resources_per_trial = {"cpu": 1}
 
     # Open CLI Reporter
-    reporter = tune.CLIReporter(max_report_frequency=10, infer_limit=10,)
+    reporter = tune.CLIReporter(
+        max_report_frequency=10,
+        infer_limit=10,
+    )
 
     # Where ever i save my ray results
     local_dir = "WHERE I WANT TO SAVE MY RAY RESULTS AND CHECKPOINTS"
