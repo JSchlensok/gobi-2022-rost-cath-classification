@@ -1,5 +1,4 @@
 from gobi_cath_classification.scripts_david.hierarchical_classifier import HierarchicalClassifier
-from pathlib import Path
 
 
 def main():

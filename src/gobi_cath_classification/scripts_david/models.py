@@ -7,7 +7,6 @@ from typing import List, Optional, Dict
 import numpy as np
 import pandas as pd
 import torch
-import uuid
 
 # Import own classes needed in this script
 from gobi_cath_classification.pipeline.model_interface import ModelInterface, Prediction
