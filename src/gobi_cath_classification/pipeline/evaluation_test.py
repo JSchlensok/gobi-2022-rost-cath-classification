@@ -86,13 +86,7 @@ def test_evaluate():
     y_true = ["1.25.300.45", "2.25.400.10", "1.25.300.450"]
     prediction = Prediction(
         probabilities=pd.DataFrame(
-            np.array(
-                [
-                    [0.7, 0.1, 0.1, 0.1],
-                    [0.2, 0.2, 0.5, 0.1],
-                    [0.05, 0.7, 0.05, 0.2],
-                ]
-            ),
+            np.array([[0.7, 0.1, 0.1, 0.1], [0.2, 0.2, 0.5, 0.1], [0.05, 0.7, 0.05, 0.2],]),
             columns=columns,
         )
     )

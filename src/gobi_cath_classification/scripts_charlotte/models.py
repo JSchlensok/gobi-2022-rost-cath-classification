@@ -209,17 +209,11 @@ class NeuralNetworkModel(ModelInterface):
         for i, num_in_features in enumerate(layer_sizes[:-1]):
             model.add_module(
                 f"Linear_{i}",
-                nn.Linear(
-                    in_features=num_in_features,
-                    out_features=layer_sizes[i + 1],
-                ),
+                nn.Linear(in_features=num_in_features, out_features=layer_sizes[i + 1],),
             )
             if dropout_sizes[i] is not None:
                 model.add_module(
-                    f"Dropout_{i}",
-                    nn.Dropout(
-                        p=dropout_sizes[i],
-                    ),
+                    f"Dropout_{i}", nn.Dropout(p=dropout_sizes[i],),
                 )
             model.add_module(f"ReLU_{i}", nn.ReLU())
 
@@ -229,10 +223,7 @@ class NeuralNetworkModel(ModelInterface):
         )
         if dropout_sizes[-1] is not None:
             model.add_module(
-                f"Dropout_{len(dropout_sizes) - 1}",
-                nn.Dropout(
-                    p=dropout_sizes[-1],
-                ),
+                f"Dropout_{len(dropout_sizes) - 1}", nn.Dropout(p=dropout_sizes[-1],),
             )
         if loss_function is not "CrossEntropyLoss":
             model.add_module("Softmax", nn.Softmax())
@@ -260,9 +251,7 @@ class NeuralNetworkModel(ModelInterface):
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
         elif optimizer == "adam":
             self.optimizer = torch.optim.Adam(
-                self.model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
+                self.model.parameters(), lr=lr, weight_decay=weight_decay,
             )
         else:
             raise ValueError(f"Optimizer is not valid: {optimizer}")

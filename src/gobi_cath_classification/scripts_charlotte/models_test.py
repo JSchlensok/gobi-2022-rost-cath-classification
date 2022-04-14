@@ -109,20 +109,8 @@ class TestHierarchicalLoss:
             device="cpu",
             loss_function=log_loss,
         )
-        y_true = torch.tensor(
-            [
-                [0.0, 0.0, 1.0],
-                [1.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0],
-            ]
-        )
-        y_pred = torch.tensor(
-            [
-                [0.0, 0.1, 0.9],
-                [1.0, 0.0, 0.0],
-                [0.2, 0.8, 0.0],
-            ]
-        )
+        y_true = torch.tensor([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0],])
+        y_pred = torch.tensor([[0.0, 0.1, 0.9], [1.0, 0.0, 0.0], [0.2, 0.8, 0.0],])
         loss = loss_function(y_pred=y_pred, y_true=y_true)
         assert torch.allclose(loss, torch.tensor([0.328504066972036 / 9]))
 
@@ -130,38 +118,12 @@ class TestHierarchicalLoss:
 def test_H_to_level_matrix():
     class_names = ["1.1.1.1", "2.2.3.3", "2.3.3.3", "2.3.4.4", "2.3.4.5"]
 
-    matrix_C = torch.transpose(
-        torch.Tensor(
-            [
-                [1, 0, 0, 0, 0],
-                [0, 1, 1, 1, 1],
-            ]
-        ),
-        0,
-        1,
-    )
+    matrix_C = torch.transpose(torch.Tensor([[1, 0, 0, 0, 0], [0, 1, 1, 1, 1],]), 0, 1,)
     matrix_A = torch.transpose(
-        torch.Tensor(
-            [
-                [1, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0],
-                [0, 0, 1, 1, 1],
-            ]
-        ),
-        0,
-        1,
+        torch.Tensor([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 1, 1],]), 0, 1,
     )
     matrix_T = torch.transpose(
-        torch.Tensor(
-            [
-                [1, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0],
-                [0, 0, 1, 0, 0],
-                [0, 0, 0, 1, 1],
-            ]
-        ),
-        0,
-        1,
+        torch.Tensor([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 1],]), 0, 1,
     )
     matrix_H = torch.eye(n=len(class_names))
 

@@ -326,10 +326,7 @@ def metric_for_level(
 
     # compute the specified metric
     if metric == "acc":
-        return accuracy_score(
-            y_true=y_true_for_level,
-            y_pred=y_pred_for_level,
-        )
+        return accuracy_score(y_true=y_true_for_level, y_pred=y_pred_for_level,)
     if metric == "mcc":
         return matthews_corrcoef(y_true=y_true_for_level, y_pred=y_pred_for_level)
     if metric == "f1":

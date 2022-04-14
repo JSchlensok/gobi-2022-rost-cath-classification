@@ -53,9 +53,7 @@ def training_function(config: dict) -> None:
     y_pred_val = model.predict(embeddings=data_set.X_val)
 
     eval_dict = evaluate(
-        y_true=data_set.y_val,
-        y_pred=y_pred_val,
-        class_names_training=class_names,
+        y_true=data_set.y_val, y_pred=y_pred_val, class_names_training=class_names,
     )
     tune.report(**eval_dict)
 
@@ -70,10 +68,7 @@ def main():
     else:
         resources_per_trial = {"cpu": 1}
 
-    reporter = tune.CLIReporter(
-        max_report_frequency=10,
-        infer_limit=10,
-    )
+    reporter = tune.CLIReporter(max_report_frequency=10, infer_limit=10,)
 
     ray.init()
     analysis = tune.run(

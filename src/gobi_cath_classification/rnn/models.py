@@ -78,10 +78,7 @@ class RNNModel(nn.Module):
         return out
 
     def train_one_epoch(
-        self,
-        sequences: List[str],
-        labels: List[str],
-        sample_weights: Optional[np.ndarray],
+        self, sequences: List[str], labels: List[str], sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
 
         list_perm = np.random.permutation(len(sequences))
@@ -126,13 +123,7 @@ class RNNModel(nn.Module):
 
 class BRNN(nn.Module):
     def __init__(
-        self,
-        hidden_size,
-        num_layers,
-        class_names,
-        class_weights=None,
-        lr=0.01,
-        batch_size=200,
+        self, hidden_size, num_layers, class_names, class_weights=None, lr=0.01, batch_size=200,
     ):
         super(BRNN, self).__init__()
         self.hidden_size = hidden_size

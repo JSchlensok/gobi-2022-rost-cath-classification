@@ -189,9 +189,7 @@ def training_function(config: dict) -> None:
 
         # evaluate and save results in ray tune
         eval_dict = evaluate(
-            y_true=dataset.y_val,
-            y_pred=y_pred_val,
-            class_names_training=dataset.train_labels,
+            y_true=dataset.y_val, y_pred=y_pred_val, class_names_training=dataset.train_labels,
         )
 
         # Save the model if the average accuracy has risen during the last epoch and check for early stopping
@@ -202,9 +200,7 @@ def training_function(config: dict) -> None:
             print(f"Attempting to save {model_class} as intermediate checkpoint...")
             # Delete old model_object and save new improved model
             remove_files(checkpoint_dir=checkpoint_dir, filetype="model_object")
-            model.save_checkpoint(
-                save_to_dir=checkpoint_dir,
-            )
+            model.save_checkpoint(save_to_dir=checkpoint_dir,)
         else:
             n_bad += 1
             if n_bad >= n_thresh:
@@ -236,10 +232,7 @@ def main():
     else:
         resources_per_trial = {"cpu": 1}
 
-    reporter = tune.CLIReporter(
-        max_report_frequency=10,
-        infer_limit=10,
-    )
+    reporter = tune.CLIReporter(max_report_frequency=10, infer_limit=10,)
     # Default Path for local_dir --> defines location of ray files
     # Can be changed to any location
     local_dir = REPO_ROOT_DIR / "model checkpoints"
@@ -275,10 +268,7 @@ def main():
                         "layer_sizes": [1024, 2048],
                         "dropout_sizes": [0.2, None],
                     },
-                    {
-                        "model_class": GaussianNaiveBayesModel.__name__,
-                        "num_epochs": 1,
-                    },
+                    {"model_class": GaussianNaiveBayesModel.__name__, "num_epochs": 1,},
                 ]
             ),
         },
