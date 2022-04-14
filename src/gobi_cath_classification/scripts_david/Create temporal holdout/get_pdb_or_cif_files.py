@@ -42,11 +42,7 @@ def get_pdb_or_cif_files():
             dict_cath_b_newest_all.pop(entry)
     print(f"Reduced to {len(dict_cath_b_newest_all)} domains in the newest release")
     # Download matching PDB or CIF files for the extracted IDs
-    counter = 0
     for id in dict_cath_b_newest_all.keys():
-        counter += 1
-        if counter == 21:
-            break
         if id != "":
             pdbl = PDBList(pdb=f"PDB/{id[:4]}")
             pdbl.retrieve_pdb_file(id[:4])
