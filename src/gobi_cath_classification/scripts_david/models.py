@@ -34,7 +34,7 @@ class SupportVectorMachine(ModelInterface):
         # Cache auf 1000 MB erweitert
         # ####################################################################################### Parameter
         # description for SVMs Kernel: The main  function of  the  kernel is to transform the given dataset input
-        # data into the required form. There are various types of functions such as linear, polynomial, and radial
+        # cath latest release data into the required form. There are various types of functions such as linear, polynomial, and radial
         # basis function(RBF).Polynomial and RBF are useful for non - linear hyperplane.Polynomial and RBF kernels
         # compute the separation line in the higher dimension.In some of the applications, it is suggested to use a
         # more complex kernel to separate the classes that are curved or nonlinear.This transformation can lead to
@@ -49,7 +49,7 @@ class SupportVectorMachine(ModelInterface):
         # Gamma: A lower value  of Gamma will loosely fit the training dataset, whereas a higher value of gamma will
         # exactly fit the training dataset, which causes over - fitting.In other words, you can say a low value of gamma
         # considers only nearby  points in calculating the separation line, while the a value of gamma considers all the
-        # data points in the calculation of the separation line.
+        # cath latest release data points in the calculation of the separation line.
 
         self.model = svm.SVC(C=c, kernel=kernel, degree=degree, gamma=gamma, probability=True)
         self.model.cache_size = 1000  # Make more MBs of RAM available for model cache

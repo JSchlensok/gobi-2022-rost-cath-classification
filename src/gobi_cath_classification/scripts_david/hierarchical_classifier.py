@@ -61,16 +61,16 @@ class HierarchicalClassifier:
         # FUNCTION NAME     : get_data()
         # INPUT PARAMETERS  : random_seed: int
         # OUTPUT PARAMETERS : none
-        # DESCRIPTION       : Read in the data in the required format
+        # DESCRIPTION       : Read in the cath latest release data in the required format
         # AUTHOR            : D. Mauder
         # CREATE DATE       : 09.03.2022
         # UPDATE            : ---
         ########################################################################################
-        print("Reading in data...")
+        print("Reading in cath latest release data...")
         set_random_seeds(seed=random_seed)
         rng = np.random.RandomState(random_seed)
         print(f"rng = {rng}")
-        # load data
+        # load cath latest release data
         self.dataset = load_data(
             data_dir=DATA_DIR,
             rng=rng,
@@ -238,12 +238,7 @@ class HierarchicalClassifier:
         print("-----------------------------------------------------------\n\n")
 
     def return_prediction(
-        self,
-        probs_C,
-        probs_A,
-        probs_T,
-        probs_H,
-        threshold,
+        self, probs_C, probs_A, probs_T, probs_H, threshold,
     ) -> (CATHLabel, float):
         ########################################################################################
         # FUNCTION NAME     : return_prediction()
