@@ -21,7 +21,11 @@ class RandomBaseline(ModelInterface):
     """
 
     def __init__(
-        self, data: Dataset, class_balance: bool, rng: np.random.RandomState, random_seed: int = 42,
+        self,
+        data: Dataset,
+        class_balance: bool,
+        rng: np.random.RandomState,
+        random_seed: int = 42,
     ):
         """
         Args:
@@ -122,7 +126,10 @@ class ZeroRate(ModelInterface):
     """
 
     def __init__(
-        self, data: Dataset, rng: np.random.RandomState, random_seed: int = 42,
+        self,
+        data: Dataset,
+        rng: np.random.RandomState,
+        random_seed: int = 42,
     ):
         """
         Args:

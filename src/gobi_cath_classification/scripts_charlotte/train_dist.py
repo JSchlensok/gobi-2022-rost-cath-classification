@@ -18,7 +18,10 @@ def main():
     else:
         resources_per_trial = {"cpu": 1}
 
-    reporter = tune.CLIReporter(max_report_frequency=10, infer_limit=10,)
+    reporter = tune.CLIReporter(
+        max_report_frequency=10,
+        infer_limit=10,
+    )
     local_dir = REPO_ROOT_DIR / "ray_results"
 
     ray.init()
@@ -29,7 +32,11 @@ def main():
         num_samples=1,
         config={
             "random_seed": tune.grid_search([1]),
-            "class_weights": tune.grid_search(["inverse",]),
+            "class_weights": tune.grid_search(
+                [
+                    "inverse",
+                ]
+            ),
             "model": {
                 "model_class": DistanceModel.__name__,
                 "distance_order": tune.grid_search([2]),

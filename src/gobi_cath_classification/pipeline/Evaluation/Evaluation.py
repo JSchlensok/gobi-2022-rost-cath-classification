@@ -530,11 +530,18 @@ def metric_for_level(
     assert len(y_true_for_level) == len(y_pred_for_level)
     # compute the specified metric
     if metric == "acc":
-        return accuracy_score(y_true=y_true_for_level, y_pred=y_pred_for_level,)
+        return accuracy_score(
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level,
+        )
     if metric == "mcc":
         return matthews_corrcoef(y_true=y_true_for_level, y_pred=y_pred_for_level)
     if metric == "f1":
-        return f1_score(y_true=y_true_for_level, y_pred=y_pred_for_level, average="weighted",)
+        return f1_score(
+            y_true=y_true_for_level,
+            y_pred=y_pred_for_level,
+            average="weighted",
+        )
     if metric == "kappa":
         return cohen_kappa_score(y1=y_true_for_level, y2=y_pred_for_level)
 

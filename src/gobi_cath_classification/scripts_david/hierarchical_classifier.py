@@ -238,7 +238,12 @@ class HierarchicalClassifier:
         print("-----------------------------------------------------------\n\n")
 
     def return_prediction(
-        self, probs_C, probs_A, probs_T, probs_H, threshold,
+        self,
+        probs_C,
+        probs_A,
+        probs_T,
+        probs_H,
+        threshold,
     ) -> (CATHLabel, float):
         ########################################################################################
         # FUNCTION NAME     : return_prediction()
