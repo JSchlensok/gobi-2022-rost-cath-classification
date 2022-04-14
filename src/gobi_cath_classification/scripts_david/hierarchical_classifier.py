@@ -7,10 +7,10 @@ import numpy as np
 from typing_extensions import Literal
 from typing import List
 
+from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
 from gobi_cath_classification.pipeline.data import load_data, DATA_DIR
 from gobi_cath_classification.pipeline.utils.torch_utils import set_random_seeds
-from gobi_cath_classification.pipeline.evaluation import accuracy_for_level
 
 
 class HierarchicalClassifier:
@@ -77,6 +77,7 @@ class HierarchicalClassifier:
             without_duplicates=True,
             shuffle_data=True,
             reloading_allowed=True,
+            load_tmp_holdout_set=False,
         )
         self.dataset.scale()
         print("Data successfully read in!")
@@ -369,6 +370,7 @@ class HierarchicalClassifier:
         # CREATE DATE       : 15.03.2022
         # UPDATE            : ---
         ########################################################################################
+        
         eval_dict = {
             "accuracy_c": accuracy_for_level(
                 y_true=self.dataset.y_val,
@@ -402,3 +404,4 @@ class HierarchicalClassifier:
             + eval_dict["accuracy_h"]
         ) / 4
         return eval_dict
+

@@ -43,7 +43,7 @@ def main():
             ),
             "model": {
                 "model_class": DistanceModel.__name__,
-                "distance_order": tune.grid_search([1, 2, 3]),
+                "distance_order": tune.grid_search([2]),
             },
         },
         progress_reporter=reporter,
