@@ -11,12 +11,16 @@ src/gobi_cath_classification/contrastive_learning_arcface/ProtTucker
 #**/data/
 data
 **/sample_data
+*.csv
+*.dt
 *.fasta
 *.h5
 *.html
+*.json
+*.pkl
 *.txt
-*.dt
 model checkpoints
+scaled_vs_non_scaled
 **/ray_results
 **/predictions
 

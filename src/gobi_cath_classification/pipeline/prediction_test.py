@@ -8,7 +8,7 @@ import pandas as pd
 from gobi_cath_classification.pipeline.prediction import (
     save_predictions,
     Prediction,
-    read_in_predictions,
+    read_in_proba_predictions,
 )
 
 
@@ -27,7 +27,7 @@ def test_save_and_read_in_prediction():
         )
     )
     save_predictions(pred=pred_1, filepath=filepath)
-    pred_2 = read_in_predictions(filepath=filepath)
+    pred_2 = read_in_proba_predictions(filepath=filepath)
     os.remove(path=filepath)
 
     pd.testing.assert_frame_equal(pred_1.probabilities, pred_2.probabilities)

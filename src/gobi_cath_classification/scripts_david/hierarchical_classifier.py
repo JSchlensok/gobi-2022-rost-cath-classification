@@ -5,7 +5,7 @@ import torch
 import decimal
 import numpy as np
 from typing_extensions import Literal
-from typing import List, Optional, Dict
+from typing import List
 
 from gobi_cath_classification.pipeline.Evaluation import Evaluation
 from gobi_cath_classification.pipeline.utils.CATHLabel import CATHLabel
@@ -44,8 +44,8 @@ class HierarchicalClassifier:
             print("Attempting to read in the models from list 'models'...")
             for model_path in models:
                 self.models.append(torch.load(model_path))
-        except:
-            raise ValueError("Failed to read models from list 'models'!")
+        except Exception as e:
+            raise ValueError("Failed to read models from list 'models'!\n{e}")
 
         if classifier_type == "LCL":
             print("Commencing classification with 'Local Classifier Per Level'")
@@ -107,8 +107,8 @@ class HierarchicalClassifier:
             print("Model for level T ready and standing by!")
             model_H = self.models[3]
             print("Model for level H ready and standing by!")
-        except:
-            print("FAILED to assign models...")
+        except Exception as e:
+            print(f"FAILED to assign models...\n{e}")
             exit(0)
         # Predict with each model
         print("Commencing to predict...")
@@ -131,7 +131,7 @@ class HierarchicalClassifier:
         # Evaluate the prediction
         eval_dict = self.return_evaluation(labels_CATH)
         # Print out the results:
-        print("\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER LEVEL")
+        print("\n\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER LEVEL")
         print("-----------------------------------------------------------")
         print("USED MODELS:")
         print(f"Model for level C : {self.models[0]}")
@@ -145,6 +145,7 @@ class HierarchicalClassifier:
         print(f"Accuracy T   : {eval_dict['accuracy_t']}")
         print(f"Accuracy H   : {eval_dict['accuracy_h']}")
         print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
+        print("-----------------------------------------------------------\n\n")
 
     def predict_lcpn(self, threshold, prediction: Literal["AVG", "H"]):
         ########################################################################################
@@ -172,8 +173,8 @@ class HierarchicalClassifier:
             print("Model for level T ready and standing by...")
             model_H = self.models[3]
             print("Model for level H ready and standing by...")
-        except:
-            print("FAILED to assign models!")
+        except Exception as e:
+            print("FAILED to assign models!\n{e}")
             exit(0)
         # Predict with each model
         print("Commencing to predict...")
@@ -220,7 +221,7 @@ class HierarchicalClassifier:
         # Evaluate the predictions
         eval_dict = self.return_evaluation(labels_CATH)
         # Print out the results:
-        print("\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER PARENT NODE")
+        print("\n\nRESULTS - FOR PREDICTIONS USING LOCAL CLASSIFIERS PER PARENT NODE")
         print("-----------------------------------------------------------")
         print("USED MODELS:")
         print(f"Model for level C : {self.models[0]}")
@@ -234,6 +235,7 @@ class HierarchicalClassifier:
         print(f"Accuracy T   : {eval_dict['accuracy_t']}")
         print(f"Accuracy H   : {eval_dict['accuracy_h']}")
         print(f"Accuracy AVG : {eval_dict['accuracy_avg']}")
+        print("-----------------------------------------------------------\n\n")
 
     def return_prediction(
         self,
@@ -241,7 +243,7 @@ class HierarchicalClassifier:
         probs_A,
         probs_T,
         probs_H,
-        treshhold,
+        threshold,
     ) -> (CATHLabel, float):
         ########################################################################################
         # FUNCTION NAME     : return_prediction()
@@ -271,7 +273,7 @@ class HierarchicalClassifier:
             # Calculate mean probability over every level
             mean_proba_of_current_label = (current_proba_C + 0 + 0 + 0) / 4
             # Break if mean probability does not exceed the threshold
-            if not mean_proba_of_current_label >= treshhold:
+            if not mean_proba_of_current_label >= threshold:
                 break
             # If best probability is less then the actual --> Update the best values
             elif mean_proba_of_current_label > proba_of_current_best_label_AVG:
@@ -293,7 +295,7 @@ class HierarchicalClassifier:
                 # Calculate mean probability over every level
                 mean_proba_of_current_label = (current_proba_C + current_proba_A + 0 + 0) / 4
                 # Break if mean probability does not exceed the threshold
-                if not mean_proba_of_current_label >= treshhold:
+                if not mean_proba_of_current_label >= threshold:
                     break
                 # If best probability is less then the actual --> Update the best values
                 elif mean_proba_of_current_label > proba_of_current_best_label_AVG:
@@ -303,7 +305,7 @@ class HierarchicalClassifier:
                 columns_T = [
                     column
                     for column in probs_T.columns.values
-                    if current_column_A == CATHLabel(f"{column}.0")["A"]
+                    if current_column_A == CATHLabel(f"{column}.0")[:"A"].__str__()
                 ]
                 # T-LEVEL ------------------------------------------------------------------------------------------------------
                 # Loop over all probabilities of every prediction for level T
@@ -317,7 +319,7 @@ class HierarchicalClassifier:
                         current_proba_C + current_proba_A + current_proba_T + 0
                     ) / 4
                     # Break if mean probability does not exceed the threshold
-                    if not mean_proba_of_current_label >= treshhold:
+                    if not mean_proba_of_current_label >= threshold:
                         break
                     # If best probability is less then the actual --> Update the best values
                     elif mean_proba_of_current_label > proba_of_current_best_label_AVG:
@@ -327,7 +329,7 @@ class HierarchicalClassifier:
                     columns_H = [
                         column
                         for column in probs_H.columns.values
-                        if current_column_T == CATHLabel(column)["T"]
+                        if current_column_T == CATHLabel(column)[:"T"].__str__()
                     ]
                     # H-LEVEL ------------------------------------------------------------------------------------------------------
                     # Loop over all probabilities of every prediction for level H
@@ -341,7 +343,7 @@ class HierarchicalClassifier:
                             current_proba_C + current_proba_A + current_proba_T + current_proba_H
                         ) / 4
                         # Break if mean probability does not exceed the threshold
-                        if not mean_proba_of_current_label >= treshhold:
+                        if not mean_proba_of_current_label >= threshold:
                             break
                         # If best probability is less then the actual --> Update the best values
                         elif mean_proba_of_current_label > proba_of_current_best_label_AVG:
@@ -358,7 +360,7 @@ class HierarchicalClassifier:
             proba_of_current_best_label_H,
         )
 
-    def return_evaluation(self, labels_CATH: List[str]):
+    def return_evaluation(self, labels_cath: List[str]):
         ########################################################################################
         # FUNCTION NAME     : return_evaluation()
         # INPUT PARAMETERS  : labels_CATH: List[str]
@@ -368,31 +370,37 @@ class HierarchicalClassifier:
         # CREATE DATE       : 15.03.2022
         # UPDATE            : ---
         ########################################################################################
-        evaluation = Evaluation(
-            y_true=self.dataset.y_val,
-            predictions=labels_CATH,
-            train_labels=self.dataset.train_labels,
-            model_name="Hierarchical Classifier",  # can be changed
-        )
-        evaluation.compute_metrics(accuracy=True, mcc=True, f1=True, kappa=True)
-        eval_dict = {}
-        for k, v in evaluation.eval_dict.items():
-            eval_dict = {**eval_dict, **evaluation.eval_dict[k]}
+
+        eval_dict = {
+            "accuracy_c": accuracy_for_level(
+                y_true=self.dataset.y_val,
+                y_pred=labels_cath,
+                class_names_training=self.dataset.train_labels,
+                cath_level="C",
+            ),
+            "accuracy_a": accuracy_for_level(
+                y_true=self.dataset.y_val,
+                y_pred=labels_cath,
+                class_names_training=self.dataset.train_labels,
+                cath_level="A",
+            ),
+            "accuracy_t": accuracy_for_level(
+                y_true=self.dataset.y_val,
+                y_pred=labels_cath,
+                class_names_training=self.dataset.train_labels,
+                cath_level="T",
+            ),
+            "accuracy_h": accuracy_for_level(
+                y_true=self.dataset.y_val,
+                y_pred=labels_cath,
+                class_names_training=self.dataset.train_labels,
+                cath_level="H",
+            ),
+        }
+        eval_dict["accuracy_avg"] = (
+            eval_dict["accuracy_c"]
+            + eval_dict["accuracy_a"]
+            + eval_dict["accuracy_t"]
+            + eval_dict["accuracy_h"]
+        ) / 4
         return eval_dict
-
-
-if __name__ == "__main__":
-    set_random_seeds(seed=1)
-    rng = np.random.RandomState(1)
-    print(f"rng = {rng}")
-    # load data
-    dataset = load_data(
-        data_dir=DATA_DIR,
-        rng=rng,
-        without_duplicates=True,
-        shuffle_data=True,
-        reloading_allowed=True,
-        level_cutoff="H",
-        load_tmp_holdout_set=False,
-    )
-    dataset.scale()
