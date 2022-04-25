@@ -115,7 +115,6 @@ py-spy==0.3.11
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
-pyDeprecate==0.3.1
 Pygments==2.11.2
 pyparsing==3.0.6
 pyrsistent==0.18.1
