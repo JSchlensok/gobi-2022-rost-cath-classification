@@ -1,20 +1,13 @@
-from typing import List, Dict
 from collections import Counter
 import os
+from typing import List, Dict
+from typing_extensions import Literal
 import uuid
 import warnings
-from typing_extensions import Literal
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (
-    accuracy_score,
-    cohen_kappa_score,
-    matthews_corrcoef,
-    f1_score,
-    balanced_accuracy_score,
-)
-from tabulate import tabulate
-from matplotlib import pyplot as plt
 from plotnine import (
     ggplot,
     aes,
@@ -27,6 +20,15 @@ from plotnine import (
     theme,
     element_text,
 )
+from sklearn.metrics import (
+    accuracy_score,
+    cohen_kappa_score,
+    matthews_corrcoef,
+    f1_score,
+    balanced_accuracy_score,
+)
+from tabulate import tabulate
+from tqdm import trange
 
 from gobi_cath_classification.pipeline.utils import CATHLabel
 from gobi_cath_classification.pipeline.prediction import Prediction
@@ -245,7 +247,7 @@ class Evaluation:
 
         # only if the eval_dict contains metrics we can calculate the error
         if self.eval_dict is not None:
-            for _ in range(bootstrap_n):
+            for _ in trange(bootstrap_n):
                 # choose n_pred indices with replacement
                 sample = np.random.choice(indexes, n_pred, replace=True)
                 y_true = [self.y_true[idx] for idx in sample]

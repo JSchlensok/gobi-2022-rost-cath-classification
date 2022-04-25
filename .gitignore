@@ -34,6 +34,9 @@ scaled_vs_non_scaled
 # PyTorch
 *.pth
 
+# PyTorch Lightning + Ray Tune
+*.ckpt
+
 # Created by https://www.toptal.com/developers/gitignore/api/python,macos,intellij,pycharm
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,macos,intellij,pycharm
 
@@ -386,6 +389,8 @@ cython_debug/
 
 # Checkpoint files
 /src/gobi_cath_classification/model checkpoints/
+/src/gobi_cath_classification/contrastive_learning_arcface/lightning_logs/
 
 # RDATA files
 /.RDataFiles/1527078135.RData
+!/src/gobi_cath_classification/pipeline/data/lightning.py
