@@ -1,10 +1,12 @@
+from __future__ import annotations
+from pathlib import Path
+from typing import List
 import warnings
 
+from deprecation import deprecated
 import numpy as np
-from typing import List
-
 import pandas as pd
-from pathlib import Path
+from tqdm import tqdm
 
 
 class Prediction:
@@ -24,7 +26,23 @@ class Prediction:
         y_pred_strings_val = [self.probabilities.columns[y] for y in y_pred_argmax_val]
         return y_pred_strings_val
 
+    # TODO speed up by using df.to_csv()
+    def save(self, path: Path) -> None:
+        # self.probabilities.to_csv(path, columns=self.probabilities.columns)
+        with open(path, "w+") as f:
+            column_names = "\t".join(self.probabilities.columns)
+            f.write(f"{column_names}\n")
+            for probas in tqdm(self.probabilities.values):
+                p = "\t".join([str(proba) for proba in probas])
+                f.write(f"{p}\n")
 
+    @classmethod
+    def from_file(cls, path) -> Prediction:
+        df = pd.read_csv(filepath_or_buffer=path, sep="\t")
+        return Prediction(probabilities=df)
+
+
+@deprecated(details="Use class method Prediction.save() instead")
 def save_predictions(pred: Prediction, filepath: Path) -> None:
     with open(Path(filepath), "w") as f:
         column_names = "\t".join(pred.probabilities.columns)
@@ -34,6 +52,7 @@ def save_predictions(pred: Prediction, filepath: Path) -> None:
             f.write(f"{p}\n")
 
 
+@deprecated(details="Use class method Prediction.from_file() instead")
 def read_in_proba_predictions(filepath: Path) -> Prediction:
     """
     Reads in probabilities from given file and returns a Prediction object.
