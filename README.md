@@ -1,53 +1,42 @@
 # GoBi 2022 CATH Classification
-
-## Project organisation:
-### Slides:
-Rolling slide deck intro Presentation: https://docs.google.com/presentation/d/1TvTKibsBg_XdaENP_taODn4jPAQi8Y8t9tuwYYHxTKs/edit?usp=sharing \
-Rolling slide deck intermediate Presentation: https://docs.google.com/presentation/d/1_3Y6vuqYIWZX2Ip2UnL3sXAbx9C4tHZRkw7Z2e44vWg/edit?usp=sharing \
-Rolling slide deck final Presentation: https://docs.google.com/presentation/d/1z13lF1WeNIKjIAZgW2vlUoawp6SchPlB3WkiE5Q01-4/edit?usp=sharing
-
-### Report:
-Overleaf Report: https://www.overleaf.com/2953961862zbsyvgtsngst
-
-### Trello board
-https://trello.com/b/iEvimTbs/gobi-praktikum
+A comparison of different machine learning approaches for predicting CATH superfamily labels of protein sequences from their ProtT5 embeddings. This was done in the scope of the project part of the [Rostlab](https://rostlab.org) GoBi 2021/2022.
 
 ## Resources
-### Papers
-ProtT5 papers:
-https://www.biorxiv.org/content/10.1101/2020.07.12.199554v3
-https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-3220-8
+- Slides:
+    - [Intro presentation](https://docs.google.com/presentation/d/1TvTKibsBg_XdaENP_taODn4jPAQi8Y8t9tuwYYHxTKs/edit?usp=sharing)
+    - [Intermediate presentation](https://docs.google.com/presentation/d/1_3Y6vuqYIWZX2Ip2UnL3sXAbx9C4tHZRkw7Z2e44vWg/edit?usp=sharing)
+    - [Final presentation](https://docs.google.com/presentation/d/1z13lF1WeNIKjIAZgW2vlUoawp6SchPlB3WkiE5Q01-4/edit?usp=sharing)
 
-Method review paper: https://academic.oup.com/bib/article/19/2/231/2562645?login=true
+- **[Final report](https://www.overleaf.com/2953961862zbsyvgtsngst)** (this gives a great overview!)
+- [Trello board](https://trello.com/b/iEvimTbs/gobi-praktikum)
+
+### Papers
+- [ProtT5](https://www.biorxiv.org/content/10.1101/2020.07.12.199554v3)
+- [SeqVec](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-3220-8)
+- [Remote homology detection method review](https://academic.oup.com/bib/article/19/2/231/2562645?login=true)
 
 #### CATH info:
-https://www.cathdb.info/
+- https://www.cathdb.info/
 
 ### Code Examples
-https://github.com/sacdallago/bio_embeddings/blob/develop/notebooks/deeploc_machine_learning.ipynb
-https://githubplus.com/Rostlab/EAT
+- https://github.com/sacdallago/bio_embeddings/blob/develop/notebooks/deeploc_machine_learning.ipynb
 
-## Grading
-- 20% report
-- 20% intro talk
-- 30% final talk
-- 15% discussion & exercise contribution
-- 15% effort
+### Reference method: ProtTucker
+- [paper](https://www.biorxiv.org/content/10.1101/2021.11.14.468528v1)
+- [repo](https://githubplus.com/Rostlab/EAT)
 
 ## Data
-Download the following data:
-
-- Sequences Training: https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/train66k.fasta
-- Sequences Validation: https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/val200.fasta
-- Sequences Test: https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/test219.fasta
-
-- Labels: https://rostlab.org/~deepppi/cath-domain-list.txt
-
-- Embeddings: https://rostlab.org/~deepppi/eat_dbs/cath_v430_dom_seqs_S100_161121.h5
+- Sequences
+    - [Training](https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/train66k.fasta)
+    - [Validation](https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/val200.fasta)
+    - [Test](https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/test219.fasta)
+    - [Lookup](https://github.com/Rostlab/EAT/blob/main/data/ProtTucker/lookup69k.fasta)
+- [Labels](https://rostlab.org/~deepppi/cath-domain-list.txt)
+- [Embeddings](https://rostlab.org/~deepppi/eat_dbs/cath_v430_dom_seqs_S100_161121.h5)
 
 
 ## Requirements
-Install requirements with:
+Install requirements using:
 ```
 pip install -r requirements.txt
 ```
@@ -58,9 +47,9 @@ Before committing your code run the following command:
 ```
 black src
 ```
-Configurations for formatting with black are saved in [black configuration file](pyproject.toml).
+Configurations for formatting with black are saved in the [Black configuration file](pyproject.toml).
 
-More information in [black documentation](https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file).
+More information in the [Black documentation](https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file).
 
 
 ## Training in Google Colab
