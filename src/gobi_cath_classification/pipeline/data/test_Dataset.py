@@ -2,7 +2,7 @@ from copy import deepcopy
 import numpy as np
 from sklearn.utils import shuffle
 
-from ..data import Dataset
+from .Dataset import Dataset
 from ..utils import CATHLabel
 
 x1 = np.array([[1], [2], [5]])
@@ -26,6 +26,8 @@ data1 = Dataset(
     y_test=[CATHLabel(label) for label in [id1, id5, id6]],
     X_tmp_holdout=None,
     y_tmp_holdout=None,
+    X_lookup=None,
+    y_lookup=None
 )
 
 
@@ -63,6 +65,8 @@ data2 = Dataset(
     y_test=[CATHLabel("1.8.20.300"), CATHLabel("2.20.3.3")],
     X_tmp_holdout=None,
     y_tmp_holdout=None,
+    X_lookup=None,
+    y_lookup=None
 )
 
 data2 = data2.get_filtered_version("A")
