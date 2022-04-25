@@ -1,21 +1,20 @@
 import logging
+import os
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import pickle
 import pytorch_lightning as pl
+import pytorch_metric_learning as pml
 import torch
-from pytorch_metric_learning.distances import CosineSimilarity
-from pytorch_metric_learning.losses import ArcFaceLoss
-from pytorch_metric_learning.utils.accuracy_calculator import AccuracyCalculator
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import LabelEncoder
-from statsmodels.distributions.empirical_distribution import ECDF
+import torchmetrics as tm
 
-from gobi_cath_classification.pipeline import ModelInterface, load_data
-from gobi_cath_classification.pipeline import Prediction
-from .eat import EAT
+from pytorch_metric_learning.losses import ArcFaceLoss, SubCenterArcFaceLoss
+from sklearn.preprocessing import LabelEncoder
+
+from gobi_cath_classification.pipeline import ModelInterface, load_data, Prediction
 from .utils import get_base_dir
 
 ROOT_DIR = get_base_dir()
@@ -24,60 +23,76 @@ DATA_DIR = ROOT_DIR / "data"
 
 
 class ArcFaceModel(pl.LightningModule, ModelInterface):
-    # TODO set hyperparameters
+    # TODO register tensors
     def __init__(
         self,
-        config,
+        config: Dict,
         lookup_data: Tuple[int, torch.utils.data.DataLoader],
         label_encoder: LabelEncoder,
-        accuracy_calculator: AccuracyCalculator,
         name: str,
         acceleration: str = "gpu",
+        subcenters: bool = False,
     ):
         super().__init__()
-        self.num_classes, self.lookup_data = lookup_data
+
+        # Basic info
         self.name = name
         self.epoch = 0
+        self.highest_acc = 0
+
+        # Utilities
         self.acceleration = acceleration
         self.label_encoder = label_encoder
-        self.accuracy_calculator = accuracy_calculator
+        self.pickle_intermediates = config["pickle_intermediates"]
+        self.old_intermediate_path = None
 
+        # Dataset
+        self.num_classes, self.lookup_data = lookup_data
         self.lookup_labels = None
         self.lookup_embeddings = None
         self.query_embeddings = None
 
-        self.model_lr = config["lr"]
+        # TODO initialize lookup labels here instead of reloading them every epoch
+
+        # Hyperparameters
+        self.model_lr = config["model_lr"]
         self.loss_lr = config["loss_lr"]
-        self.l1_size, self.l2_size = config["layer_sizes"]
+        if "layer_sizes" in config:
+            self.l1_size, self.l2_size = config["layer_sizes"]
+        else:
+            self.l1_size, self.l2_size = 512, 128
         self.batch_size = config["batch_size"]
 
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(1024, self.l1_size), torch.nn.ReLU(), torch.nn.Linear(self.l1_size, self.l2_size)
+            torch.nn.Linear(1024, self.l1_size),
+            torch.nn.ReLU(),
+            torch.nn.Linear(self.l1_size, self.l2_size),
         )
-        self.loss_function = ArcFaceLoss(
-            num_classes=self.num_classes, embedding_size=self.l2_size
-        )  # TODO tune to also allow SubCenterArcFaceLoss
+
+        # https://openaccess.thecvf.com/content_CVPR_2019/papers/Zhang_AdaCos_Adaptively_Scaling_Cosine_Logits_for_Effectively_Learning_Deep_Face_CVPR_2019_paper.pdf
+        scale = np.sqrt(2) * np.log(self.num_classes - 1)
+        if not subcenters:
+            self.loss_function = ArcFaceLoss(
+                num_classes=self.num_classes, embedding_size=self.l2_size, margin=28.6, scale=scale
+            )
+        else:
+            self.loss_function = SubCenterArcFaceLoss(
+                num_classes=self.num_classes,
+                embedding_size=self.l2_size,
+                margin=28.6,  # default
+                scale=scale,
+                sub_centers=3,  # TODO tune?
+            )
+            # pass
 
     def forward(self, x):
         return self.model(x)
 
     def configure_optimizers(self):
         model_optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.model_lr)
-        loss_optimizer = torch.optim.AdamW(
-            self.loss_function.parameters(), lr=self.loss_lr
-        )  # 1/100 ratio from example at https://colab.research.google.com/github/KevinMusgrave/pytorch-metric-learning/blob/master/examples/notebooks/SubCenterArcFaceMNIST.ipynb
+        loss_optimizer = torch.optim.AdamW(self.loss_function.parameters(), lr=self.loss_lr)
 
         return [model_optimizer, loss_optimizer]
-
-        # TODO tune with cyclic & 1cycle as choices
-        """
-        model_lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(model_optimizer)
-        loss_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(loss_optimizer)
-        return [model_optimizer, loss_optimizer], {
-            "scheduler": model_lr_scheduler,
-            "monitor": "val_loss",
-        }
-        """
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         x, y = batch
@@ -100,9 +115,28 @@ class ArcFaceModel(pl.LightningModule, ModelInterface):
         self.lookup_labels = torch.Tensor().to(self.device).type(torch.int64)
         self.query_embeddings = torch.Tensor().to(self.device)
 
+    # TODO type annotations
+    # TODO error catching
+    def predict_classes(self, query_projections):
+        all_similarities = pml.distances.CosineSimilarity()(
+            query_projections.float(), self.lookup_embeddings.float()
+        )
+
+        # https://stackoverflow.com/questions/56154604/groupby-aggregate-mean-in-pytorch
+        M = torch.zeros(len(self.lookup_embeddings), self.num_classes)
+        M[torch.arange(len(self.lookup_embeddings)), self.lookup_labels] = 1
+        M = torch.nn.functional.normalize(M, p=1, dim=0)
+
+        if self.acceleration == "gpu":
+            M = M.to(self.device).cuda()
+
+        class_similarities = torch.mm(all_similarities, M)
+
+        return class_similarities
+
     def validation_step(self, batch, batch_idx):
-        # TODO top-k metrics
         # TODO per-level metrics
+
         # compute embeddings for validation batch
         x, y = batch
         if self.acceleration == "cpu":
@@ -114,50 +148,65 @@ class ArcFaceModel(pl.LightningModule, ModelInterface):
         loss = self.loss_function(query_projections, y)
         self.log("val_loss", loss, prog_bar=True)
 
-
-
         # Validation accuracy
-        metrics = self.accuracy_calculator.get_accuracy(
-            query_projections,
-            self.lookup_embeddings,
-            y,
-            self.lookup_labels,
-            False
-        )
-        self.log("val_map", metrics["mean_average_precision"], prog_bar=True)
-        self.log("val_acc_top10", metrics["precision_at_1"], prog_bar=True)
+        class_similarities = self.predict_classes(query_projections)
+        # Move to CPU for torchmetrics
+        acc = tm.Accuracy()(class_similarities.to("cpu"), y.to("cpu"))
+        self.log("val_acc", acc, on_epoch=True, prog_bar=True)
 
-        eat = EAT(CosineSimilarity(), self.lookup_embeddings, query_projections)
-        eat.get_neighbors(1)
-        eat.transfer_labels(self.lookup_labels)
-        eat.decode_labels(self.label_encoder)
+        # TODO move to proper callback
+        if self.pickle_intermediate and acc > self.highest_acc:
+            self.highest_acc = acc
+            path = ROOT_DIR / f"models/{self.name}_val_acc_{acc:.2f}.pickle"
+            print(f"Pickling to {path} ...")
+            with open(path, "wb+") as f:
+                pickle.dump(self, f)
 
-        predicted_labels = eat.encoded_labels.cpu().flatten()
-        true_labels = y.cpu().flatten()
+            if self.old_path:
+                os.remove(self.old_path)
+            self.old_path = path
 
-        self.log("val_acc", accuracy_score(true_labels, predicted_labels), prog_bar=True)
-
-        # TODO compute top-k accuracy
-        """
-        # Compute accuracy scores
-        for k in [1, 2, 5, 10, 25, 50, 100]:
-            accuracy = torchmetrics.Accuracy(average="micro", top_k=k)  # TODO change to macro?
+        for k in [5, 10, 25, 50, 100]:
             self.log(
                 f"val_acc_top{k}",
-                accuracy(predicted_labels, true_labels),
-                prog_bar=True if k in [1, 25] else False
+                tm.Accuracy(top_k=k)(class_similarities.to("cpu"), y.to("cpu")),
+                on_epoch=True,
+                prog_bar=True,
             )
-        """
+
+        return loss
 
     def test_step(self, batch, batch_idx):
+        # - ignore_index?
         x, y = batch
-        y_hat = self(x)
-        test_loss = self.loss_function(y_hat, y)
+        if self.acceleration == "cpu":
+            # No automatic mixed precision possible
+            x = x.type(torch.float32)
+
+        query_projections = self(x)
+
+        test_loss = self.loss_function(query_projections, y)
         self.log("test_loss", test_loss)
 
+        class_similarities = self.predict_classes(query_projections)
+
+        # TODO merge top k predictions
+        # Move to CPU for torchmetrics
+        self.log("test_acc", tm.Accuracy()(class_similarities.to("cpu"), y.to("cpu")))
+
     def predict_step(self, batch, batch_idx):
-        # TODO
-        pass
+        x, y = batch
+        if self.acceleration == "cpu":
+            # No automatic mixed precision possible
+            x = x.type(torch.float32)
+        query_projections = self(x)
+
+        class_similarities = self.predict_classes(query_projections)
+        _, neighbor_indices = torch.topk(class_similarities, 1, largest=True)
+        encoded_labels = torch.take(self.lookup_labels, neighbor_indices)
+        decoded_labels = self.label_encoder.inverse_transform(encoded_labels.cpu().flatten())
+
+        return decoded_labels
 
     def train_one_epoch(
         self,
@@ -167,67 +216,29 @@ class ArcFaceModel(pl.LightningModule, ModelInterface):
         sample_weights: Optional[np.ndarray],
     ) -> Dict[str, float]:
         # TODO does this make sense?
+        # - just run training_step ?
         raise NotImplementedError
 
-    def predict(self, embeddings: np.ndarray) -> Prediction:
-        # TODO enable different lookup file than training set
-        # TODO get probabilities differently
-        #   - as inverse of softmax loss?
-        #   - from cosine similarity?
-        logging.info("Loading dataset")
-        dataset = load_data(DATA_DIR, np.random.RandomState(42), True, True, False, True)
+    # TODO enable different lookup file than training set
+    # TODO use self.predict_step() ?
+    def predict(self, embeddings) -> Prediction:
+        # manual casting required since this is outside of what PyTorch lightning takes care of
+        if self.acceleration == "gpu":
+            embeddings = embeddings.type(torch.float32).cuda()
+            query_projections = self(embeddings).to(self.device).cuda()
 
-        logging.info("Getting splits from dataset")
-        lookup_embeddings, lookup_labels = dataset.get_split(
-            "train", x_encoding="embedding-tensor", zipped=False
+        class_similarities = self.predict_classes(query_projections)
+        _, neighbor_indices = torch.topk(class_similarities, k=1, largest=True)
+        encoded_labels = torch.take(self.lookup_labels, neighbor_indices)
+        pred_labels = self.label_encoder.inverse_transform(encoded_labels.cpu().flatten())
+
+        df = pd.DataFrame(
+            data=class_similarities.cpu().detach().numpy(),
+            columns=self.label_encoder.inverse_transform(np.arange(self.num_classes)),
         )
 
-        query_embeddings, query_labels = dataset.get_split(
-            "test", x_encoding="embedding-tensor", zipped=False
-        )
-
-        lookup_embeddings = lookup_embeddings.cuda()
-        query_embeddings = query_embeddings.cuda()
-
-        with torch.cuda.amp.autocast():
-            lookup_embeddings = self.model(lookup_embeddings)
-            query_embeddings = self.model(query_embeddings)
-
-        logging.info("Transferring annotations ...")
-
-        all_distances = np.empty((query_embeddings.shape[0], len(lookup_labels)))
-
-        for i, query_embedding in enumerate(query_embeddings):
-            distances = torch.linalg.norm(
-                lookup_embeddings.float() - query_embedding.float().unsqueeze(dim=0), dim=1
-            )
-            all_distances[i] = distances.cpu().detach().numpy()
-
-        # TODO change to use flag for triggering this
-        if True:
-            normed = np.zeros(all_distances.shape)
-            normed[np.arange(len(all_distances)), all_distances.argmax(1)] = 1
-            df = pd.DataFrame(data=normed, columns=[str(label) for label in lookup_labels])
-            df = df.groupby(df.columns, axis=1).max()
-
-        else:
-            ecdf = ECDF(all_distances.ravel())
-
-            # compute prediction certainty from CDF
-            logging.info("Computing probabilities from distances ...")
-            probabilities = ecdf(all_distances)
-
-            """
-            logging.debug("Evaluating predictions")
-            str_preds = [str(pred) for pred in predictions]
-            for level in "CATH":
-                print(level)
-                print(accuracy_for_level(query_labels, str_preds, dataset.train_labels, level))
-            """
-            logging.info("Creating Dataframe ...")
-            df = pd.DataFrame(data=probabilities, columns=[str(label) for label in lookup_labels])
-            logging.info("Sorting Dataframe ...")
-            df = df.groupby(df.columns, axis=1).mean()
+        # sort out negative similarities
+        df[df < 0] = 0
 
         return Prediction(df)
 
