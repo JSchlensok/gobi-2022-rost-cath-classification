@@ -143,5 +143,6 @@ The first and only run in this trial is the final model.
 !python /content/gobi-2022-rost-cath-classification/src/gobi_cath_classification/pipeline/train_eval.py
 ```
 
-
+### ArcFace
+Follow the steps in the `ArcFace Runner` notebook to either train your own model or load the best one (`arcface_2022-04-06_1403_val_acc_0.65`, loaded by default)
 
