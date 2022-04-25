@@ -393,3 +393,4 @@ cython_debug/
 
 # RDATA files
 /.RDataFiles/1527078135.RData
+!/src/gobi_cath_classification/pipeline/data/lightning.py
